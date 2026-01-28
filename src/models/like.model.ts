@@ -1,0 +1,30 @@
+import { model, Schema } from "mongoose";
+
+const DOCUMENT_NAME = "Like";
+const COLLECTION_NAME = "Likes";
+
+const likeSchema = new Schema(
+  {
+    userId: {
+      type: Schema.Types.ObjectId,
+      required: true,
+      ref: "User",
+      index: true,
+    },
+    targetId: { type: Schema.Types.ObjectId, required: true, index: true },
+    targetType: {
+      type: String,
+      enum: ["post", "comment"],
+      required: true,
+      index: true,
+    },
+  },
+  {
+    collection: COLLECTION_NAME,
+    timestamps: {
+      createdAt: "createdOn",
+    },
+  },
+);
+
+export const like = model(DOCUMENT_NAME, likeSchema);
