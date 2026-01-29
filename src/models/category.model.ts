@@ -20,4 +20,4 @@ const categorySchema = new Schema(
   },
 );
 
-export const category = model(DOCUMENT_NAME, categorySchema);
+export const categoryModel = model(DOCUMENT_NAME, categorySchema);

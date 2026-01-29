@@ -32,4 +32,4 @@ const shareSchema = new Schema(
   },
 );
 
-export const share = model(DOCUMENT_NAME, shareSchema);
+export const shareModel = model(DOCUMENT_NAME, shareSchema);

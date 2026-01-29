@@ -30,4 +30,4 @@ const userSchema = new Schema(
   },
 );
 
-export const user = model(DOCUMENT_NAME, userSchema);
+export const userModel = model(DOCUMENT_NAME, userSchema);

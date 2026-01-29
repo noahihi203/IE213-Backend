@@ -27,4 +27,4 @@ const likeSchema = new Schema(
   },
 );
 
-export const like = model(DOCUMENT_NAME, likeSchema);
+export const likeModel = model(DOCUMENT_NAME, likeSchema);

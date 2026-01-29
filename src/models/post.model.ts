@@ -34,4 +34,4 @@ const postSchema = new Schema(
   },
 );
 
-export const post = model(DOCUMENT_NAME, postSchema);
+export const postModel = model(DOCUMENT_NAME, postSchema);

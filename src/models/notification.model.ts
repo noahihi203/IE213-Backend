@@ -35,4 +35,4 @@ const notificationSchema = new Schema(
   },
 );
 
-export const notification = model(DOCUMENT_NAME, notificationSchema);
+export const notificationModel = model(DOCUMENT_NAME, notificationSchema);
