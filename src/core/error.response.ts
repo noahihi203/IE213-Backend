@@ -1,5 +1,4 @@
-
-import { StatusCodes, ReasonPhrases }  from "../utils/httpStatusCode";
+import { StatusCodes, ReasonPhrases } from "../utils/httpStatusCode.js";
 
 const StatusCode = {
   FORBIDDEN: 403,
@@ -12,7 +11,8 @@ const ReasonStatusCode = {
 };
 
 class ErrorResponse extends Error {
-  constructor(message, status) {
+  status: number;
+  constructor(message: string, status: number) {
     super(message);
     this.status = status;
   }
@@ -20,8 +20,8 @@ class ErrorResponse extends Error {
 
 class ConflictRequestError extends ErrorResponse {
   constructor(
-    message = ReasonStatusCode.CONFLICT,
-    statusCode = StatusCode.FORBIDDEN,
+    message: string = ReasonStatusCode.CONFLICT,
+    statusCode: number = StatusCode.FORBIDDEN,
   ) {
     super(message, statusCode);
   }
@@ -29,8 +29,8 @@ class ConflictRequestError extends ErrorResponse {
 
 class BadRequestError extends ErrorResponse {
   constructor(
-    message = ReasonStatusCode.CONFLICT,
-    statusCode = StatusCode.FORBIDDEN,
+    message: string = ReasonStatusCode.CONFLICT,
+    statusCode: number = StatusCode.FORBIDDEN,
   ) {
     super(message, statusCode);
   }
@@ -38,8 +38,8 @@ class BadRequestError extends ErrorResponse {
 
 class AuthFailureError extends ErrorResponse {
   constructor(
-    message = ReasonPhrases.UNAUTHORIZED,
-    statusCode = StatusCodes.UNAUTHORIZED,
+    message: string = ReasonPhrases.UNAUTHORIZED,
+    statusCode: number = StatusCodes.UNAUTHORIZED,
   ) {
     super(message, statusCode);
   }
@@ -47,8 +47,8 @@ class AuthFailureError extends ErrorResponse {
 
 class NotFoundError extends ErrorResponse {
   constructor(
-    message = ReasonPhrases.NOT_FOUND,
-    statusCode = StatusCodes.NOT_FOUND,
+    message: string = ReasonPhrases.NOT_FOUND,
+    statusCode: number = StatusCodes.NOT_FOUND,
   ) {
     super(message, statusCode);
   }
@@ -56,14 +56,14 @@ class NotFoundError extends ErrorResponse {
 
 class ForBiddenError extends ErrorResponse {
   constructor(
-    message = ReasonPhrases.FORBIDDEN,
-    statusCode = StatusCodes.FORBIDDEN,
+    message: string = ReasonPhrases.FORBIDDEN,
+    statusCode: number = StatusCodes.FORBIDDEN,
   ) {
     super(message, statusCode);
   }
 }
 
-export default {
+export {
   ConflictRequestError,
   BadRequestError,
   AuthFailureError,
