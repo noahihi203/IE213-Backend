@@ -1,793 +1,506 @@
-# API Documentation - Blog System
+# API Documentation - IE213 Blog System
 
-## Tech Stack: MENN (MongoDB, Express, Next.js, Node.js)
+## Tech Stack
 
-Base URL: `http://localhost:5000/api/v1`
-
----
-
-## Authentication
-
-All protected routes require a JWT token in the Authorization header:
-
-```
-Authorization: Bearer <token>
-```
+**Backend**: Node.js, Express, MongoDB (Mongoose)  
+**Frontend**: Next.js 14 (App Router)  
+**Authentication**: RSA-based JWT (RS256)
 
 ---
 
-## 1. Authentication & Authorization
+## Base Configuration
+
+**Base URL**: `http://localhost:5000/v1/api`  
+**Port**: Backend runs on port 5000, Frontend on port 3000  
+**Database**: MongoDB on port 10236 (Docker)
+
+---
+
+## Response Format
+
+All API responses follow this standardized format:
+
+**Success Response:**
+
+```json
+{
+  "message": "Success message",
+  "status": 200,
+  "metadata": {
+    // Response data here
+  }
+}
+```
+
+**Error Response:**
+
+```json
+{
+  "status": 400,
+  "message": "Error message description"
+}
+```
+
+---
+
+## Authentication System
+
+### Authentication Flow
+
+This API uses **RSA-based JWT tokens** with the following characteristics:
+
+- **Algorithm**: RS256 (RSA + SHA-256)
+- **Key Generation**: RSA key pairs (2048-bit) generated per user at signup
+- **Access Token**: Expires in 2 days
+- **Refresh Token**: Expires in 7 days
+- **Storage**: Keys stored in `keytoken` collection with refresh token tracking
+
+### Required Headers for Protected Routes
+
+All protected endpoints require TWO headers:
+
+```http
+x-client-id: <user_id>
+Authorization: <access_token>
+```
+
+**Example:**
+
+```http
+x-client-id: 65a1b2c3d4e5f6a7b8c9d0e1
+Authorization: eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9...
+```
+
+---
+
+## 1. Authentication Endpoints
 
 ### 1.1 Register User
 
-**POST** `/auth/register`
+**Endpoint:** `POST /v1/api/register`
 
-**Body:**
+**Description:** Create a new user account with RSA key pair generation.
+
+**Request Body:**
 
 ```json
 {
   "username": "johndoe",
   "email": "john@example.com",
-  "password": "password123",
-  "fullName": "John Doe",
-  "role": "user"
+  "password": "SecurePass123!",
+  "fullName": "John Doe"
 }
 ```
 
-**Response:** `201 Created`
+**Validation Rules:**
+
+- `username`: Required, unique, alphanumeric with underscores
+- `email`: Required, unique, valid email format
+- `password`: Required, minimum 6 characters
+- `fullName`: Required, string
+
+**Success Response:** `201 CREATED`
 
 ```json
 {
-  "success": true,
-  "data": {
-    "user": {
-      "_id": "65a1b2c3d4e5f6...",
-      "username": "johndoe",
-      "email": "john@example.com",
-      "fullName": "John Doe",
-      "role": "user",
-      "avatar": null
-    },
-    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+  "message": "Registered OK!",
+  "status": 201,
+  "metadata": {
+    "code": 201,
+    "metadata": {
+      "user": {
+        "_id": "65a1b2c3d4e5f6a7b8c9d0e1",
+        "username": "johndoe",
+        "email": "john@example.com",
+        "fullName": "John Doe"
+      },
+      "tokens": {
+        "accessToken": "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9...",
+        "refreshToken": "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9..."
+      }
+    }
+  },
+  "options": {
+    "limit": 10
   }
 }
 ```
 
+**Error Responses:**
+
+`400 BAD REQUEST` - Email already exists
+
+```json
+{
+  "status": 400,
+  "message": "Email already exists!"
+}
+```
+
+`400 BAD REQUEST` - Username already exists
+
+```json
+{
+  "status": 400,
+  "message": "Username already exists!"
+}
+```
+
+---
+
 ### 1.2 Login User
 
-**POST** `/auth/login`
+**Endpoint:** `POST /v1/api/login`
 
-**Body:**
+**Description:** Authenticate user and receive new token pair.
+
+**Request Body:**
 
 ```json
 {
   "email": "john@example.com",
-  "password": "password123"
+  "password": "SecurePass123!"
 }
 ```
 
-**Response:** `200 OK`
+**Success Response:** `200 OK`
 
 ```json
 {
-  "success": true,
-  "data": {
-    "user": { ... },
-    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+  "message": "Success",
+  "status": 200,
+  "metadata": {
+    "user": {
+      "_id": "65a1b2c3d4e5f6a7b8c9d0e1",
+      "username": "johndoe",
+      "email": "john@example.com",
+      "fullName": "John Doe"
+    },
+    "tokens": {
+      "accessToken": "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9...",
+      "refreshToken": "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9..."
+    }
   }
 }
 ```
 
-### 1.3 Get Current User
+**Error Responses:**
 
-**GET** `/auth/me`
-
-**Headers:** `Authorization: Bearer <token>`
-
-**Response:** `200 OK`
+`400 BAD REQUEST` - User not found
 
 ```json
 {
-  "success": true,
-  "data": {
-    "_id": "65a1b2c3d4e5f6...",
-    "username": "johndoe",
-    "email": "john@example.com",
-    "fullName": "John Doe",
-    "role": "user"
+  "status": 400,
+  "message": "User not registered!"
+}
+```
+
+`401 UNAUTHORIZED` - Wrong password
+
+```json
+{
+  "status": 401,
+  "message": "Authentication error"
+}
+```
+
+---
+
+### 1.3 Refresh Token
+
+**Endpoint:** `POST /v1/api/refresh-token`
+
+**Description:** Get new access token using refresh token. Prevents token reuse attacks.
+
+**Headers:**
+
+```http
+x-client-id: <user_id>
+Authorization: <refresh_token>
+```
+
+**Success Response:** `200 OK`
+
+```json
+{
+  "message": "Get token success!",
+  "status": 200,
+  "metadata": {
+    "user": {
+      "_id": "65a1b2c3d4e5f6a7b8c9d0e1",
+      "email": "john@example.com",
+      "password": "<hashed>",
+      "fullName": "John Doe"
+    },
+    "tokens": {
+      "accessToken": "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9...",
+      "refreshToken": "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9..."
+    }
   }
 }
 ```
+
+**Security Features:**
+
+- Tracks used refresh tokens in `refreshTokensUsed` array
+- Detects token reuse attempts
+- Automatically invalidates all user tokens on reuse detection
+
+**Error Responses:**
+
+`403 FORBIDDEN` - Token reuse detected
+
+```json
+{
+  "status": 403,
+  "message": "Something wrong happen! Pls re login"
+}
+```
+
+`401 UNAUTHORIZED` - Invalid refresh token
+
+```json
+{
+  "status": 401,
+  "message": "Shop not registered"
+}
+```
+
+---
 
 ### 1.4 Logout User
 
-**POST** `/auth/logout`
+**Endpoint:** `POST /v1/api/logout`
 
-**Response:** `200 OK`
+**Description:** Invalidate all tokens by removing keyStore record.
 
----
+**Headers:**
 
-## 2. Users
-
-### 2.1 Get All Users (Admin Only)
-
-**GET** `/users`
-
-**Query Parameters:**
-
-- `page` (default: 1)
-- `limit` (default: 10)
-- `role` (filter by role)
-
-**Response:** `200 OK`
-
-```json
-{
-  "success": true,
-  "data": {
-    "users": [...],
-    "pagination": {
-      "page": 1,
-      "limit": 10,
-      "total": 50
-    }
-  }
-}
+```http
+x-client-id: <user_id>
+Authorization: <access_token>
 ```
 
-### 2.2 Get User Profile
-
-**GET** `/users/:userId`
-
-**Response:** `200 OK`
+**Success Response:** `200 OK`
 
 ```json
 {
-  "success": true,
-  "data": {
-    "_id": "65a1b2c3d4e5f6...",
-    "username": "johndoe",
-    "fullName": "John Doe",
-    "avatar": "https://...",
-    "bio": "Software developer",
-    "followers": 120,
-    "following": 50,
-    "postsCount": 15
-  }
-}
-```
-
-### 2.3 Update User Profile
-
-**PUT** `/users/:userId`
-
-**Body:**
-
-```json
-{
-  "fullName": "John Updated",
-  "bio": "New bio",
-  "avatar": "https://..."
-}
-```
-
-**Response:** `200 OK`
-
-### 2.4 Delete User (Admin Only)
-
-**DELETE** `/users/:userId`
-
-**Response:** `200 OK`
-
-### 2.5 Follow User
-
-**POST** `/users/:userId/follow`
-
-**Response:** `200 OK`
-
-```json
-{
-  "success": true,
-  "message": "User followed successfully"
-}
-```
-
-### 2.6 Unfollow User
-
-**DELETE** `/users/:userId/follow`
-
-**Response:** `200 OK`
-
-### 2.7 Get User Followers
-
-**GET** `/users/:userId/followers`
-
-**Response:** `200 OK`
-
-### 2.8 Get User Following
-
-**GET** `/users/:userId/following`
-
-**Response:** `200 OK`
-
----
-
-## 3. Posts
-
-### 3.1 Get All Posts
-
-**GET** `/posts`
-
-**Query Parameters:**
-
-- `page` (default: 1)
-- `limit` (default: 10)
-- `status` (published/draft/archived)
-- `category` (filter by category)
-- `tags` (comma-separated tags)
-- `authorId` (filter by author)
-- `search` (text search)
-- `sort` (newest/oldest/popular/trending)
-
-**Response:** `200 OK`
-
-```json
-{
-  "success": true,
-  "data": {
-    "posts": [
-      {
-        "_id": "65a1b2c3d4e5f6...",
-        "title": "My First Blog Post",
-        "excerpt": "This is a short excerpt...",
-        "coverImage": "https://...",
-        "slug": "my-first-blog-post",
-        "author": {
-          "_id": "...",
-          "username": "johndoe",
-          "avatar": "..."
-        },
-        "category": "Technology",
-        "tags": ["javascript", "nodejs"],
-        "likesCount": 45,
-        "commentsCount": 12,
-        "viewCount": 234,
-        "publishedAt": "2026-01-20T10:00:00Z"
-      }
-    ],
-    "pagination": {
-      "page": 1,
-      "limit": 10,
-      "total": 100,
-      "pages": 10
-    }
-  }
-}
-```
-
-### 3.2 Get Single Post
-
-**GET** `/posts/:postId` or `/posts/slug/:slug`
-
-**Response:** `200 OK`
-
-```json
-{
-  "success": true,
-  "data": {
-    "_id": "65a1b2c3d4e5f6...",
-    "title": "My First Blog Post",
-    "content": "Full content here...",
-    "excerpt": "Short excerpt...",
-    "coverImage": "https://...",
-    "slug": "my-first-blog-post",
-    "author": {
-      "_id": "...",
-      "username": "johndoe",
-      "fullName": "John Doe",
-      "avatar": "..."
-    },
-    "category": "Technology",
-    "tags": ["javascript", "nodejs"],
-    "status": "published",
-    "likesCount": 45,
-    "commentsCount": 12,
-    "sharesCount": 5,
-    "viewCount": 235,
-    "isLiked": false,
-    "publishedAt": "2026-01-20T10:00:00Z",
-    "createdAt": "2026-01-20T09:00:00Z"
-  }
-}
-```
-
-### 3.3 Create Post (Poster/Admin)
-
-**POST** `/posts`
-
-**Body:**
-
-```json
-{
-  "title": "My New Post",
-  "content": "Full content here...",
-  "excerpt": "Short excerpt...",
-  "coverImage": "https://...",
-  "category": "Technology",
-  "tags": ["javascript", "nodejs"],
-  "status": "published"
-}
-```
-
-**Response:** `201 Created`
-
-### 3.4 Update Post (Author/Admin)
-
-**PUT** `/posts/:postId`
-
-**Body:** (same as create, all fields optional)
-
-**Response:** `200 OK`
-
-### 3.5 Delete Post (Author/Admin)
-
-**DELETE** `/posts/:postId`
-
-**Response:** `200 OK`
-
-### 3.6 Like Post
-
-**POST** `/posts/:postId/like`
-
-**Response:** `200 OK`
-
-```json
-{
-  "success": true,
-  "message": "Post liked successfully",
-  "data": {
-    "likesCount": 46
-  }
-}
-```
-
-### 3.7 Unlike Post
-
-**DELETE** `/posts/:postId/like`
-
-**Response:** `200 OK`
-
-### 3.8 Share Post
-
-**POST** `/posts/:postId/share`
-
-**Body:**
-
-```json
-{
-  "platform": "facebook",
-  "message": "Check this out!"
-}
-```
-
-**Response:** `200 OK`
-
-### 3.9 Get Trending Posts
-
-**GET** `/posts/trending`
-
-**Query Parameters:**
-
-- `period` (today/week/month)
-
-**Response:** `200 OK`
-
-### 3.10 Get User Feed
-
-**GET** `/posts/feed`
-
-Returns posts from followed users.
-
-**Response:** `200 OK`
-
----
-
-## 4. Comments
-
-### 4.1 Get Post Comments
-
-**GET** `/posts/:postId/comments`
-
-**Query Parameters:**
-
-- `page` (default: 1)
-- `limit` (default: 20)
-- `sort` (newest/oldest/popular)
-
-**Response:** `200 OK`
-
-```json
-{
-  "success": true,
-  "data": {
-    "comments": [
-      {
-        "_id": "65a1b2c3d4e5f6...",
-        "postId": "...",
-        "author": {
-          "_id": "...",
-          "username": "janedoe",
-          "avatar": "..."
-        },
-        "content": "Great post!",
-        "likesCount": 5,
-        "isEdited": false,
-        "replies": [
-          {
-            "_id": "...",
-            "content": "Thank you!",
-            "author": {...},
-            "createdAt": "..."
-          }
-        ],
-        "createdAt": "2026-01-20T11:00:00Z"
-      }
-    ],
-    "pagination": {...}
-  }
-}
-```
-
-### 4.2 Create Comment
-
-**POST** `/posts/:postId/comments`
-
-**Body:**
-
-```json
-{
-  "content": "This is my comment",
-  "parentId": null
-}
-```
-
-**Response:** `201 Created`
-
-### 4.3 Update Comment
-
-**PUT** `/comments/:commentId`
-
-**Body:**
-
-```json
-{
-  "content": "Updated comment"
-}
-```
-
-**Response:** `200 OK`
-
-### 4.4 Delete Comment
-
-**DELETE** `/comments/:commentId`
-
-**Response:** `200 OK`
-
-### 4.5 Like Comment
-
-**POST** `/comments/:commentId/like`
-
-**Response:** `200 OK`
-
-### 4.6 Unlike Comment
-
-**DELETE** `/comments/:commentId/like`
-
-**Response:** `200 OK`
-
----
-
-## 5. Categories
-
-### 5.1 Get All Categories
-
-**GET** `/categories`
-
-**Response:** `200 OK`
-
-```json
-{
-  "success": true,
-  "data": [
-    {
-      "_id": "...",
-      "name": "Technology",
-      "slug": "technology",
-      "description": "Tech related posts",
-      "icon": "https://...",
-      "postCount": 150
-    }
-  ]
-}
-```
-
-### 5.2 Get Single Category
-
-**GET** `/categories/:categoryId` or `/categories/slug/:slug`
-
-**Response:** `200 OK`
-
-### 5.3 Create Category (Admin Only)
-
-**POST** `/categories`
-
-**Body:**
-
-```json
-{
-  "name": "Technology",
-  "description": "Tech related posts",
-  "icon": "https://..."
-}
-```
-
-**Response:** `201 Created`
-
-### 5.4 Update Category (Admin Only)
-
-**PUT** `/categories/:categoryId`
-
-**Response:** `200 OK`
-
-### 5.5 Delete Category (Admin Only)
-
-**DELETE** `/categories/:categoryId`
-
-**Response:** `200 OK`
-
----
-
-## 6. Notifications
-
-### 6.1 Get User Notifications
-
-**GET** `/notifications`
-
-**Query Parameters:**
-
-- `page` (default: 1)
-- `limit` (default: 20)
-- `isRead` (true/false/all)
-
-**Response:** `200 OK`
-
-```json
-{
-  "success": true,
-  "data": {
-    "notifications": [
-      {
-        "_id": "...",
-        "type": "like",
-        "actor": {
-          "_id": "...",
-          "username": "janedoe",
-          "avatar": "..."
-        },
-        "message": "janedoe liked your post",
-        "targetId": "...",
-        "targetType": "post",
-        "isRead": false,
-        "createdAt": "2026-01-20T12:00:00Z"
-      }
-    ],
-    "pagination": {...}
-  }
-}
-```
-
-### 6.2 Mark Notification as Read
-
-**PUT** `/notifications/:notificationId/read`
-
-**Response:** `200 OK`
-
-### 6.3 Mark All as Read
-
-**PUT** `/notifications/read-all`
-
-**Response:** `200 OK`
-
-### 6.4 Delete Notification
-
-**DELETE** `/notifications/:notificationId`
-
-**Response:** `200 OK`
-
-### 6.5 Get Unread Count
-
-**GET** `/notifications/unread-count`
-
-**Response:** `200 OK`
-
-```json
-{
-  "success": true,
-  "data": {
-    "count": 5
+  "message": "Logout success!",
+  "status": 200,
+  "metadata": {
+    "deletedCount": 1
   }
 }
 ```
 
 ---
 
-## 7. Statistics (Admin Only)
+## 2. Database Models
 
-### 7.1 Get Dashboard Stats
+### 2.1 User Model
 
-**GET** `/admin/stats/dashboard`
+**Collection:** `Users`
 
-**Response:** `200 OK`
-
-```json
+```typescript
 {
-  "success": true,
-  "data": {
-    "totalUsers": 1500,
-    "totalPosts": 500,
-    "totalComments": 3000,
-    "totalLikes": 10000,
-    "newUsersThisWeek": 50,
-    "newPostsThisWeek": 30
-  }
+  _id: ObjectId,
+  username: string,           // Unique, indexed
+  email: string,              // Unique, indexed
+  password: string,           // Bcrypt hashed (10 rounds)
+  fullName: string,
+  avatar: string | null,      // Optional, default: null
+  bio: string | null,         // Optional, default: null
+  role: string,               // enum: ['user', 'poster', 'admin'], default: 'user'
+  status: string,             // enum: ['active', 'inactive'], default: 'active'
+  createdOn: Date,            // Auto-generated
+  modifiedOn: Date            // Auto-updated
 }
 ```
 
-### 7.2 Get User Stats
+### 2.2 KeyToken Model
 
-**GET** `/admin/stats/users`
+**Collection:** `Keys`
 
-**Response:** `200 OK`
-
-### 7.3 Get Post Stats
-
-**GET** `/admin/stats/posts`
-
-**Response:** `200 OK`
-
----
-
-## Error Responses
-
-All errors follow this format:
-
-```json
+```typescript
 {
-  "success": false,
-  "error": {
-    "message": "Error message here",
-    "code": "ERROR_CODE"
-  }
-}
-```
-
-**HTTP Status Codes:**
-
-- `400` Bad Request
-- `401` Unauthorized
-- `403` Forbidden
-- `404` Not Found
-- `409` Conflict (duplicate)
-- `422` Validation Error
-- `500` Internal Server Error
-
----
-
-## Rate Limiting
-
-- Anonymous users: 100 requests/hour
-- Authenticated users: 1000 requests/hour
-- Admin: Unlimited
-
----
-
-## WebSocket Events (Real-time Updates)
-
-### Connection
-
-```javascript
-const socket = io("http://localhost:5000", {
-  auth: { token: "<jwt_token>" },
-});
-```
-
-### Events to Listen:
-
-- `notification:new` - New notification received
-- `post:liked` - Post was liked
-- `comment:new` - New comment on user's post
-- `user:followed` - New follower
-
-### Events to Emit:
-
-- `post:view` - Track post view
-- `typing` - User is typing a comment
-
----
-
-## Pagination Format
-
-All paginated endpoints return:
-
-```json
-{
-  "success": true,
-  "data": {
-    "items": [...],
-    "pagination": {
-      "page": 1,
-      "limit": 10,
-      "total": 100,
-      "pages": 10,
-      "hasNext": true,
-      "hasPrev": false
-    }
-  }
+  _id: ObjectId,
+  userId: ObjectId,           // Reference to User, indexed
+  publicKey: string,          // RSA public key (PEM format)
+  privateKey: string,         // RSA private key (PEM format)
+  refreshToken: string,       // Current valid refresh token
+  refreshTokensUsed: string[], // Array of used refresh tokens
+  createdOn: Date,
+  modifiedOn: Date
 }
 ```
 
 ---
 
-## Search Functionality
+## 3. Error Status Codes
 
-### Full Text Search
+| Status Code | Reason Phrase         | Usage                                 |
+| ----------- | --------------------- | ------------------------------------- |
+| `200`       | OK                    | Successful GET, PUT, DELETE           |
+| `201`       | CREATED               | Successful POST (resource created)    |
+| `400`       | BAD REQUEST           | Validation error, duplicate entry     |
+| `401`       | UNAUTHORIZED          | Authentication failed, invalid token  |
+| `403`       | FORBIDDEN             | Token reuse, insufficient permissions |
+| `404`       | NOT FOUND             | Resource not found                    |
+| `409`       | CONFLICT              | Duplicate resource                    |
+| `500`       | INTERNAL SERVER ERROR | Server error                          |
 
-**GET** `/posts?search=keyword`
+---
 
-### Advanced Search
+## 4. Future Endpoints (Not Yet Implemented)
 
-**POST** `/posts/search`
+The following models exist but endpoints are not yet implemented:
 
-**Body:**
+### Categories
 
-```json
-{
-  "query": "javascript",
-  "filters": {
-    "category": "Technology",
-    "tags": ["nodejs", "express"],
-    "dateFrom": "2026-01-01",
-    "dateTo": "2026-01-31"
-  },
-  "sort": "relevance"
-}
+- Get all categories
+- Get single category
+- Create category (Admin)
+- Update category (Admin)
+- Delete category (Admin)
+
+### Posts
+
+- Get all posts (with filters, pagination)
+- Get single post
+- Create post (Poster/Admin)
+- Update post (Author/Admin)
+- Delete post (Author/Admin)
+- Like/unlike post
+- Share post
+
+### Comments
+
+- Get post comments
+- Create comment/reply
+- Update comment
+- Delete comment
+- Like/unlike comment
+
+### Likes & Shares
+
+- Track post likes
+- Track post shares
+
+### Notifications
+
+- Get user notifications
+- Mark as read
+- Delete notification
+
+---
+
+## 5. Testing the API
+
+### Using cURL
+
+**Register:**
+
+```bash
+curl -X POST http://localhost:5000/v1/api/register \
+  -H "Content-Type: application/json" \
+  -d '{
+    "username": "testuser",
+    "email": "test@example.com",
+    "password": "password123",
+    "fullName": "Test User"
+  }'
+```
+
+**Login:**
+
+```bash
+curl -X POST http://localhost:5000/v1/api/login \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "test@example.com",
+    "password": "password123"
+  }'
+```
+
+**Logout:**
+
+```bash
+curl -X POST http://localhost:5000/v1/api/logout \
+  -H "x-client-id: <user_id>" \
+  -H "Authorization: <access_token>"
+```
+
+### Using Postman
+
+1. Create environment variables:
+   - `base_url`: `http://localhost:5000/v1/api`
+   - `user_id`: (save from login response)
+   - `access_token`: (save from login response)
+
+2. Set up headers for protected routes:
+   - Key: `x-client-id`, Value: `{{user_id}}`
+   - Key: `Authorization`, Value: `{{access_token}}`
+
+---
+
+## 6. Security Considerations
+
+### Password Security
+
+- Passwords hashed with bcrypt (10 salt rounds)
+- Never returned in API responses
+
+### Token Security
+
+- RSA key pairs generated per user (not shared across users)
+- Access tokens short-lived (2 days)
+- Refresh tokens tracked to prevent reuse
+- Automatic invalidation on suspicious activity
+
+### Headers Validation
+
+- Both `x-client-id` and `Authorization` required
+- Token payload must match user ID in header
+- Public key retrieved from database for verification
+
+---
+
+## 7. Development Notes
+
+### Running the Backend
+
+```bash
+cd Backend-IE213
+npm install
+npm run dev  # Runs on port 5000
+```
+
+### MongoDB Connection
+
+```
+mongodb://localhost:10236/IE213
+```
+
+### Environment Variables (.env)
+
+```env
+DEV_DB_HOST=localhost
+DEV_DB_PORT=10236
+DEV_DB_NAME=IE213
+PORT=5000
 ```
 
 ---
 
-## File Upload
+## Changelog
 
-### Upload Image
+**Version 1.0** (Current)
 
-**POST** `/upload/image`
-
-**Body:** `multipart/form-data`
-
-- `image`: File
-
-**Response:** `200 OK`
-
-```json
-{
-  "success": true,
-  "data": {
-    "url": "https://cdn.example.com/images/abc123.jpg",
-    "filename": "abc123.jpg"
-  }
-}
-```
-
-**Limitations:**
-
-- Max file size: 5MB
-- Allowed formats: JPG, PNG, GIF, WebP
+- ✅ User registration with RSA key generation
+- ✅ User login with JWT token pair
+- ✅ Refresh token endpoint with reuse detection
+- ✅ Logout endpoint
+- ❌ User profile endpoints (not implemented)
+- ❌ Posts, Comments, Likes, Shares (models exist, endpoints pending)
+- ❌ Categories (model exists, endpoints pending)
+- ❌ Notifications (model exists, endpoints pending)
