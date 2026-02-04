@@ -10,11 +10,34 @@ interface SignUpBody {
   fullName: string;
 }
 
+interface UserInfo {
+  _id: string;
+  username: string;
+  email: string;
+  password: string;
+  fullName: string;
+}
+
+interface KeyStoreDocument {
+  _id: Types.ObjectId;
+  userId: Types.ObjectId;
+  publicKey: string;
+  privateKey: string;
+  refreshToken: string;
+  refreshTokensUsed: string[];
+  updateOne: (update: any) => Promise<any>;
+}
+
+interface AuthenticatedRequest {
+  refreshToken: string;
+  user: UserInfo;
+  keyStore: KeyStoreDocument;
+}
+
 class AccessController {
   signUp = async (
     req: Request<{}, {}, SignUpBody>,
     res: Response,
-    next: NextFunction,
   ): Promise<void> => {
     new CREATED({
       message: "Registered OK!",
@@ -25,41 +48,32 @@ class AccessController {
     }).send(res);
   };
 
-  // login = async (
-  //   req: Request<{}, {}, LoginBody>,
-  //   res: Response,
-  //   next: NextFunction,
-  // ): Promise<void> => {
-  //   new SuccessResponse({
-  //     metadata: await AccessService.login(req.body),
-  //   }).send(res);
-  // };
+  login = async (req: Request, res: Response): Promise<void> => {
+    new SuccessResponse({
+      metadata: await AccessService.login(req.body),
+    }).send(res);
+  };
 
-  // handleRefreshToken = async (
-  //   req: AuthenticatedRequest,
-  //   res: Response,
-  //   next: NextFunction,
-  // ): Promise<void> => {
-  //   new SuccessResponse({
-  //     message: "Get token success!",
-  //     metadata: await AccessService.handlerRefreshToken({
-  //       refreshToken: req.refreshToken!,
-  //       user: req.user!,
-  //       keyStore: req.keyStore!,
-  //     }),
-  //   }).send(res);
-  // };
+  handleRefreshToken = async (
+    req: AuthenticatedRequest,
+    res: Response,
+  ): Promise<void> => {
+    new SuccessResponse({
+      message: "Get token success!",
+      metadata: await AccessService.handlerRefreshToken({
+        refreshToken: req.refreshToken!,
+        user: req.user!,
+        keyStore: req.keyStore!,
+      }),
+    }).send(res);
+  };
 
-  // logout = async (
-  //   req: AuthenticatedRequest,
-  //   res: Response,
-  //   next: NextFunction,
-  // ): Promise<void> => {
-  //   new SuccessResponse({
-  //     message: "Logout success!",
-  //     metadata: await AccessService.logout(req.keyStore!),
-  //   }).send(res);
-  // };
+  logout = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+    new SuccessResponse({
+      message: "Logout success!",
+      metadata: await AccessService.logout(req.keyStore!),
+    }).send(res);
+  };
 
   // me = async (
   //   req: KeyStoreDocument,
