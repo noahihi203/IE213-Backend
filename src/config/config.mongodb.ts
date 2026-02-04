@@ -22,7 +22,7 @@ const dev: AppConfig = {
 
 const prod: AppConfig = {
   app: {
-    port: process.env.PROD_APP_PORT || 3000,
+    port: process.env.PROD_APP_PORT || 5000,
   },
   db: {
     host: process.env.PROD_DB_HOST || "localhost",
