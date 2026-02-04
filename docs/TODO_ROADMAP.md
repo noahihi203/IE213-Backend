@@ -1,256 +1,256 @@
-# IE213 Blog System - Development Roadmap
+# Hệ Thống Blog IE213 - Lộ Trình Phát Triển
 
-## Current Status (February 4, 2026)
+## Tình Trạng Hiện Tại (4 tháng 2, 2026)
 
-### ✅ Completed Features
+### ✅ Các Tính Năng Đã Hoàn Thành
 
-#### Authentication System
+#### Hệ Thống Xác Thực
 
-- [x] User registration with RSA key generation
-- [x] User login with JWT token pair
-- [x] Refresh token with reuse detection
-- [x] Logout functionality
-- [x] Authentication middleware
-- [x] User model with bcrypt password hashing
-- [x] KeyToken model for token management
+- [x] Đăng ký người dùng với tạo cặp khóa RSA
+- [x] Đăng nhập người dùng với cặp JWT token
+- [x] Refresh token với phát hiện tái sử dụng
+- [x] Chức năng đăng xuất
+- [x] Middleware xác thực
+- [x] Model User với mã hóa mật khẩu bcrypt
+- [x] Model KeyToken để quản lý token
 
-#### API Documentation
+#### Tài Liệu API
 
-- [x] Complete API documentation for all planned endpoints
-- [x] Request/Response examples
-- [x] Database model schemas
-- [x] Error handling documentation
+- [x] Tài liệu API đầy đủ cho tất cả endpoints đã lên kế hoạch
+- [x] Ví dụ Request/Response
+- [x] Schemas của các model database
+- [x] Tài liệu xử lý lỗi
 
 ---
 
-## 📋 Development Todo List
+## 📋 Danh Sách Công Việc Phát Triển
 
-### Day 1 (February 5, 2026) - User Management Service
+### Ngày 1 (5 tháng 2, 2026) - Service Quản Lý User
 
-**Priority: HIGH**
+**Độ ưu tiên: CAO**
 
-#### Morning Session (4-5 hours)
+#### Buổi Sáng (4-5 giờ)
 
-- [ ] Create `user.controller.ts` with all user endpoints
+- [ ] Tạo `user.controller.ts` với tất cả endpoints cho user
   - [ ] getUserProfile (GET /v1/api/users/:userId)
   - [ ] updateUserProfile (PUT /v1/api/users/:userId)
-  - [ ] getAllUsers (GET /v1/api/users) - Admin only
-  - [ ] deleteUser (DELETE /v1/api/users/:userId) - Admin only
-  - [ ] changeUserRole (PUT /v1/api/users/:userId/role) - Admin only
+  - [ ] getAllUsers (GET /v1/api/users) - Chỉ Admin
+  - [ ] deleteUser (DELETE /v1/api/users/:userId) - Chỉ Admin
+  - [ ] changeUserRole (PUT /v1/api/users/:userId/role) - Chỉ Admin
 
-#### Afternoon Session (3-4 hours)
+#### Buổi Chiều (3-4 giờ)
 
-- [ ] Extend `user.service.ts` with business logic
-  - [ ] getUserById method
-  - [ ] updateUser method with validation
-  - [ ] getAllUsersWithPagination method
-  - [ ] deleteUserById method (soft delete - change status to inactive)
-  - [ ] updateUserRole method with role validation
+- [ ] Mở rộng `user.service.ts` với business logic
+  - [ ] Method getUserById
+  - [ ] Method updateUser với validation
+  - [ ] Method getAllUsersWithPagination
+  - [ ] Method deleteUserById (soft delete - đổi status thành inactive)
+  - [ ] Method updateUserRole với validation role
 
-- [ ] Create user routes in `src/routes/user/index.ts`
-  - [ ] Set up all 5 user endpoints
-  - [ ] Add authentication middleware
-  - [ ] Add role-based authorization middleware (for admin routes)
+- [ ] Tạo user routes trong `src/routes/user/index.ts`
+  - [ ] Thiết lập tất cả 5 user endpoints
+  - [ ] Thêm authentication middleware
+  - [ ] Thêm role-based authorization middleware (cho admin routes)
 
-- [ ] Register user routes in `src/routes/index.ts`
+- [ ] Đăng ký user routes trong `src/routes/index.ts`
 
-#### Testing & Documentation
+#### Testing & Tài Liệu
 
-- [ ] Test all user endpoints with Postman
-- [ ] Create test file `src/tests/user.routes.test.ts`
-- [ ] Write basic unit tests for user service methods
+- [ ] Test tất cả user endpoints với Postman
+- [ ] Tạo test file `src/tests/user.routes.test.ts`
+- [ ] Viết unit tests cơ bản cho các methods của user service
 
-**Estimated Time: 7-9 hours**
+**Thời gian ước tính: 7-9 giờ**
 
 ---
 
-### Day 2 (February 6, 2026) - Category Management
+### Ngày 2 (6 tháng 2, 2026) - Quản Lý Category
 
-**Priority: HIGH**
+**Độ ưu tiên: CAO**
 
-#### Morning Session (3-4 hours)
+#### Buổi Sáng (3-4 giờ)
 
-- [ ] Create `category.service.ts`
-  - [ ] getAllCategories method
-  - [ ] getCategoryById method
-  - [ ] getCategoryBySlug method
-  - [ ] createCategory method with slug generation
-  - [ ] updateCategory method
-  - [ ] deleteCategory method (check for associated posts)
-  - [ ] getCategoryPostCount method
+- [ ] Tạo `category.service.ts`
+  - [ ] Method getAllCategories
+  - [ ] Method getCategoryById
+  - [ ] Method getCategoryBySlug
+  - [ ] Method createCategory với tạo slug tự động
+  - [ ] Method updateCategory
+  - [ ] Method deleteCategory (kiểm tra các posts liên quan)
+  - [ ] Method getCategoryPostCount
 
-- [ ] Create `category.controller.ts`
+- [ ] Tạo `category.controller.ts`
   - [ ] getAllCategories (GET /v1/api/categories)
   - [ ] getSingleCategory (GET /v1/api/categories/:categoryId)
   - [ ] getCategoryBySlug (GET /v1/api/categories/slug/:slug)
-  - [ ] createCategory (POST /v1/api/categories) - Admin only
-  - [ ] updateCategory (PUT /v1/api/categories/:categoryId) - Admin only
-  - [ ] deleteCategory (DELETE /v1/api/categories/:categoryId) - Admin only
+  - [ ] createCategory (POST /v1/api/categories) - Chỉ Admin
+  - [ ] updateCategory (PUT /v1/api/categories/:categoryId) - Chỉ Admin
+  - [ ] deleteCategory (DELETE /v1/api/categories/:categoryId) - Chỉ Admin
 
-#### Afternoon Session (2-3 hours)
+#### Buổi Chiều (2-3 giờ)
 
-- [ ] Create category routes in `src/routes/category/index.ts`
-  - [ ] Set up all category endpoints
-  - [ ] Add authentication for protected routes
-  - [ ] Add admin authorization for create/update/delete
+- [ ] Tạo category routes trong `src/routes/category/index.ts`
+  - [ ] Thiết lập tất cả category endpoints
+  - [ ] Thêm authentication cho protected routes
+  - [ ] Thêm admin authorization cho create/update/delete
 
-- [ ] Register category routes in main router
+- [ ] Đăng ký category routes vào main router
 
 #### Testing
 
-- [ ] Test all category endpoints
-- [ ] Create `src/tests/category.routes.test.ts`
-- [ ] Seed database with initial categories (Technology, Lifestyle, Business, etc.)
+- [ ] Test tất cả category endpoints
+- [ ] Tạo `src/tests/category.routes.test.ts`
+- [ ] Seed database với categories ban đầu (Technology, Lifestyle, Business, v.v.)
 
-**Estimated Time: 5-7 hours**
+**Thời gian ước tính: 5-7 giờ**
 
 ---
 
-### Day 3 (February 7, 2026) - Post Management (Part 1)
+### Ngày 3 (7 tháng 2, 2026) - Quản Lý Post (Phần 1)
 
-**Priority: HIGH**
+**Độ ưu tiên: CAO**
 
-#### Morning Session (4-5 hours)
+#### Buổi Sáng (4-5 giờ)
 
-- [ ] Create `post.service.ts` - Basic CRUD
-  - [ ] getAllPostsWithFilters method (pagination, search, sort, status filter)
-  - [ ] getPostById method (with author and category population)
-  - [ ] getPostBySlug method
-  - [ ] createPost method with slug generation
-  - [ ] updatePost method with authorization check
-  - [ ] deletePost method (soft delete - change to archived)
-  - [ ] incrementViewCount method
+- [ ] Tạo `post.service.ts` - CRUD cơ bản
+  - [ ] Method getAllPostsWithFilters (pagination, search, sort, status filter)
+  - [ ] Method getPostById (kèm author và category population)
+  - [ ] Method getPostBySlug
+  - [ ] Method createPost với tạo slug tự động
+  - [ ] Method updatePost với kiểm tra authorization
+  - [ ] Method deletePost (soft delete - chuyển sang archived)
+  - [ ] Method incrementViewCount
 
-#### Afternoon Session (3-4 hours)
+#### Buổi Chiều (3-4 giờ)
 
-- [ ] Create `post.controller.ts` - Basic endpoints
+- [ ] Tạo `post.controller.ts` - Endpoints cơ bản
   - [ ] getAllPosts (GET /v1/api/posts)
   - [ ] getSinglePost (GET /v1/api/posts/:postId)
   - [ ] getPostBySlug (GET /v1/api/posts/slug/:slug)
-  - [ ] createPost (POST /v1/api/posts) - Poster/Admin only
-  - [ ] updatePost (PUT /v1/api/posts/:postId) - Author/Admin only
-  - [ ] deletePost (DELETE /v1/api/posts/:postId) - Author/Admin only
+  - [ ] createPost (POST /v1/api/posts) - Chỉ Poster/Admin
+  - [ ] updatePost (PUT /v1/api/posts/:postId) - Chỉ Author/Admin
+  - [ ] deletePost (DELETE /v1/api/posts/:postId) - Chỉ Author/Admin
 
-- [ ] Create post routes in `src/routes/post/index.ts`
-  - [ ] Set up basic CRUD endpoints
-  - [ ] Add authentication middleware
-  - [ ] Add role-based authorization (poster/admin for create)
-  - [ ] Add ownership check middleware (for update/delete)
+- [ ] Tạo post routes trong `src/routes/post/index.ts`
+  - [ ] Thiết lập CRUD endpoints cơ bản
+  - [ ] Thêm authentication middleware
+  - [ ] Thêm role-based authorization (poster/admin cho create)
+  - [ ] Thêm ownership check middleware (cho update/delete)
 
-**Estimated Time: 7-9 hours**
+**Thời gian ước tính: 7-9 giờ**
 
 ---
 
-### Day 4 (February 8, 2026) - Post Management (Part 2) - Likes & Shares
+### Ngày 4 (8 tháng 2, 2026) - Quản Lý Post (Phần 2) - Likes & Shares
 
-**Priority: HIGH**
+**Độ ưu tiên: CAO**
 
-#### Morning Session (3-4 hours)
+#### Buổi Sáng (3-4 giờ)
 
-- [ ] Create `like.service.ts`
-  - [ ] likePost method (create like record)
-  - [ ] unlikePost method (remove like record)
-  - [ ] isPostLikedByUser method
-  - [ ] getPostLikesCount method
-  - [ ] likeComment method
-  - [ ] unlikeComment method
-  - [ ] isCommentLikedByUser method
-  - [ ] getCommentLikesCount method
+- [ ] Tạo `like.service.ts`
+  - [ ] Method likePost (tạo like record)
+  - [ ] Method unlikePost (xóa like record)
+  - [ ] Method isPostLikedByUser
+  - [ ] Method getPostLikesCount
+  - [ ] Method likeComment
+  - [ ] Method unlikeComment
+  - [ ] Method isCommentLikedByUser
+  - [ ] Method getCommentLikesCount
 
-- [ ] Create `share.service.ts`
-  - [ ] createShare method
-  - [ ] getPostSharesCount method
-  - [ ] getUserShares method
+- [ ] Tạo `share.service.ts`
+  - [ ] Method createShare
+  - [ ] Method getPostSharesCount
+  - [ ] Method getUserShares
 
-#### Afternoon Session (3-4 hours)
+#### Buổi Chiều (3-4 giờ)
 
-- [ ] Extend `post.service.ts` with engagement methods
-  - [ ] getTrendingPosts method (calculate based on views, likes, comments)
-  - [ ] getPostWithEngagement method (include likes, shares counts)
+- [ ] Mở rộng `post.service.ts` với engagement methods
+  - [ ] Method getTrendingPosts (tính toán dựa trên views, likes, comments)
+  - [ ] Method getPostWithEngagement (bao gồm likes, shares counts)
 
-- [ ] Extend `post.controller.ts` with engagement endpoints
+- [ ] Mở rộng `post.controller.ts` với engagement endpoints
   - [ ] likePost (POST /v1/api/posts/:postId/like)
   - [ ] unlikePost (DELETE /v1/api/posts/:postId/like)
   - [ ] sharePost (POST /v1/api/posts/:postId/share)
   - [ ] getTrendingPosts (GET /v1/api/posts/trending)
 
-- [ ] Update post routes with new endpoints
+- [ ] Cập nhật post routes với endpoints mới
 
 #### Testing
 
-- [ ] Test like/unlike functionality
-- [ ] Test share functionality
-- [ ] Test trending posts algorithm
-- [ ] Create integration tests
+- [ ] Test chức năng like/unlike
+- [ ] Test chức năng share
+- [ ] Test thuật toán trending posts
+- [ ] Tạo integration tests
 
-**Estimated Time: 6-8 hours**
+**Thời gian ước tính: 6-8 giờ**
 
 ---
 
-### Day 5 (February 9, 2026) - Comment Management
+### Ngày 5 (9 tháng 2, 2026) - Quản Lý Comment
 
-**Priority: HIGH**
+**Độ ưu tiên: CAO**
 
-#### Morning Session (4-5 hours)
+#### Buổi Sáng (4-5 giờ)
 
-- [ ] Create `comment.service.ts`
-  - [ ] getPostComments method (with pagination, sorting)
-  - [ ] getCommentById method
-  - [ ] createComment method
-  - [ ] createReply method (parentId not null)
-  - [ ] updateComment method (with ownership check)
-  - [ ] deleteComment method (cascade delete replies)
-  - [ ] getCommentReplies method
-  - [ ] getCommentCount method (for post)
+- [ ] Tạo `comment.service.ts`
+  - [ ] Method getPostComments (với pagination, sorting)
+  - [ ] Method getCommentById
+  - [ ] Method createComment
+  - [ ] Method createReply (parentId không null)
+  - [ ] Method updateComment (với kiểm tra ownership)
+  - [ ] Method deleteComment (cascade delete replies)
+  - [ ] Method getCommentReplies
+  - [ ] Method getCommentCount (cho post)
 
-#### Afternoon Session (3-4 hours)
+#### Buổi Chiều (3-4 giờ)
 
-- [ ] Create `comment.controller.ts`
+- [ ] Tạo `comment.controller.ts`
   - [ ] getPostComments (GET /v1/api/posts/:postId/comments)
   - [ ] createComment (POST /v1/api/posts/:postId/comments)
-  - [ ] createReply (POST /v1/api/posts/:postId/comments) - with parentId
+  - [ ] createReply (POST /v1/api/posts/:postId/comments) - với parentId
   - [ ] updateComment (PUT /v1/api/comments/:commentId)
   - [ ] deleteComment (DELETE /v1/api/comments/:commentId)
   - [ ] likeComment (POST /v1/api/comments/:commentId/like)
   - [ ] unlikeComment (DELETE /v1/api/comments/:commentId/like)
   - [ ] getCommentReplies (GET /v1/api/comments/:commentId/replies)
 
-- [ ] Create comment routes in `src/routes/comment/index.ts`
+- [ ] Tạo comment routes trong `src/routes/comment/index.ts`
 
 #### Testing
 
-- [ ] Test comment CRUD operations
-- [ ] Test nested replies functionality
+- [ ] Test các thao tác CRUD comment
+- [ ] Test chức năng nested replies
 - [ ] Test comment likes
-- [ ] Create test file `src/tests/comment.routes.test.ts`
+- [ ] Tạo test file `src/tests/comment.routes.test.ts`
 
-**Estimated Time: 7-9 hours**
+**Thời gian ước tính: 7-9 giờ**
 
 ---
 
-### Day 6 (February 10, 2026) - Notification System
+### Ngày 6 (10 tháng 2, 2026) - Hệ Thống Notification
 
-**Priority: MEDIUM**
+**Độ ưu tiên: TRUNG BÌNH**
 
-#### Morning Session (4-5 hours)
+#### Buổi Sáng (4-5 giờ)
 
-- [ ] Create `notification.service.ts`
-  - [ ] createNotification method (generic)
-  - [ ] getUserNotifications method (with filters: isRead, type)
-  - [ ] getUnreadCount method
-  - [ ] markAsRead method
-  - [ ] markAllAsRead method
-  - [ ] deleteNotification method
-  - [ ] deleteAllRead method
-  - [ ] Notification trigger methods:
+- [ ] Tạo `notification.service.ts`
+  - [ ] Method createNotification (generic)
+  - [ ] Method getUserNotifications (với filters: isRead, type)
+  - [ ] Method getUnreadCount
+  - [ ] Method markAsRead
+  - [ ] Method markAllAsRead
+  - [ ] Method deleteNotification
+  - [ ] Method deleteAllRead
+  - [ ] Các methods kích hoạt Notification:
     - [ ] notifyOnPostLike
     - [ ] notifyOnComment
     - [ ] notifyOnCommentLike
     - [ ] notifyOnShare
 
-#### Afternoon Session (3-4 hours)
+#### Buổi Chiều (3-4 giờ)
 
-- [ ] Create `notification.controller.ts`
+- [ ] Tạo `notification.controller.ts`
   - [ ] getUserNotifications (GET /v1/api/notifications)
   - [ ] getUnreadCount (GET /v1/api/notifications/unread-count)
   - [ ] markAsRead (PUT /v1/api/notifications/:notificationId/read)
@@ -258,136 +258,136 @@
   - [ ] deleteNotification (DELETE /v1/api/notifications/:notificationId)
   - [ ] deleteAllRead (DELETE /v1/api/notifications/read)
 
-- [ ] Create notification routes in `src/routes/notification/index.ts`
+- [ ] Tạo notification routes trong `src/routes/notification/index.ts`
 
-- [ ] Integrate notification triggers into:
-  - [ ] Post like/unlike actions
-  - [ ] Comment creation
-  - [ ] Comment like actions
-  - [ ] Post share actions
+- [ ] Tích hợp notification triggers vào:
+  - [ ] Các thao tác like/unlike post
+  - [ ] Tạo comment
+  - [ ] Các thao tác like comment
+  - [ ] Các thao tác share post
 
-**Estimated Time: 7-9 hours**
+**Thời gian ước tính: 7-9 giờ**
 
 ---
 
-### Day 7 (February 11, 2026) - Statistics & Admin Dashboard
+### Ngày 7 (11 tháng 2, 2026) - Thống Kê & Admin Dashboard
 
-**Priority: MEDIUM**
+**Độ ưu tiên: TRUNG BÌNH**
 
-#### Morning Session (4-5 hours)
+#### Buổi Sáng (4-5 giờ)
 
-- [ ] Create `statistics.service.ts`
-  - [ ] getDashboardStats method
-    - Total users, posts, comments, likes, shares
-    - New users/posts this week/month
-    - Active users count
+- [ ] Tạo `statistics.service.ts`
+  - [ ] Method getDashboardStats
+    - Tổng số users, posts, comments, likes, shares
+    - Users/posts mới trong tuần/tháng này
+    - Số lượng active users
     - Top categories
-  - [ ] getUserStatistics method
-    - User registration trends
-    - Users by role
+  - [ ] Method getUserStatistics
+    - Xu hướng đăng ký user
+    - Users theo role
     - Top contributors
     - Active vs inactive users
-  - [ ] getPostStatistics method
-    - Posts by status (published/draft/archived)
-    - Total views, likes, comments, shares
-    - Average engagement metrics
-    - Posts by category
+  - [ ] Method getPostStatistics
+    - Posts theo status (published/draft/archived)
+    - Tổng views, likes, comments, shares
+    - Các chỉ số engagement trung bình
+    - Posts theo category
     - Top posts
 
-#### Afternoon Session (3-4 hours)
+#### Buổi Chiều (3-4 giờ)
 
-- [ ] Extend `statistics.service.ts`
-  - [ ] getActivityStatistics method
-    - Activity trends (likes, comments, shares by date)
-    - Most active hours
-    - Engagement patterns
-  - [ ] getCategoryStatistics method
-    - Posts per category
-    - Engagement per category
-    - Category performance metrics
+- [ ] Mở rộng `statistics.service.ts`
+  - [ ] Method getActivityStatistics
+    - Xu hướng hoạt động (likes, comments, shares theo ngày)
+    - Những giờ hoạt động nhiều nhất
+    - Các mẫu engagement
+  - [ ] Method getCategoryStatistics
+    - Posts theo từng category
+    - Engagement theo từng category
+    - Các chỉ số hiệu suất category
 
-- [ ] Create `statistics.controller.ts`
+- [ ] Tạo `statistics.controller.ts`
   - [ ] getDashboardStats (GET /v1/api/admin/stats/dashboard)
   - [ ] getUserStats (GET /v1/api/admin/stats/users)
   - [ ] getPostStats (GET /v1/api/admin/stats/posts)
   - [ ] getActivityStats (GET /v1/api/admin/stats/activity)
   - [ ] getCategoryStats (GET /v1/api/admin/stats/categories)
 
-- [ ] Create admin routes in `src/routes/admin/index.ts`
-  - [ ] Add admin-only middleware
-  - [ ] Register all statistics endpoints
+- [ ] Tạo admin routes trong `src/routes/admin/index.ts`
+  - [ ] Thêm admin-only middleware
+  - [ ] Đăng ký tất cả statistics endpoints
 
-**Estimated Time: 7-9 hours**
+**Thời gian ước tính: 7-9 giờ**
 
 ---
 
-### Day 8 (February 12, 2026) - Middleware & Authorization
+### Ngày 8 (12 tháng 2, 2026) - Middleware & Phân Quyền
 
-**Priority: HIGH**
+**Độ ưu tiên: CAO**
 
-#### Tasks (4-6 hours)
+#### Công Việc (4-6 giờ)
 
-- [ ] Create `src/middleware/authorization.ts`
-  - [ ] checkRole middleware (for admin/poster role checks)
-  - [ ] checkPostOwnership middleware (verify user owns the post)
-  - [ ] checkCommentOwnership middleware (verify user owns the comment)
+- [ ] Tạo `src/middleware/authorization.ts`
+  - [ ] checkRole middleware (cho kiểm tra role admin/poster)
+  - [ ] checkPostOwnership middleware (xác minh user sở hữu post)
+  - [ ] checkCommentOwnership middleware (xác minh user sở hữu comment)
 
-- [ ] Create `src/middleware/validation.ts`
-  - [ ] validateUserInput (for user registration/update)
-  - [ ] validatePostInput (for post creation/update)
-  - [ ] validateCommentInput (for comment creation/update)
-  - [ ] validateCategoryInput (for category creation/update)
+- [ ] Tạo `src/middleware/validation.ts`
+  - [ ] validateUserInput (cho đăng ký/cập nhật user)
+  - [ ] validatePostInput (cho tạo/cập nhật post)
+  - [ ] validateCommentInput (cho tạo/cập nhật comment)
+  - [ ] validateCategoryInput (cho tạo/cập nhật category)
 
-- [ ] Update all routes to use new middleware
-  - [ ] Apply role checks to admin endpoints
-  - [ ] Apply ownership checks to update/delete endpoints
-  - [ ] Apply input validation to all POST/PUT endpoints
+- [ ] Cập nhật tất cả routes để sử dụng middleware mới
+  - [ ] Áp dụng kiểm tra role cho admin endpoints
+  - [ ] Áp dụng kiểm tra ownership cho update/delete endpoints
+  - [ ] Áp dụng input validation cho tất cả POST/PUT endpoints
 
 - [ ] Testing
-  - [ ] Test authorization middleware with different roles
-  - [ ] Test ownership verification
-  - [ ] Test validation with invalid inputs
+  - [ ] Test authorization middleware với các roles khác nhau
+  - [ ] Test xác minh ownership
+  - [ ] Test validation với các inputs không hợp lệ
 
-**Estimated Time: 4-6 hours**
-
----
-
-### Day 9 (February 13, 2026) - Error Handling & Logging
-
-**Priority: MEDIUM**
-
-#### Tasks (4-5 hours)
-
-- [ ] Enhance error handling
-  - [ ] Review all service methods for proper error throwing
-  - [ ] Ensure consistent error messages
-  - [ ] Add custom error classes if needed (already have some in error.response.ts)
-
-- [ ] Add logging system
-  - [ ] Install winston or pino logger
-  - [ ] Create logger configuration
-  - [ ] Add logging to all services:
-    - [ ] Info logs for successful operations
-    - [ ] Error logs with stack traces
-    - [ ] Debug logs for development
-  - [ ] Log all incoming requests (middleware)
-  - [ ] Log database queries (if needed)
-
-- [ ] Create log file structure
-  - [ ] Separate files for errors, combined, and exceptions
-  - [ ] Log rotation configuration
-
-**Estimated Time: 4-5 hours**
+**Thời gian ước tính: 4-6 giờ**
 
 ---
 
-### Day 10 (February 14, 2026) - Testing & Quality Assurance
+### Ngày 9 (13 tháng 2, 2026) - Xử Lý Lỗi & Logging
 
-**Priority: HIGH**
+**Độ ưu tiên: TRUNG BÌNH**
 
-#### Morning Session (4-5 hours)
+#### Công Việc (4-5 giờ)
 
-- [ ] Complete unit tests
+- [ ] Cải thiện xử lý lỗi
+  - [ ] Rà soát tất cả service methods cho việc throw error đúng cách
+  - [ ] Đảm bảo các thông báo lỗi nhất quán
+  - [ ] Thêm custom error classes nếu cần (đã có một số trong error.response.ts)
+
+- [ ] Thêm logging system
+  - [ ] Cài đặt winston hoặc pino logger
+  - [ ] Tạo logger configuration
+  - [ ] Thêm logging vào tất cả services:
+    - [ ] Info logs cho các thao tác thành công
+    - [ ] Error logs với stack traces
+    - [ ] Debug logs cho development
+  - [ ] Log tất cả incoming requests (middleware)
+  - [ ] Log database queries (nếu cần)
+
+- [ ] Tạo cấu trúc log file
+  - [ ] File riêng cho errors, combined, và exceptions
+  - [ ] Cấu hình log rotation
+
+**Thời gian ước tính: 4-5 giờ**
+
+---
+
+### Ngày 10 (14 tháng 2, 2026) - Testing & Kiểm Tra Chất Lượng
+
+**Độ ưu tiên: CAO**
+
+#### Buổi Sáng (4-5 giờ)
+
+- [ ] Hoàn thành unit tests
   - [ ] Access service tests
   - [ ] User service tests
   - [ ] Post service tests
@@ -395,283 +395,283 @@
   - [ ] Category service tests
   - [ ] Notification service tests
 
-#### Afternoon Session (4-5 hours)
+#### Buổi Chiều (4-5 giờ)
 
 - [ ] Integration tests
-  - [ ] End-to-end user flow (register → login → create post → comment)
+  - [ ] End-to-end user flow (đăng ký → đăng nhập → tạo post → comment)
   - [ ] Authentication flow tests
   - [ ] Authorization tests (role-based access)
   - [ ] Engagement flow (like → comment → share)
 
-- [ ] API testing with Postman
-  - [ ] Create comprehensive Postman collection
-  - [ ] Test all endpoints with valid data
-  - [ ] Test error cases
-  - [ ] Test authorization failures
-  - [ ] Export collection for documentation
+- [ ] API testing với Postman
+  - [ ] Tạo Postman collection toàn diện
+  - [ ] Test tất cả endpoints với dữ liệu hợp lệ
+  - [ ] Test các trường hợp lỗi
+  - [ ] Test lỗi authorization
+  - [ ] Export collection cho tài liệu
 
-**Estimated Time: 8-10 hours**
+**Thời gian ước tính: 8-10 giờ**
 
 ---
 
-## 🎯 Phase 2 - Advanced Features (Week 3+)
+## 🎯 Giai Đoạn 2 - Tính Năng Nâng Cao (Tuần 3+)
 
-### Week 3 - Performance & Optimization
+### Tuần 3 - Hiệu Suất & Tối Ư u Hóa
 
-#### Day 11-12: Caching
+#### Ngày 11-12: Caching
 
-- [ ] Install and configure Redis
-- [ ] Implement caching for:
+- [ ] Cài đặt và cấu hình Redis
+- [ ] Triển khai caching cho:
   - [ ] Trending posts
-  - [ ] Category lists
-  - [ ] User profile data
-  - [ ] Post view counts
-- [ ] Cache invalidation strategies
+  - [ ] Danh sách categories
+  - [ ] Dữ liệu user profile
+  - [ ] Số lượng view của post
+- [ ] Chiến lược cache invalidation
 
-#### Day 13-14: Database Optimization
+#### Ngày 13-14: Tối Ưu Hóa Database
 
-- [ ] Add database indexes for frequently queried fields
-- [ ] Optimize aggregation queries for statistics
-- [ ] Implement database query profiling
-- [ ] Add database connection pooling
-- [ ] Optimize populate operations (select specific fields)
+- [ ] Thêm indexes cho các fields thường xuyên query
+- [ ] Tối ưu hóa aggregation queries cho statistics
+- [ ] Triển khai database query profiling
+- [ ] Thêm database connection pooling
+- [ ] Tối ưu hóa populate operations (chọn các fields cụ thể)
 
-#### Day 15: Rate Limiting
+#### Ngày 15: Rate Limiting
 
-- [ ] Install express-rate-limit
-- [ ] Implement rate limiting:
-  - [ ] Different limits for authenticated vs anonymous
-  - [ ] Higher limits for admin users
-  - [ ] Specific limits for resource-intensive endpoints
-- [ ] Add rate limit headers to responses
+- [ ] Cài đặt express-rate-limit
+- [ ] Triển khai rate limiting:
+  - [ ] Giới hạn khác nhau cho authenticated vs anonymous
+  - [ ] Giới hạn cao hơn cho admin users
+  - [ ] Giới hạn cụ thể cho các endpoints tốn nhiều tài nguyên
+- [ ] Thêm rate limit headers vào responses
 
 ---
 
-### Week 4 - Advanced Features
+### Tuần 4 - Tính Năng Nâng Cao
 
-#### Day 16-17: Search Functionality
+#### Ngày 16-17: Chức Năng Tìm Kiếm
 
-- [ ] Implement full-text search for posts
+- [ ] Triển khai full-text search cho posts
   - [ ] MongoDB text indexes
-  - [ ] Search in title, content, excerpt
+  - [ ] Tìm kiếm trong title, content, excerpt
   - [ ] Search relevance scoring
-- [ ] Advanced search filters
-  - [ ] Date range
-  - [ ] Multiple categories
-  - [ ] Tags support
-- [ ] Search result highlighting
-- [ ] Search suggestions/autocomplete
+- [ ] Bộ lọc tìm kiếm nâng cao
+  - [ ] Khoảng thời gian
+  - [ ] Nhiều categories
+  - [ ] Hỗ trợ tags
+- [ ] Highlighting kết quả tìm kiếm
+- [ ] Gợi ý tìm kiếm/autocomplete
 
-#### Day 18-19: File Upload
+#### Ngày 18-19: Upload File
 
-- [ ] Set up file upload system
-  - [ ] Install multer
-  - [ ] Configure storage (local or cloud)
-  - [ ] Image validation (size, format)
-  - [ ] Image optimization (sharp library)
+- [ ] Thiết lập hệ thống upload file
+  - [ ] Cài đặt multer
+  - [ ] Cấu hình storage (local hoặc cloud)
+  - [ ] Validation ảnh (kích thước, định dạng)
+  - [ ] Tối ưu hóa ảnh (thư viện sharp)
 - [ ] Endpoints:
   - [ ] POST /v1/api/upload/image
   - [ ] POST /v1/api/upload/avatar
   - [ ] DELETE /v1/api/upload/:fileId
-- [ ] Update user avatar upload
-- [ ] Update post cover image upload
+- [ ] Cập nhật upload avatar cho user
+- [ ] Cập nhật upload cover image cho post
 
-#### Day 20: Email Service
+#### Ngày 20: Dịch Vụ Email
 
-- [ ] Set up email service (NodeMailer)
+- [ ] Thiết lập email service (NodeMailer)
 - [ ] Email templates:
-  - [ ] Welcome email on registration
-  - [ ] Password reset email
-  - [ ] Notification digest email
-- [ ] Email queue system (optional: Bull + Redis)
+  - [ ] Email chào mừng khi đăng ký
+  - [ ] Email đặt lại mật khẩu
+  - [ ] Email tổng hợp thông báo
+- [ ] Email queue system (tùy chọn: Bull + Redis)
 
 ---
 
-### Week 5 - Real-time Features & Frontend Integration
+### Tuần 5 - Tính Năng Real-time & Tích Hợp Frontend
 
-#### Day 21-22: WebSocket Implementation
+#### Ngày 21-22: Triển Khai WebSocket
 
-- [ ] Install socket.io
-- [ ] Set up WebSocket server
-- [ ] Real-time events:
-  - [ ] New notification
-  - [ ] Post liked
-  - [ ] New comment
-  - [ ] Post view tracking
-- [ ] Authentication for WebSocket connections
-- [ ] Room management (user-specific rooms)
+- [ ] Cài đặt socket.io
+- [ ] Thiết lập WebSocket server
+- [ ] Các sự kiện real-time:
+  - [ ] Thông báo mới
+  - [ ] Post được like
+  - [ ] Comment mới
+  - [ ] Theo dõi lượt view post
+- [ ] Xác thực cho WebSocket connections
+- [ ] Quản lý room (rooms cụ thể cho từng user)
 
-#### Day 23-25: Frontend Integration Support
+#### Ngày 23-25: Hỗ Trợ Tích Hợp Frontend
 
-- [ ] CORS configuration review
-- [ ] Frontend API client testing
-- [ ] Fix any integration issues
-- [ ] Update API documentation with frontend examples
-- [ ] Create frontend integration guide
-
----
-
-## 📦 Additional Features (Future Enhancements)
-
-### User Features
-
-- [ ] Password reset functionality
-- [ ] Email verification
-- [ ] Two-factor authentication (2FA)
-- [ ] User follow/unfollow system
-- [ ] User bookmarks/saved posts
-- [ ] User activity feed
-
-### Post Features
-
-- [ ] Post drafts auto-save
-- [ ] Post scheduling (publish at specific time)
-- [ ] Post tags system
-- [ ] Post revisions/version history
-- [ ] Related posts suggestions
-- [ ] Post series/collections
-
-### Content Moderation
-
-- [ ] Content reporting system
-- [ ] Admin moderation queue
-- [ ] Automated content filtering (profanity, spam)
-- [ ] User banning system
-
-### Analytics
-
-- [ ] Google Analytics integration
-- [ ] Detailed user behavior tracking
-- [ ] A/B testing framework
-- [ ] Custom event tracking
+- [ ] Rà soát cấu hình CORS
+- [ ] Test API client của Frontend
+- [ ] Sửa các vấn đề tích hợp
+- [ ] Cập nhật tài liệu API với ví dụ frontend
+- [ ] Tạo hướng dẫn tích hợp frontend
 
 ---
 
-## 🧪 Testing Checklist
+## 📦 Tính Năng Bổ Sung (Cải Tiến Tương Lai)
+
+### Tính Năng User
+
+- [ ] Chức năng đặt lại mật khẩu
+- [ ] Xác thực email
+- [ ] Xác thực hai yếu tố (2FA)
+- [ ] Hệ thống follow/unfollow user
+- [ ] Bookmark/lưu posts của user
+- [ ] Bảng tin hoạt động user
+
+### Tính Năng Post
+
+- [ ] Tự động lưu bản nháp post
+- [ ] Lên lịch post (đăng vào thời gian cụ thể)
+- [ ] Hệ thống tags cho post
+- [ ] Lịch sử chỉnh sửa/phiên bản post
+- [ ] Gợi ý bài viết liên quan
+- [ ] Series/bộ sưu tập bài viết
+
+### Kiểm Duyệt Nội Dung
+
+- [ ] Hệ thống báo cáo nội dung
+- [ ] Hàng đợi kiểm duyệt của Admin
+- [ ] Lọc nội dung tự động (tục tịu, spam)
+- [ ] Hệ thống cấm user
+
+### Phân Tích
+
+- [ ] Tích hợp Google Analytics
+- [ ] Theo dõi hành vi user chi tiết
+- [ ] Framework A/B testing
+- [ ] Theo dõi sự kiện tùy chỉnh
+
+---
+
+## 🧪 Danh Sách Kiểm Tra Testing
 
 ### Unit Tests
 
-- [ ] All service methods
-- [ ] All controller methods
-- [ ] Middleware functions
-- [ ] Utility functions
+- [ ] Tất cả các methods của service
+- [ ] Tất cả các methods của controller
+- [ ] Các functions middleware
+- [ ] Các functions utility
 
 ### Integration Tests
 
 - [ ] Authentication flow
-- [ ] Authorization checks
-- [ ] CRUD operations for all resources
-- [ ] Relationship operations (likes, comments, etc.)
+- [ ] Kiểm tra Authorization
+- [ ] Các thao tác CRUD cho tất cả resources
+- [ ] Các thao tác quan hệ (likes, comments, v.v.)
 
 ### End-to-End Tests
 
-- [ ] Complete user journey
-- [ ] Admin workflows
-- [ ] Error handling scenarios
+- [ ] Hành trình user hoàn chỉnh
+- [ ] Quy trình làm việc của Admin
+- [ ] Các kịch bản xử lý lỗi
 
 ### Performance Tests
 
-- [ ] Load testing with high concurrent users
-- [ ] Database query performance
-- [ ] API response times
-- [ ] Memory leak detection
+- [ ] Load testing với nhiều users đồng thời
+- [ ] Hiệu suất database query
+- [ ] Thời gian phản hồi API
+- [ ] Phát hiện memory leak
 
 ---
 
-## 📝 Documentation Checklist
+## 📝 Danh Sách Kiểm Tra Tài Liệu
 
-- [x] API Documentation with all endpoints
-- [x] Database model schemas
-- [ ] Setup and installation guide
-- [ ] Environment configuration guide
-- [ ] Deployment guide
-- [ ] Frontend integration guide
-- [ ] Postman collection export
-- [ ] Code documentation (JSDoc comments)
-- [ ] Architecture documentation
-- [ ] Security best practices guide
-
----
-
-## 🚀 Deployment Checklist
-
-### Pre-deployment
-
-- [ ] Environment variables configuration
-- [ ] Database migration scripts
-- [ ] Database seeding scripts
-- [ ] Build optimization
-- [ ] Security audit
-- [ ] Performance benchmarking
-
-### Deployment
-
-- [ ] Choose hosting provider (AWS, Heroku, DigitalOcean, etc.)
-- [ ] Set up MongoDB Atlas (cloud database)
-- [ ] Configure environment variables on server
-- [ ] Set up CI/CD pipeline (GitHub Actions, etc.)
-- [ ] Configure SSL/TLS certificates
-- [ ] Set up monitoring (PM2, New Relic, etc.)
-- [ ] Set up error tracking (Sentry, etc.)
-- [ ] Configure automatic backups
-
-### Post-deployment
-
-- [ ] Smoke testing in production
-- [ ] Monitor logs and errors
-- [ ] Performance monitoring
-- [ ] Set up alerts for critical issues
-- [ ] Documentation update with production URLs
+- [x] Tài liệu API với tất cả endpoints
+- [x] Schemas của các database models
+- [ ] Hướng dẫn thiết lập và cài đặt
+- [ ] Hướng dẫn cấu hình môi trường
+- [ ] Hướng dẫn triển khai
+- [ ] Hướng dẫn tích hợp frontend
+- [ ] Export Postman collection
+- [ ] Tài liệu code (JSDoc comments)
+- [ ] Tài liệu kiến trúc
+- [ ] Hướng dẫn thực hành bảo mật tốt nhất
 
 ---
 
-## 📊 Progress Tracking
+## 🚀 Danh Sách Kiểm Tra Triển Khai
 
-**Week 1 Progress:** 0% (Starting February 5, 2026)
+### Trước Khi Triển Khai
 
-- Day 1: User Management
-- Day 2: Category Management
-- Day 3: Post Management (Part 1)
-- Day 4: Post Management (Part 2)
-- Day 5: Comment Management
-- Day 6: Notification System
-- Day 7: Statistics & Admin
+- [ ] Cấu hình biến môi trường
+- [ ] Scripts migration cho database
+- [ ] Scripts seeding cho database
+- [ ] Tối ưu hóa build
+- [ ] Kiểm toán bảo mật
+- [ ] Đánh giá hiệu suất
 
-**Week 2 Progress:** 0%
+### Triển Khai
 
-- Day 8: Middleware & Authorization
-- Day 9: Error Handling & Logging
-- Day 10: Testing & QA
+- [ ] Chọn nhà cung cấp hosting (AWS, Heroku, DigitalOcean, v.v.)
+- [ ] Thiết lập MongoDB Atlas (cloud database)
+- [ ] Cấu hình biến môi trường trên server
+- [ ] Thiết lập CI/CD pipeline (GitHub Actions, v.v.)
+- [ ] Cấu hình chứng chỉ SSL/TLS
+- [ ] Thiết lập giám sát (PM2, New Relic, v.v.)
+- [ ] Thiết lập theo dõi lỗi (Sentry, v.v.)
+- [ ] Cấu hình sao lưu tự động
 
----
+### Sau Khi Triển Khai
 
-## 💡 Notes
-
-### Development Best Practices
-
-1. **Commit frequently** with clear, descriptive messages
-2. **Test each feature** before moving to the next
-3. **Update documentation** as you implement features
-4. **Code review** your own code before committing
-5. **Handle errors gracefully** with meaningful messages
-6. **Validate inputs** on all endpoints
-7. **Use TypeScript types** properly
-8. **Keep services thin** - business logic only
-9. **Keep controllers thin** - request/response handling only
-10. **Follow DRY principle** - Don't Repeat Yourself
-
-### Daily Workflow
-
-1. Start with reviewing previous day's work
-2. Update this TODO file with progress
-3. Implement planned features
-4. Write tests for new features
-5. Update API documentation if needed
-6. Commit and push changes
-7. Plan next day's work
+- [ ] Smoke testing trong production
+- [ ] Giám sát logs và errors
+- [ ] Giám sát hiệu suất
+- [ ] Thiết lập cảnh báo cho các vấn đề nghiêm trọng
+- [ ] Cập nhật tài liệu với URLs production
 
 ---
 
-**Last Updated:** February 4, 2026  
-**Project Status:** In Active Development  
-**Target Completion:** February 24, 2026 (3 weeks)
+## 📊 Theo Dõi Tiến Độ
+
+**Tiến Độ Tuần 1:** 0% (Bắt đầu 5 tháng 2, 2026)
+
+- Ngày 1: Quản Lý User
+- Ngày 2: Quản Lý Category
+- Ngày 3: Quản Lý Post (Phần 1)
+- Ngày 4: Quản Lý Post (Phần 2)
+- Ngày 5: Quản Lý Comment
+- Ngày 6: Hệ Thống Notification
+- Ngày 7: Thống Kê & Admin
+
+**Tiến Độ Tuần 2:** 0%
+
+- Ngày 8: Middleware & Phân Quyền
+- Ngày 9: Xử Lý Lỗi & Logging
+- Ngày 10: Testing & QA
+
+---
+
+## 💡 Ghi Chú
+
+### Thực Hành Tốt Nhất Khi Phát Triển
+
+1. **Commit thường xuyên** với thông điệp rõ ràng, mô tả
+2. **Test từng tính năng** trước khi chuyển sang tính năng tiếp theo
+3. **Cập nhật tài liệu** khi bạn triển khai tính năng
+4. **Code review** code của chính bạn trước khi commit
+5. **Xử lý lỗi một cách uyển chuyển** với thông báo ý nghĩa
+6. **Validate inputs** trên tất cả endpoints
+7. **Sử dụng TypeScript types** một cách đúng đắn
+8. **Giữ services gọn gàng** - chỉ chứa business logic
+9. **Giữ controllers gọn gàng** - chỉ xử lý request/response
+10. **Tuân theo nguyên tắc DRY** - Don't Repeat Yourself
+
+### Quy Trình Làm Việc Hàng Ngày
+
+1. Bắt đầu với việc xem lại công việc ngày hôm trước
+2. Cập nhật file TODO này với tiến độ
+3. Triển khai các tính năng đã lên kế hoạch
+4. Viết tests cho tính năng mới
+5. Cập nhật tài liệu API nếu cần
+6. Commit và push các thay đổi
+7. Lên kế hoạch cho công việc ngày tiếp theo
+
+---
+
+**Lần Cập Nhật Cuối:** 4 tháng 2, 2026  
+**Trạng Thái Dự Án:** Đang Phát Triển Tích Cực  
+**Mục Tiêu Hoàn Thành:** 24 tháng 2, 2026 (3 tuần)
