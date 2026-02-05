@@ -9,9 +9,8 @@ import {
   AuthFailureError,
   ForBiddenError,
 } from "../core/error.response.js";
-// import { findByEmail } from "./user.service.js";
-import { Schema, Types } from "mongoose";
-import { findUserByEmail } from "./user.service.js";
+import { Types } from "mongoose";
+import UserService from "./user.service.js";
 
 interface SignUpParams {
   username: string;
@@ -105,7 +104,12 @@ class AccessService {
       });
 
       const tokens = await createTokenPair(
-        { userId: newUser._id, email },
+        {
+          userId: newUser._id,
+          email,
+          role: newUser.role,
+          tokenVersion: newUser.tokenVersion || 0,
+        },
         publicKey,
         privateKey,
       );
@@ -146,7 +150,7 @@ class AccessService {
     email,
     password,
   }: LoginParams): Promise<{ user: UserResponse; tokens: TokenPair }> => {
-    const foundUser = await findUserByEmail({ email });
+    const foundUser = await UserService.findUserByEmail({ email });
     if (!foundUser) throw new BadRequestError("User not registered!");
 
     const match = await bcrypt.compare(password, foundUser.password);
@@ -164,9 +168,9 @@ class AccessService {
       },
     });
 
-    const { _id: userId } = foundUser;
+    const { _id: userId, role, tokenVersion } = foundUser;
     const tokens = await createTokenPair(
-      { userId, email },
+      { userId, email, role, tokenVersion: tokenVersion || 0 },
       publicKey,
       privateKey,
     );
@@ -203,7 +207,7 @@ class AccessService {
     if (keyStore.refreshToken !== refreshToken)
       throw new AuthFailureError("Shop not registered");
 
-    const foundUser = await findUserByEmail({ email });
+    const foundUser = await UserService.findUserByEmail({ email });
     if (!foundUser) throw new AuthFailureError("Shop not registered");
 
     // create 1 cap RT(Refresh token) va AT(Access token) moi
