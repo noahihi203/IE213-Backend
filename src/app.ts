@@ -6,6 +6,7 @@ import compression from "compression";
 
 interface HttpError extends Error {
   status?: number;
+  code?: string; // Add custom error code
 }
 
 const app = express();
@@ -36,9 +37,9 @@ app.use(
     const statusCode = error.status || 500;
     return res.status(statusCode).json({
       status: "error",
-      code: statusCode,
-      stack: error.stack,
+      code: error.code || statusCode, // Include custom error code if present
       message: error.message || "Internal Server error",
+      ...(process.env.NODE_ENV === "development" && { stack: error.stack }),
     });
   },
 );
