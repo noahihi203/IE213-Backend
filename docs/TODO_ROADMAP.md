@@ -25,46 +25,115 @@
 
 ## 📋 Danh Sách Công Việc Phát Triển
 
-### Ngày 1 (5 tháng 2, 2026) - Service Quản Lý User
+### Ngày 1 (5 tháng 2, 2026) - Service Quản Lý User ✅ HOÀN THÀNH
 
 **Độ ưu tiên: CAO**
 
 #### Buổi Sáng (4-5 giờ)
 
-- [ ] Tạo `user.controller.ts` với tất cả endpoints cho user
-  - [ ] getUserProfile (GET /v1/api/users/:userId)
-  - [ ] updateUserProfile (PUT /v1/api/users/:userId)
-  - [ ] getAllUsers (GET /v1/api/users) - Chỉ Admin
-  - [ ] deleteUser (DELETE /v1/api/users/:userId) - Chỉ Admin
-  - [ ] changeUserRole (PUT /v1/api/users/:userId/role) - Chỉ Admin
+- [x] Tạo `user.controller.ts` với tất cả endpoints cho user
+  - [x] getUserProfile (GET /v1/api/users/:userId)
+  - [x] updateUserProfile (PUT /v1/api/users/:userId)
+  - [x] getAllUsers (GET /v1/api/users) - Chỉ Admin
+  - [x] deleteUser (DELETE /v1/api/users/:userId) - Chỉ Admin
+  - [x] changeUserRole (PUT /v1/api/users/:userId/role) - Chỉ Admin
 
 #### Buổi Chiều (3-4 giờ)
 
-- [ ] Mở rộng `user.service.ts` với business logic
-  - [ ] Method getUserById
-  - [ ] Method updateUser với validation
-  - [ ] Method getAllUsersWithPagination
-  - [ ] Method deleteUserById (soft delete - đổi status thành inactive)
-  - [ ] Method updateUserRole với validation role
+- [x] Mở rộng `user.service.ts` với business logic
+  - [x] Method getUserById
+  - [x] Method updateUser với validation (email format, username length, uniqueness checks)
+  - [x] Method getAllUsersWithPagination (with search, role filter, isActive filter)
+  - [x] Method deleteUserById (soft delete - đổi status thành inactive)
+  - [x] Method updateUserRole với validation role
 
-- [ ] Tạo user routes trong `src/routes/user/index.ts`
-  - [ ] Thiết lập tất cả 5 user endpoints
-  - [ ] Thêm authentication middleware
-  - [ ] Thêm role-based authorization middleware (cho admin routes)
+- [x] Tạo user routes trong `src/routes/user/index.ts`
+  - [x] Thiết lập tất cả 5 user endpoints
+  - [x] Thêm authentication middleware
+  - [x] Thêm role-based authorization middleware (cho admin routes)
 
-- [ ] Đăng ký user routes trong `src/routes/index.ts`
+- [x] Đăng ký user routes trong `src/routes/index.ts`
+
+#### Bonus Features Hoàn Thành
+
+- [x] **Token Versioning System** - Invalidate tokens khi role thay đổi
+  - [x] Added `tokenVersion` field to User model
+  - [x] JWT payload includes tokenVersion
+  - [x] Authentication middleware validates tokenVersion
+  - [x] Auto-increment tokenVersion on role change
+  - [x] Custom `TOKEN_OUTDATED` error code for frontend handling
+- [x] **Advanced Authorization Middleware** (`src/auth/authorization.ts`)
+  - [x] `checkAdmin` - Admin-only access
+  - [x] `checkRoles(...roles)` - Multiple role support
+  - [x] `checkOwnershipOrAdmin` - Owner or admin can access
+  - [x] `checkPosterOrAdmin` - For post creation routes
+
+- [x] **Comprehensive Testing Documentation** (`TOKEN_VERSION_TESTING.md`)
 
 #### Testing & Tài Liệu
 
-- [ ] Test tất cả user endpoints với Postman
+- [x] Test tất cả user endpoints với Postman
 - [ ] Tạo test file `src/tests/user.routes.test.ts`
 - [ ] Viết unit tests cơ bản cho các methods của user service
 
-**Thời gian ước tính: 7-9 giờ**
+**Thời gian thực tế: ~8 giờ (bao gồm token versioning & authorization system)**
 
 ---
 
-### Ngày 2 (6 tháng 2, 2026) - Quản Lý Category
+### Ngày 2 (6 tháng 2, 2026) - Admin Role Management & Security
+
+**Độ ưu tiên: CAO**
+
+#### Buổi Sáng (3-4 giờ)
+
+- [ ] **Admin Role Protection System**
+  - [ ] Implement `checkMinimumAdmins` middleware
+    - [ ] Query active admin count before role change
+    - [ ] Prevent admin demotion if count <= minimum (e.g., 1-2 admins)
+    - [ ] Custom error: `MINIMUM_ADMINS_REQUIRED`
+  - [ ] Implement `checkMaximumAdmins` middleware
+    - [ ] Query active admin count before role promotion
+    - [ ] Prevent admin promotion if count >= maximum (e.g., 5 admins)
+    - [ ] Custom error: `MAXIMUM_ADMINS_REACHED`
+  - [ ] Update `updateUserRole` service method
+    - [ ] Add validation for self-demotion (admin lowering own role)
+    - [ ] Add validation for admin-to-admin role changes
+    - [ ] Add checks using new middleware
+    - [ ] Add logging for all admin role changes (audit trail)
+
+#### Buổi Chiều (2-3 giờ)
+
+- [ ] **Admin Configuration & Constants**
+  - [ ] Create `src/config/admin.config.ts`
+    - [ ] `MIN_ACTIVE_ADMINS` constant (default: 1)
+    - [ ] `MAX_ACTIVE_ADMINS` constant (default: 5)
+    - [ ] `SUPER_ADMIN_ID` for initial admin (cannot be demoted)
+  - [ ] Update User model (optional)
+    - [ ] Add `isSuperAdmin` boolean field (default: false)
+    - [ ] First registered admin automatically becomes super admin
+
+- [ ] **Enhanced Authorization Rules**
+  - [ ] Update `authorization.ts`
+    - [ ] Add `checkNotSelfDemotion` middleware
+    - [ ] Add `checkSuperAdminProtection` middleware
+    - [ ] Add `checkAdminToAdminPermission` middleware
+
+#### Testing & Documentation
+
+- [ ] Test admin protection scenarios
+  - [ ] Test minimum admin limit enforcement
+  - [ ] Test maximum admin limit enforcement
+  - [ ] Test admin self-demotion prevention
+  - [ ] Test super admin protection
+  - [ ] Test admin changing other admin's role
+- [ ] Update API documentation with new error codes
+- [ ] Create `ADMIN_ROLE_MANAGEMENT.md` documentation
+
+**Thời gian ước tính: 5-7 giờ**
+
+---
+
+### Ngày 3 (7 tháng 2, 2026) - Quản Lý Category
 
 **Độ ưu tiên: CAO**
 
@@ -106,7 +175,7 @@
 
 ---
 
-### Ngày 3 (7 tháng 2, 2026) - Quản Lý Post (Phần 1)
+### Ngày 4 (8 tháng 2, 2026) - Quản Lý Post (Phần 1)
 
 **Độ ưu tiên: CAO**
 
@@ -141,7 +210,7 @@
 
 ---
 
-### Ngày 4 (8 tháng 2, 2026) - Quản Lý Post (Phần 2) - Likes & Shares
+### Ngày 5 (9 tháng 2, 2026) - Quản Lý Post (Phần 2) - Likes & Shares
 
 **Độ ưu tiên: CAO**
 
