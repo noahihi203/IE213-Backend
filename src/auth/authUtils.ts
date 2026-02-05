@@ -4,6 +4,7 @@ import { AuthFailureError, NotFoundError } from "../core/error.response.js";
 
 //service
 import KeyTokenService from "../services/keyToken.service.js";
+import { userModel } from "../models/user.model.js";
 
 const HEADER = {
   API_KEY: "x-api-key",
@@ -46,6 +47,35 @@ const createTokenPair = async (
   }
 };
 
+/**
+ * Check if token version matches current user's token version
+ * If mismatch, throw specific error for frontend to handle auto-refresh
+ */
+const checkTokenVersion = async (decodedToken: JwtPayload) => {
+  const user = await userModel
+    .findById(decodedToken.userId)
+    .select("tokenVersion isActive")
+    .lean();
+
+  if (!user) {
+    throw new AuthFailureError("User not found");
+  }
+
+  if (!user.isActive) {
+    throw new AuthFailureError("User account is inactive");
+  }
+
+  const tokenVersionInToken = decodedToken.tokenVersion || 0;
+  const tokenVersionInDB = user.tokenVersion || 0;
+
+  if (tokenVersionInToken < tokenVersionInDB) {
+    // Special error code for frontend to trigger auto-refresh
+    const error = new AuthFailureError("Token version outdated");
+    (error as any).code = "TOKEN_OUTDATED"; // Custom error code
+    throw error;
+  }
+};
+
 const authentication = asyncHandler(async (req, res, next) => {
   const userId = req.headers[HEADER.CLIENT_ID];
   if (!userId) throw new AuthFailureError("Invalid Request");
@@ -62,6 +92,10 @@ const authentication = asyncHandler(async (req, res, next) => {
       }) as JwtPayload;
       if (userId !== decodeUser.userId)
         throw new AuthFailureError("Invalid Userid");
+      
+      // Check token version
+      await checkTokenVersion(decodeUser);
+      
       req.keyStore = keyStore;
       req.user = decodeUser;
       req.refreshToken = refreshToken;
@@ -81,11 +115,15 @@ const authentication = asyncHandler(async (req, res, next) => {
     }) as JwtPayload;
     if (userId !== decodeUser.userId)
       throw new AuthFailureError("Invalid Userid");
+    
+    // Check token version
+    await checkTokenVersion(decodeUser);
+    
     req.keyStore = keyStore;
     req.user = decodeUser;
     return next();
   } catch (error) {
-    throw error;
+    throw error; 
   }
 });
 
