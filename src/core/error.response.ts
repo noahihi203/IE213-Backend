@@ -12,6 +12,7 @@ const ReasonStatusCode = {
 
 class ErrorResponse extends Error {
   status: number;
+  code?: string; // Add optional error code for specific handling
   constructor(message: string, status: number) {
     super(message);
     this.status = status;
