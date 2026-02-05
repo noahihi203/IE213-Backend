@@ -7,7 +7,7 @@ var keyTokenSchema = new Schema(
     user: {
       type: Schema.Types.ObjectId,
       required: true,
-      ref: "Shop",
+      ref: "User",
     },
     privateKey: {
       type: String,

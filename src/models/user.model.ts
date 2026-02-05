@@ -17,6 +17,7 @@ const userSchema = new Schema(
       default: "user",
       index: true,
     },
+    tokenVersion: { type: Number, default: 0 }, // For token invalidation
     isActive: { type: Boolean, default: true },
     followers: { type: Schema.Types.ObjectId, ref: "User" },
     following: { type: Schema.Types.ObjectId, ref: "User" },
