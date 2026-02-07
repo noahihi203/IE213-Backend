@@ -21,6 +21,7 @@ const userSchema = new Schema(
     isActive: { type: Boolean, default: true },
     followers: { type: Schema.Types.ObjectId, ref: "User" },
     following: { type: Schema.Types.ObjectId, ref: "User" },
+    isSuperAdmin: { type: Boolean, default: false },
   },
   {
     collection: COLLECTION_NAME,
