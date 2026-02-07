@@ -80,7 +80,7 @@
 
 ---
 
-### Ngày 2 (6 tháng 2, 2026) - Admin Role Management & Security
+### Ngày 2 (8 tháng 2, 2026) - Admin Role Management & Security
 
 **Độ ưu tiên: CAO**
 
@@ -133,7 +133,7 @@
 
 ---
 
-### Ngày 3 (7 tháng 2, 2026) - Quản Lý Category
+### Ngày 3 (9 tháng 2, 2026) - Quản Lý Category
 
 **Độ ưu tiên: CAO**
 
@@ -175,7 +175,7 @@
 
 ---
 
-### Ngày 4 (8 tháng 2, 2026) - Quản Lý Post (Phần 1)
+### Ngày 4 (10 tháng 2, 2026) - Quản Lý Post (Phần 1)
 
 **Độ ưu tiên: CAO**
 
@@ -210,7 +210,7 @@
 
 ---
 
-### Ngày 5 (9 tháng 2, 2026) - Quản Lý Post (Phần 2) - Likes & Shares
+### Ngày 5 (11 tháng 2, 2026) - Quản Lý Post (Phần 2) - Likes & Shares
 
 **Độ ưu tiên: CAO**
 
@@ -256,7 +256,7 @@
 
 ---
 
-### Ngày 5 (9 tháng 2, 2026) - Quản Lý Comment
+### Ngày 6 (12 tháng 2, 2026) - Quản Lý Comment
 
 **Độ ưu tiên: CAO**
 
@@ -297,7 +297,7 @@
 
 ---
 
-### Ngày 6 (10 tháng 2, 2026) - Hệ Thống Notification
+### Ngày 7 (13 tháng 2, 2026) - Hệ Thống Notification
 
 **Độ ưu tiên: TRUNG BÌNH**
 
@@ -339,7 +339,7 @@
 
 ---
 
-### Ngày 7 (11 tháng 2, 2026) - Thống Kê & Admin Dashboard
+### Ngày 8 (14 tháng 2, 2026) - Thống Kê & Admin Dashboard
 
 **Độ ưu tiên: TRUNG BÌNH**
 
@@ -390,7 +390,7 @@
 
 ---
 
-### Ngày 8 (12 tháng 2, 2026) - Middleware & Phân Quyền
+### Ngày 9 (15 tháng 2, 2026) - Middleware & Phân Quyền
 
 **Độ ưu tiên: CAO**
 
@@ -421,7 +421,7 @@
 
 ---
 
-### Ngày 9 (13 tháng 2, 2026) - Xử Lý Lỗi & Logging
+### Ngày 10 (16 tháng 2, 2026) - Xử Lý Lỗi & Logging
 
 **Độ ưu tiên: TRUNG BÌNH**
 
@@ -450,7 +450,7 @@
 
 ---
 
-### Ngày 10 (14 tháng 2, 2026) - Testing & Kiểm Tra Chất Lượng
+### Ngày 11 (17 tháng 2, 2026) - Testing & Kiểm Tra Chất Lượng
 
 **Độ ưu tiên: CAO**
 
@@ -487,7 +487,7 @@
 
 ### Tuần 3 - Hiệu Suất & Tối Ư u Hóa
 
-#### Ngày 11-12: Caching
+#### Ngày 12-13 (18-19 tháng 2, 2026): Caching
 
 - [ ] Cài đặt và cấu hình Redis
 - [ ] Triển khai caching cho:
@@ -497,7 +497,7 @@
   - [ ] Số lượng view của post
 - [ ] Chiến lược cache invalidation
 
-#### Ngày 13-14: Tối Ưu Hóa Database
+#### Ngày 14-15 (20-21 tháng 2, 2026): Tối Ưu Hóa Database
 
 - [ ] Thêm indexes cho các fields thường xuyên query
 - [ ] Tối ưu hóa aggregation queries cho statistics
@@ -505,7 +505,7 @@
 - [ ] Thêm database connection pooling
 - [ ] Tối ưu hóa populate operations (chọn các fields cụ thể)
 
-#### Ngày 15: Rate Limiting
+#### Ngày 16 (22 tháng 2, 2026): Rate Limiting
 
 - [ ] Cài đặt express-rate-limit
 - [ ] Triển khai rate limiting:
@@ -518,7 +518,7 @@
 
 ### Tuần 4 - Tính Năng Nâng Cao
 
-#### Ngày 16-17: Chức Năng Tìm Kiếm
+#### Ngày 17-18 (23-24 tháng 2, 2026): Chức Năng Tìm Kiếm
 
 - [ ] Triển khai full-text search cho posts
   - [ ] MongoDB text indexes
@@ -531,7 +531,7 @@
 - [ ] Highlighting kết quả tìm kiếm
 - [ ] Gợi ý tìm kiếm/autocomplete
 
-#### Ngày 18-19: Upload File
+#### Ngày 19-20 (25-26 tháng 2, 2026): Upload File
 
 - [ ] Thiết lập hệ thống upload file
   - [ ] Cài đặt multer
@@ -545,7 +545,7 @@
 - [ ] Cập nhật upload avatar cho user
 - [ ] Cập nhật upload cover image cho post
 
-#### Ngày 20: Dịch Vụ Email
+#### Ngày 21 (27 tháng 2, 2026): Dịch Vụ Email
 
 - [ ] Thiết lập email service (NodeMailer)
 - [ ] Email templates:
@@ -558,7 +558,7 @@
 
 ### Tuần 5 - Tính Năng Real-time & Tích Hợp Frontend
 
-#### Ngày 21-22: Triển Khai WebSocket
+#### Ngày 22-23 (28 tháng 2 - 1 tháng 3, 2026): Triển Khai WebSocket
 
 - [ ] Cài đặt socket.io
 - [ ] Thiết lập WebSocket server
@@ -570,7 +570,7 @@
 - [ ] Xác thực cho WebSocket connections
 - [ ] Quản lý room (rooms cụ thể cho từng user)
 
-#### Ngày 23-25: Hỗ Trợ Tích Hợp Frontend
+#### Ngày 24-26 (2-4 tháng 3, 2026): Hỗ Trợ Tích Hợp Frontend
 
 - [ ] Rà soát cấu hình CORS
 - [ ] Test API client của Frontend
@@ -696,21 +696,22 @@
 
 ## 📊 Theo Dõi Tiến Độ
 
-**Tiến Độ Tuần 1:** 0% (Bắt đầu 5 tháng 2, 2026)
+**Tiến Độ Tuần 1:** 14.3% (1/7 ngày hoàn thành)
 
-- Ngày 1: Quản Lý User
-- Ngày 2: Quản Lý Category
-- Ngày 3: Quản Lý Post (Phần 1)
-- Ngày 4: Quản Lý Post (Phần 2)
-- Ngày 5: Quản Lý Comment
-- Ngày 6: Hệ Thống Notification
-- Ngày 7: Thống Kê & Admin
+- ✅ Ngày 1 (5/2): Quản Lý User - HOÀN THÀNH
+- Ngày 2 (8/2): Admin Role Management
+- Ngày 3 (9/2): Quản Lý Category
+- Ngày 4 (10/2): Quản Lý Post (Phần 1)
+- Ngày 5 (11/2): Quản Lý Post (Phần 2)
+- Ngày 6 (12/2): Quản Lý Comment
+- Ngày 7 (13/2): Hệ Thống Notification
+- Ngày 8 (14/2): Thống Kê & Admin
 
 **Tiến Độ Tuần 2:** 0%
 
-- Ngày 8: Middleware & Phân Quyền
-- Ngày 9: Xử Lý Lỗi & Logging
-- Ngày 10: Testing & QA
+- Ngày 9 (15/2): Middleware & Phân Quyền
+- Ngày 10 (16/2): Xử Lý Lỗi & Logging
+- Ngày 11 (17/2): Testing & QA
 
 ---
 
@@ -741,6 +742,8 @@
 
 ---
 
-**Lần Cập Nhật Cuối:** 4 tháng 2, 2026  
+**Lần Cập Nhật Cuối:** 7 tháng 2, 2026  
 **Trạng Thái Dự Án:** Đang Phát Triển Tích Cực  
-**Mục Tiêu Hoàn Thành:** 24 tháng 2, 2026 (3 tuần)
+**Mục Tiêu Hoàn Thành:** 4 tháng 3, 2026 (điều chỉnh do trễ 2 ngày)
+
+**Ghi Chú Cập Nhật:** Đã dời lịch trình 2 ngày do bỏ lỡ ngày 6-7/2. Task tiếp theo là Admin Role Management vào ngày 8/2.
