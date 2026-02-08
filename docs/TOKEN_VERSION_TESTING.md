@@ -328,7 +328,7 @@ User request → 401 TOKEN_OUTDATED
 
 ```
 Initial: version: 0, role: "user"
-Change 1: version: 1, role: "poster"
+Change 1: version: 1, role: "author"
 Change 2: version: 2, role: "admin"
 
 Token with version: 0 → Rejected (0 < 2)

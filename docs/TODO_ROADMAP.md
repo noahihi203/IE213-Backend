@@ -203,7 +203,7 @@
 - [ ] Tạo post routes trong `src/routes/post/index.ts`
   - [ ] Thiết lập CRUD endpoints cơ bản
   - [ ] Thêm authentication middleware
-  - [ ] Thêm role-based authorization (poster/admin cho create)
+  - [ ] Thêm role-based authorization (author/admin cho create)
   - [ ] Thêm ownership check middleware (cho update/delete)
 
 **Thời gian ước tính: 7-9 giờ**
@@ -397,7 +397,7 @@
 #### Công Việc (4-6 giờ)
 
 - [ ] Tạo `src/middleware/authorization.ts`
-  - [ ] checkRole middleware (cho kiểm tra role admin/poster)
+  - [ ] checkRole middleware (cho kiểm tra role admin/author)
   - [ ] checkPostOwnership middleware (xác minh user sở hữu post)
   - [ ] checkCommentOwnership middleware (xác minh user sở hữu comment)
 

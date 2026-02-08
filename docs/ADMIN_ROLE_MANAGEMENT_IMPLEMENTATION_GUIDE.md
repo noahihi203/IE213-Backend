@@ -401,11 +401,11 @@ PROCESS:
 ```
 SETUP:
   - Tạo 1 admin user (admin1)
-  - Tạo 1 poster user (poster1)
+  - Tạo 1 author user (author1)
 
 TEST:
   - Login as admin1
-  - Attempt: PUT /v1/api/users/{admin1._id}/role với body { newRole: 'poster' }
+  - Attempt: PUT /v1/api/users/{admin1._id}/role với body { newRole: 'author' }
 
 EXPECTED:
   - Status: 403
@@ -421,11 +421,11 @@ SETUP:
 
 TEST:
   - Login as admin1
-  - Attempt: PUT /v1/api/users/{admin2._id}/role với body { newRole: 'poster' }
+  - Attempt: PUT /v1/api/users/{admin2._id}/role với body { newRole: 'author' }
 
 EXPECTED:
   - Status: 200
-  - admin2.role đã đổi thành 'poster'
+  - admin2.role đã đổi thành 'author'
   - Vẫn còn 1 admin (admin1)
 ```
 
@@ -438,16 +438,16 @@ EXPECTED:
 ```
 SETUP:
   - Tạo 5 admin users (MAX_ACTIVE_ADMINS = 5)
-  - Tạo 1 poster user (poster1)
+  - Tạo 1 author user (author1)
 
 TEST:
   - Login as admin1
-  - Attempt: PUT /v1/api/users/{poster1._id}/role với body { newRole: 'admin' }
+  - Attempt: PUT /v1/api/users/{author1._id}/role với body { newRole: 'admin' }
 
 EXPECTED:
   - Status: 403
   - Message: "Maximum admin limit reached"
-  - poster1.role vẫn là 'poster'
+  - author1.role vẫn là 'author'
 ```
 
 **Test Case 4: Cho phép thăng cấp khi chưa đạt max**
@@ -455,15 +455,15 @@ EXPECTED:
 ```
 SETUP:
   - Tạo 4 admin users (MAX_ACTIVE_ADMINS = 5)
-  - Tạo 1 poster user (poster1)
+  - Tạo 1 author user (author1)
 
 TEST:
   - Login as admin1
-  - Attempt: PUT /v1/api/users/{poster1._id}/role với body { newRole: 'admin' }
+  - Attempt: PUT /v1/api/users/{author1._id}/role với body { newRole: 'admin' }
 
 EXPECTED:
   - Status: 200
-  - poster1.role đã đổi thành 'admin'
+  - author1.role đã đổi thành 'admin'
   - Tổng số admin = 5
 ```
 
@@ -479,7 +479,7 @@ SETUP:
 
 TEST:
   - Login as admin1
-  - Attempt: PUT /v1/api/users/{admin1._id}/role với body { newRole: 'poster' }
+  - Attempt: PUT /v1/api/users/{admin1._id}/role với body { newRole: 'author' }
 
 EXPECTED:
   - Status: 403
@@ -500,7 +500,7 @@ SETUP:
 
 TEST:
   - Login as admin1
-  - Attempt: PUT /v1/api/users/{superAdmin._id}/role với body { newRole: 'poster' }
+  - Attempt: PUT /v1/api/users/{superAdmin._id}/role với body { newRole: 'author' }
 
 EXPECTED:
   - Status: 403
@@ -523,7 +523,7 @@ SETUP:
 
 TEST:
   - Login as admin1
-  - Attempt: PUT /v1/api/users/{admin2._id}/role với body { newRole: 'poster' }
+  - Attempt: PUT /v1/api/users/{admin2._id}/role với body { newRole: 'author' }
 
 EXPECTED:
   - Status: 403
@@ -540,11 +540,11 @@ SETUP:
 
 TEST:
   - Login as superAdmin
-  - Attempt: PUT /v1/api/users/{admin2._id}/role với body { newRole: 'poster' }
+  - Attempt: PUT /v1/api/users/{admin2._id}/role với body { newRole: 'author' }
 
 EXPECTED:
   - Status: 200
-  - admin2.role đã đổi thành 'poster'
+  - admin2.role đã đổi thành 'author'
 ```
 
 ---
