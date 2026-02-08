@@ -71,6 +71,20 @@ class AccessService {
     message?: string;
     metadata?: object | null;
   }> => {
+    // validate
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      throw new BadRequestError("Invalid email format");
+    }
+    if (username.length < 3 || username.length > 30) {
+      throw new BadRequestError("Username must be between 3 and 30 characters");
+    }
+    // 4. Validate fullName if provided
+    if (fullName && fullName.trim().length < 2) {
+      throw new BadRequestError("Full name must be at least 2 characters");
+    }
+
+    //exist User?
     const holderShop = await userModel.findOne({ email }).lean();
 
     if (holderShop) {
@@ -89,6 +103,24 @@ class AccessService {
       password: passwordHash,
       fullName,
     });
+
+    // set super admin
+    if (newUser) {
+      const adminExists = await userModel.exists({
+        isSuperAdmin: true,
+      });
+
+      if (!adminExists) {
+        const updateSuperAdmin = await newUser.updateOne({
+          isSuperAdmin: true,
+          role: "admin",
+        });
+        console.log("Super Admin ID: ", newUser._id);
+        if (!updateSuperAdmin) {
+          throw new BadRequestError("Update Super Admin failed!");
+        }
+      }
+    }
 
     if (newUser) {
       const { publicKey, privateKey } = crypto.generateKeyPairSync("rsa", {

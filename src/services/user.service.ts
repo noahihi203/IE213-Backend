@@ -161,7 +161,7 @@ class UserService {
 
     // Filter by role
     if (role) {
-      if (!["admin", "user", "poster"].includes(role)) {
+      if (!["admin", "user", "author"].includes(role)) {
         throw new BadRequestError("Invalid role filter");
       }
       filter.role = role;
@@ -226,7 +226,7 @@ class UserService {
     newRole: string;
   }) => {
     // Validate role
-    const validRoles = ["admin", "user", "poster"];
+    const validRoles = ["admin", "user", "author"];
     if (!validRoles.includes(newRole)) {
       throw new BadRequestError(
         `Invalid role. Must be one of: ${validRoles.join(", ")}`,
