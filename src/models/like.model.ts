@@ -3,7 +3,13 @@ import { model, Schema } from "mongoose";
 const DOCUMENT_NAME = "Like";
 const COLLECTION_NAME = "Likes";
 
-const likeSchema = new Schema(
+interface ILike {
+  userId: Schema.Types.ObjectId;
+  targetId: Schema.Types.ObjectId;
+  targetType: "post" | "comment";
+}
+
+const likeSchema = new Schema<ILike>(
   {
     userId: {
       type: Schema.Types.ObjectId,
@@ -27,4 +33,4 @@ const likeSchema = new Schema(
   },
 );
 
-export const likeModel = model(DOCUMENT_NAME, likeSchema);
+export const likeModel = model<ILike>(DOCUMENT_NAME, likeSchema);

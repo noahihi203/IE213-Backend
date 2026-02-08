@@ -3,7 +3,18 @@ import { model, Schema } from "mongoose";
 const DOCUMENT_NAME = "Notification";
 const COLLECTION_NAME = "Notifications";
 
-const notificationSchema = new Schema(
+interface INotification {
+  userId: Schema.Types.ObjectId;
+
+  actorId: Schema.Types.ObjectId;
+  type: string;
+  targetId: Schema.Types.ObjectId;
+  targetType: "post" | "comment" | "user";
+  message: string;
+  isRead: boolean;
+}
+
+const notificationSchema = new Schema<INotification>(
   {
     userId: {
       type: Schema.Types.ObjectId,
@@ -35,4 +46,7 @@ const notificationSchema = new Schema(
   },
 );
 
-export const notificationModel = model(DOCUMENT_NAME, notificationSchema);
+export const notificationModel = model<INotification>(
+  DOCUMENT_NAME,
+  notificationSchema,
+);

@@ -1,9 +1,15 @@
 import { model, Schema } from "mongoose";
 
-const DOCUMENT_NAME = "Apikey";
-const COLLECTION_NAME = "Apikeys";
+const DOCUMENT_NAME = "ApiKey";
+const COLLECTION_NAME = "ApiKeys";
 
-const apiKeySchema = new Schema(
+interface IApiKey {
+  key: string;
+  status: boolean;
+  permissions: "0000" | "1111" | "2222";
+}
+
+const apiKeySchema = new Schema<IApiKey>(
   {
     key: {
       type: String,
@@ -15,7 +21,7 @@ const apiKeySchema = new Schema(
       default: true,
     },
     permissions: {
-      type: [String],
+      type: String,
       required: true,
       enum: ["0000", "1111", "2222"],
     },
@@ -23,7 +29,7 @@ const apiKeySchema = new Schema(
   {
     timestamps: true,
     collection: COLLECTION_NAME,
-  }
+  },
 );
 
-export const apikeyModel = model(DOCUMENT_NAME, apiKeySchema);
+export const apiKeyModel = model<IApiKey>(DOCUMENT_NAME, apiKeySchema);

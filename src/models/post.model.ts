@@ -3,7 +3,24 @@ import { model, Schema } from "mongoose";
 const DOCUMENT_NAME = "Post";
 const COLLECTION_NAME = "Posts";
 
-const postSchema = new Schema(
+interface IPost {
+  authorId: Schema.Types.ObjectId;
+  title: string;
+  content: string;
+  excerpt: string;
+  coverImage: string;
+  slug: string;
+  status: "draft" | "published" | "archived";
+  tags: Array<string>;
+  category: string;
+  viewCount: number;
+  likesCount: number;
+  commentsCount: number;
+  sharesCount: number;
+  publishedAt: Date;
+}
+
+const postSchema = new Schema<IPost>(
   {
     authorId: { type: Schema.Types.ObjectId, ref: "User" },
     title: { type: String, required: true },
@@ -17,7 +34,7 @@ const postSchema = new Schema(
       default: "draft",
       index: true,
     },
-    tags: { type: Array, default: [], index: true },
+    tags: { type: [String], default: [], index: true },
     category: { type: String, required: true, index: true },
     viewCount: { type: Number, default: 0 },
     likesCount: { type: Number, default: 0 },
@@ -34,4 +51,4 @@ const postSchema = new Schema(
   },
 );
 
-export const postModel = model(DOCUMENT_NAME, postSchema);
+export const postModel = model<IPost>(DOCUMENT_NAME, postSchema);

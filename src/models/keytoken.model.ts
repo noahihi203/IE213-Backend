@@ -1,8 +1,17 @@
-import { Schema, model } from "mongoose"; 
+import { Schema, model } from "mongoose";
+
 const DOCUMENT_NAME = "Key";
 const COLLECTION_NAME = "Keys";
 
-var keyTokenSchema = new Schema(
+interface IKeyToken {
+  user: Schema.Types.ObjectId;
+  privateKey: string;
+  publicKey: string;
+  refreshTokensUsed: Array<string>;
+  refreshToken: string;
+}
+
+var keyTokenSchema = new Schema<IKeyToken>(
   {
     user: {
       type: Schema.Types.ObjectId,
@@ -18,7 +27,7 @@ var keyTokenSchema = new Schema(
       required: true,
     },
     refreshTokensUsed: {
-      type: Array,
+      type: [String],
       default: [], // Nhung RT da dc su dung
     },
     refreshToken: {
@@ -29,7 +38,7 @@ var keyTokenSchema = new Schema(
   {
     collection: COLLECTION_NAME,
     timestamps: true,
-  }
+  },
 );
 
-export const keyTokenModel = model(DOCUMENT_NAME, keyTokenSchema);
+export const keyTokenModel = model<IKeyToken>(DOCUMENT_NAME, keyTokenSchema);

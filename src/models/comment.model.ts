@@ -3,7 +3,16 @@ import { model, Schema } from "mongoose";
 const DOCUMENT_NAME = "Comment";
 const COLLECTION_NAME = "Comments";
 
-const commentSchema = new Schema(
+interface IComment {
+  postId: Schema.Types.ObjectId;
+  authorId: Schema.Types.ObjectId;
+  content: string;
+  parentId: Schema.Types.ObjectId;
+  likesCount: number;
+  isEdited: boolean;
+}
+
+const commentSchema = new Schema<IComment>(
   {
     postId: {
       type: Schema.Types.ObjectId,
@@ -36,4 +45,4 @@ const commentSchema = new Schema(
   },
 );
 
-export const commentModel = model(DOCUMENT_NAME, commentSchema);
+export const commentModel = model<IComment>(DOCUMENT_NAME, commentSchema);

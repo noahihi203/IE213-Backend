@@ -3,7 +3,14 @@ import { model, Schema } from "mongoose";
 const DOCUMENT_NAME = "Share";
 const COLLECTION_NAME = "Shares";
 
-const shareSchema = new Schema(
+interface IShare {
+  postId: Schema.Types.ObjectId;
+  userId: Schema.Types.ObjectId;
+  platform: string;
+  message: string;
+}
+
+const shareSchema = new Schema<IShare>(
   {
     postId: {
       type: Schema.Types.ObjectId,
@@ -32,4 +39,4 @@ const shareSchema = new Schema(
   },
 );
 
-export const shareModel = model(DOCUMENT_NAME, shareSchema);
+export const shareModel = model<IShare>(DOCUMENT_NAME, shareSchema);

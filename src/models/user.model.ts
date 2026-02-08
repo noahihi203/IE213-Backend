@@ -1,27 +1,42 @@
-import { model, Schema } from "mongoose";
+import { model, Schema, Document } from "mongoose";
 
 const DOCUMENT_NAME = "User";
 const COLLECTION_NAME = "Users";
 
-const userSchema = new Schema(
+export interface IUser {
+  username: string;
+  email: string;
+  password: string;
+  fullName: string;
+  avatar?: string | null;
+  bio?: string | null;
+  role: "admin" | "user" | "author";
+  isSuperAdmin: boolean;
+  tokenVersion: number;
+  isActive: boolean;
+  followers?: Schema.Types.ObjectId;
+  following?: Schema.Types.ObjectId;
+}
+
+const userSchema = new Schema<IUser>(
   {
     username: { type: String, required: true, unique: true, index: true },
     email: { type: String, required: true, unique: true, index: true },
-    password: { type: String, required: true, hashed: true },
+    password: { type: String, required: true },
     fullName: { type: String, required: true },
     avatar: { type: String, default: null },
     bio: { type: String, default: null },
     role: {
       type: String,
-      enum: ["admin", "user", "poster"],
+      enum: ["admin", "user", "author"],
       default: "user",
       index: true,
     },
-    tokenVersion: { type: Number, default: 0 }, // For token invalidation
+    isSuperAdmin: { type: Boolean, default: false, index: true },
+    tokenVersion: { type: Number, default: 0 },
     isActive: { type: Boolean, default: true },
     followers: { type: Schema.Types.ObjectId, ref: "User" },
     following: { type: Schema.Types.ObjectId, ref: "User" },
-    isSuperAdmin: { type: Boolean, default: false },
   },
   {
     collection: COLLECTION_NAME,
@@ -32,4 +47,4 @@ const userSchema = new Schema(
   },
 );
 
-export const userModel = model(DOCUMENT_NAME, userSchema);
+export const userModel = model<IUser>(DOCUMENT_NAME, userSchema);

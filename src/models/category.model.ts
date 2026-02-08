@@ -3,7 +3,15 @@ import { model, Schema } from "mongoose";
 const DOCUMENT_NAME = "Category";
 const COLLECTION_NAME = "Categories";
 
-const categorySchema = new Schema(
+interface ICategory {
+  name: string;
+  slug: string;
+  description: string;
+  icon: string;
+  postCount: number;
+}
+
+const categorySchema = new Schema<ICategory>(
   {
     name: { type: String, required: true, unique: true, index: true },
     slug: { type: String, required: true, unique: true, index: true },
@@ -20,4 +28,4 @@ const categorySchema = new Schema(
   },
 );
 
-export const categoryModel = model(DOCUMENT_NAME, categorySchema);
+export const categoryModel = model<ICategory>(DOCUMENT_NAME, categorySchema);
