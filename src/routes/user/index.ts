@@ -4,7 +4,12 @@ import { asyncHandler } from "../../auth/checkAuth.js";
 import { authentication } from "../../auth/authUtils.js";
 import {
   checkAdmin,
+  checkAdminToAdminPermission,
+  checkMaximumAdmins,
+  checkMinimumAdmins,
+  checkNotSelfDemotion,
   checkOwnershipOrAdmin,
+  checkSuperAdminProtection,
 } from "../../middleware/authorization.js";
 
 const router = express.Router();
@@ -32,6 +37,11 @@ router.delete(
 router.put(
   "/users/:userId/role",
   checkAdmin,
+  checkSuperAdminProtection,
+  checkNotSelfDemotion,
+  checkAdminToAdminPermission,
+  checkMaximumAdmins,
+  checkMinimumAdmins,
   asyncHandler(userController.changeUserRole),
 );
 
