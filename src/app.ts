@@ -19,7 +19,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // init db
-import "./dbs/init.mongodb"
+import "./dbs/init.mongodb";
 
 // init routes
 import routes from "./routes/index.js";
@@ -36,9 +36,9 @@ app.use(
   (error: HttpError, _req: Request, res: Response, _next: NextFunction) => {
     const statusCode = error.status || 500;
     return res.status(statusCode).json({
-      status: "error",
-      code: error.code || statusCode, // Include custom error code if present
+      status: statusCode,
       message: error.message || "Internal Server error",
+      ...(error.code && { code: error.code }), // Include custom error code if present
       ...(process.env.NODE_ENV === "development" && { stack: error.stack }),
     });
   },
