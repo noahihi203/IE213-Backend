@@ -378,11 +378,11 @@ describe("User Routes Integration Tests", () => {
         .set("x-client-id", adminUser._id.toString())
         .set("authorization", `Bearer ${adminToken}`)
         .send({
-          role: "poster",
+          role: "author",
         });
 
       expect(response.status).toBe(200);
-      expect(response.body.metadata.role).toBe("poster");
+      expect(response.body.metadata.role).toBe("author");
       expect(response.body.metadata.tokenVersion).toBe(1); // Should increment
     });
 
@@ -499,7 +499,7 @@ describe("User Routes Integration Tests", () => {
         .set("x-client-id", adminUser._id.toString())
         .set("authorization", `Bearer ${adminToken}`)
         .send({
-          role: "poster",
+          role: "author",
         });
 
       expect(response.status).toBe(200);
@@ -528,7 +528,7 @@ describe("User Routes Integration Tests", () => {
         {
           userId: testUser._id.toString(),
           email: testUser.email,
-          role: "poster",
+          role: "author",
           tokenVersion: 1,
         },
         testKeyPair.privateKey,
@@ -540,7 +540,7 @@ describe("User Routes Integration Tests", () => {
         .set("authorization", `Bearer ${newToken}`);
 
       expect(response.status).toBe(200);
-      expect(response.body.metadata.role).toBe("poster");
+      expect(response.body.metadata.role).toBe("author");
     });
   });
 

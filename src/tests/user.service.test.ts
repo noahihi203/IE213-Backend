@@ -606,14 +606,14 @@ describe("UserService Unit Tests", () => {
   // ==================== updateUserRole ====================
 
   describe("updateUserRole", () => {
-    it("should update user role to poster successfully", async () => {
+    it("should update user role to author successfully", async () => {
       const userId = "123456789";
-      const newRole = "poster";
+      const newRole = "author";
 
       const mockUpdatedUser = {
         _id: userId,
         username: "testuser",
-        role: "poster",
+        role: "author",
         tokenVersion: 1,
       };
 
@@ -632,7 +632,7 @@ describe("UserService Unit Tests", () => {
         },
         { new: true, runValidators: true },
       );
-      expect(result.role).toBe("poster");
+      expect(result.role).toBe("author");
       expect(result.tokenVersion).toBe(1);
     });
 
@@ -658,11 +658,11 @@ describe("UserService Unit Tests", () => {
 
     it("should increment tokenVersion when role changes", async () => {
       const userId = "123456789";
-      const newRole = "poster";
+      const newRole = "author";
 
       const mockUpdatedUser = {
         _id: userId,
-        role: "poster",
+        role: "author",
         tokenVersion: 5, // Simulating multiple role changes
       };
 
@@ -692,12 +692,12 @@ describe("UserService Unit Tests", () => {
 
       await expect(
         UserService.updateUserRole({ userId, newRole }),
-      ).rejects.toThrow("Invalid role. Must be one of: admin, user, poster");
+      ).rejects.toThrow("Invalid role. Must be one of: admin, user, author");
     });
 
     it("should throw error when user not found for role update", async () => {
       const userId = "nonexistent123";
-      const newRole = "poster";
+      const newRole = "author";
 
       const mockSelect = jest.fn().mockResolvedValue(null);
       (userModel.findByIdAndUpdate as jest.Mock) = jest
@@ -711,11 +711,11 @@ describe("UserService Unit Tests", () => {
 
     it("should not expose password in role update response", async () => {
       const userId = "123456789";
-      const newRole = "poster";
+      const newRole = "author";
 
       const mockUpdatedUser = {
         _id: userId,
-        role: "poster",
+        role: "author",
         tokenVersion: 1,
       };
 
@@ -732,7 +732,7 @@ describe("UserService Unit Tests", () => {
 
     it("should accept all valid roles", async () => {
       const userId = "123456789";
-      const validRoles = ["admin", "user", "poster"];
+      const validRoles = ["admin", "user", "author"];
 
       for (const role of validRoles) {
         const mockUpdatedUser = {
