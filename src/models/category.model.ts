@@ -3,7 +3,7 @@ import { model, Schema } from "mongoose";
 const DOCUMENT_NAME = "Category";
 const COLLECTION_NAME = "Categories";
 
-interface ICategory {
+export interface ICategory {
   name: string;
   slug: string;
   description: string;
