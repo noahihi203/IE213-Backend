@@ -18,11 +18,11 @@ const router = express.Router();
 router.use(authentication);
 
 // Public authenticated routes
-router.get("/users/:userId", asyncHandler(userController.getUserProfile));
+router.get("/:userId", asyncHandler(userController.getUserProfile));
 
 // User can update their own profile, or admin can update any
 router.put(
-  "/users/:userId",
+  "/:userId",
   checkOwnershipOrAdmin("userId"),
   asyncHandler(userController.updateUserProfile),
 );
@@ -30,12 +30,12 @@ router.put(
 // Admin-only routes
 router.get("/users", checkAdmin, asyncHandler(userController.getAllUsers));
 router.delete(
-  "/users/:userId",
+  "/:userId",
   checkAdmin,
   asyncHandler(userController.deleteUser),
 );
 router.put(
-  "/users/:userId/role",
+  "/:userId/role",
   checkAdmin,
   checkSuperAdminProtection,
   checkNotSelfDemotion,
