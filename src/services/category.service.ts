@@ -1,0 +1,193 @@
+import { Types } from "mongoose";
+import { BadRequestError } from "../core/error.response.js";
+import { categoryModel } from "../models/category.model.js";
+
+interface category {
+  name: string;
+  slug: string;
+  description: string;
+  icon: string;
+  postCount: number;
+}
+
+function slugify(string: string) {
+  if (!string || string.trim() === "") {
+    throw new BadRequestError("Cannot slugify empty string");
+  } else {
+    return string
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .split("")
+      .map((character) => (/[a-z0-9]/.test(character) ? character : "-"))
+      .join("")
+      .replace(/-+/g, "-")
+      .replace(/^-|-$/g, "");
+  }
+}
+
+class CategoryService {
+  static getAllCategories = async () => {
+    let categories: category[] = [];
+    categories = await categoryModel.find();
+    if (!categories) {
+      throw new BadRequestError("category not exist!");
+    }
+    return categories;
+  };
+
+  static getCategoryById = async (categoryId: string) => {
+    if (!categoryId) {
+      throw new BadRequestError("categoryId not exist!");
+    }
+    return await categoryModel.findById(categoryId);
+  };
+
+  static getCategoryBySlug = async (slug: string) => {
+    if (!slug) {
+      throw new BadRequestError("Slug not existed!");
+    }
+    return await categoryModel.findOne({ slug: slug });
+  };
+
+  static createCategory = async (catBody: category) => {
+    const { name, description, icon } = catBody;
+
+    // 1. Validate required fields
+    if (!name || name.trim() === "") {
+      throw new BadRequestError("Category name is required!");
+    }
+
+    // 2. Validate name length
+    if (name.length < 2 || name.length > 100) {
+      throw new BadRequestError(
+        "Category name must be between 2-100 characters!",
+      );
+    }
+
+    // 3. Generate slug from name
+    const slug = slugify(name);
+
+    // 4. Check if category with same name or slug already exists
+    const existingCategory = await categoryModel.findOne({
+      $or: [{ name }, { slug }],
+    });
+
+    if (existingCategory) {
+      throw new BadRequestError("Category with this name already exists!");
+    }
+
+    // 5. Validate optional fields
+    if (description && description.length > 500) {
+      throw new BadRequestError("Description must not exceed 500 characters!");
+    }
+
+    if (icon && !icon.match(/^https?:\/\/.+/)) {
+      throw new BadRequestError("Icon must be a valid URL!");
+    }
+
+    // 6. Create category (postCount defaults to 0 in schema)
+    return await categoryModel.create({
+      name: name.trim(),
+      slug,
+      description: description?.trim() || "",
+      icon: icon?.trim() || "",
+    });
+  };
+
+  static updateCategory = async (categoryId: string, updateData: category) => {
+    const name = updateData.name;
+    const description = updateData.description;
+    const icon = updateData.icon;
+    // 1. Validate required fields
+    if (!name || name.trim() === "") {
+      throw new BadRequestError("Category name is required!");
+    } else {
+      const slug = slugify(name);
+      // 2. Validate name length
+      if (name.length < 2 || name.length > 100) {
+        throw new BadRequestError(
+          "Category name must be between 2-100 characters!",
+        );
+      }
+
+      // 3. Generate slug from name
+
+      // 4. Check if category with same name or slug already exists
+      const existingCategory = await categoryModel.findOne({
+        $or: [{ name }, { slug }],
+      });
+      if (slug) {
+        updateData = {
+          ...updateData,
+          slug,
+        };
+      }
+      if (existingCategory) {
+        throw new BadRequestError("Category with this name already exists!");
+      }
+    }
+
+    // 5. Validate optional fields
+    if (description && description.length > 500) {
+      throw new BadRequestError("Description must not exceed 500 characters!");
+    }
+
+    if (icon && !icon.match(/^https?:\/\/.+/)) {
+      throw new BadRequestError("Icon must be a valid URL!");
+    }
+
+    const updateCategory = await categoryModel.findByIdAndUpdate(
+      categoryId,
+      { $set: updateData },
+      { new: true, runValidators: true },
+    );
+    if (!updateCategory) {
+      throw new BadRequestError("User not found!");
+    } else {
+      return updateCategory;
+    }
+  };
+
+  static deleteCategory = async (categoryId: string) => {
+    // 1. Validate categoryId
+    if (!categoryId) {
+      throw new BadRequestError("Category ID is required!");
+    }
+
+    // 2. Check if category exists
+    const category = await categoryModel.findById(categoryId);
+    if (!category) {
+      throw new BadRequestError("Category not found!");
+    }
+
+    // 3. Check if category has posts (using postCount)
+    if (category.postCount > 0) {
+      throw new BadRequestError(
+        `Cannot delete category with ${category.postCount} existing posts! Please reassign or delete posts first.`,
+      );
+    }
+
+    // 4. Delete the category
+    const deletedCategory = await categoryModel.findByIdAndDelete(categoryId);
+    return deletedCategory;
+  };
+
+  static getCategoryPostCount = async (categoryId: Types.ObjectId) => {
+    if (!categoryId) {
+      throw new BadRequestError("Category ID is required!");
+    }
+
+    const category = await categoryModel
+      .findOne({ _id: categoryId })
+      .select("postCount");
+
+    if (!category) {
+      throw new BadRequestError("Category not found!");
+    }
+
+    return category;
+  };
+}
+
+export default CategoryService;
