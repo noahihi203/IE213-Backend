@@ -73,8 +73,8 @@
 #### Testing & Tài Liệu
 
 - [x] Test tất cả user endpoints với Postman
-- [ ] Tạo test file `src/tests/user.routes.test.ts`
-- [ ] Viết unit tests cơ bản cho các methods của user service
+- [x] Tạo test file `src/tests/user.routes.test.ts`
+- [x] Viết unit tests cơ bản cho các methods của user service
 
 **Thời gian thực tế: ~8 giờ (bao gồm token versioning & authorization system)**
 
@@ -86,48 +86,48 @@
 
 #### Buổi Sáng (3-4 giờ)
 
-- [ ] **Admin Role Protection System**
-  - [ ] Implement `checkMinimumAdmins` middleware
-    - [ ] Query active admin count before role change
-    - [ ] Prevent admin demotion if count <= minimum (e.g., 1-2 admins)
-    - [ ] Custom error: `MINIMUM_ADMINS_REQUIRED`
-  - [ ] Implement `checkMaximumAdmins` middleware
-    - [ ] Query active admin count before role promotion
-    - [ ] Prevent admin promotion if count >= maximum (e.g., 5 admins)
-    - [ ] Custom error: `MAXIMUM_ADMINS_REACHED`
-  - [ ] Update `updateUserRole` service method
-    - [ ] Add validation for self-demotion (admin lowering own role)
-    - [ ] Add validation for admin-to-admin role changes
-    - [ ] Add checks using new middleware
-    - [ ] Add logging for all admin role changes (audit trail)
+- [x] **Admin Role Protection System**
+  - [x] Implement `checkMinimumAdmins` middleware
+    - [x] Query active admin count before role change
+    - [x] Prevent admin demotion if count <= minimum (e.g., 1-2 admins)
+    - [x] Custom error: `MINIMUM_ADMINS_REQUIRED`
+  - [x] Implement `checkMaximumAdmins` middleware
+    - [x] Query active admin count before role promotion
+    - [x] Prevent admin promotion if count >= maximum (e.g., 5 admins)
+    - [x] Custom error: `MAXIMUM_ADMINS_REACHED`
+  - [x] Update `updateUserRole` service method
+    - [x] Add validation for self-demotion (admin lowering own role)
+    - [x] Add validation for admin-to-admin role changes
+    - [x] Add checks using new middleware
+    - [x] Add logging for all admin role changes (audit trail)
 
 #### Buổi Chiều (2-3 giờ)
 
-- [ ] **Admin Configuration & Constants**
-  - [ ] Create `src/config/admin.config.ts`
-    - [ ] `MIN_ACTIVE_ADMINS` constant (default: 1)
-    - [ ] `MAX_ACTIVE_ADMINS` constant (default: 5)
-    - [ ] `SUPER_ADMIN_ID` for initial admin (cannot be demoted)
-  - [ ] Update User model (optional)
-    - [ ] Add `isSuperAdmin` boolean field (default: false)
-    - [ ] First registered admin automatically becomes super admin
+- [x] **Admin Configuration & Constants**
+  - [x] Create `src/config/admin.config.ts`
+    - [x] `MIN_ACTIVE_ADMINS` constant (default: 1)
+    - [x] `MAX_ACTIVE_ADMINS` constant (default: 5)
+    - [x] `SUPER_ADMIN_ID` for initial admin (cannot be demoted)
+  - [x] Update User model (optional)
+    - [x] Add `isSuperAdmin` boolean field (default: false)
+    - [x] First registered admin automatically becomes super admin
 
-- [ ] **Enhanced Authorization Rules**
-  - [ ] Update `authorization.ts`
-    - [ ] Add `checkNotSelfDemotion` middleware
-    - [ ] Add `checkSuperAdminProtection` middleware
-    - [ ] Add `checkAdminToAdminPermission` middleware
+- [x] **Enhanced Authorization Rules**
+  - [x] Update `authorization.ts`
+    - [x] Add `checkNotSelfDemotion` middleware
+    - [x] Add `checkSuperAdminProtection` middleware
+    - [x] Add `checkAdminToAdminPermission` middleware
 
 #### Testing & Documentation
 
-- [ ] Test admin protection scenarios
-  - [ ] Test minimum admin limit enforcement
-  - [ ] Test maximum admin limit enforcement
-  - [ ] Test admin self-demotion prevention
-  - [ ] Test super admin protection
-  - [ ] Test admin changing other admin's role
-- [ ] Update API documentation with new error codes
-- [ ] Create `ADMIN_ROLE_MANAGEMENT.md` documentation
+- [x] Test admin protection scenarios
+  - [x] Test minimum admin limit enforcement
+  - [x] Test maximum admin limit enforcement
+  - [x] Test admin self-demotion prevention
+  - [x] Test super admin protection
+  - [x] Test admin changing other admin's role
+- [x] Update API documentation with new error codes
+- [x] Create `ADMIN_ROLE_MANAGEMENT.md` documentation
 
 **Thời gian ước tính: 5-7 giờ**
 
@@ -139,37 +139,37 @@
 
 #### Buổi Sáng (3-4 giờ)
 
-- [ ] Tạo `category.service.ts`
-  - [ ] Method getAllCategories
-  - [ ] Method getCategoryById
-  - [ ] Method getCategoryBySlug
-  - [ ] Method createCategory với tạo slug tự động
-  - [ ] Method updateCategory
-  - [ ] Method deleteCategory (kiểm tra các posts liên quan)
-  - [ ] Method getCategoryPostCount
+- [x] Tạo `category.service.ts`
+  - [x] Method getAllCategories
+  - [x] Method getCategoryById
+  - [x] Method getCategoryBySlug
+  - [x] Method createCategory với tạo slug tự động
+  - [x] Method updateCategory
+  - [x] Method deleteCategory (kiểm tra các posts liên quan)
+  - [x] Method getCategoryPostCount
 
-- [ ] Tạo `category.controller.ts`
-  - [ ] getAllCategories (GET /v1/api/categories)
-  - [ ] getSingleCategory (GET /v1/api/categories/:categoryId)
-  - [ ] getCategoryBySlug (GET /v1/api/categories/slug/:slug)
-  - [ ] createCategory (POST /v1/api/categories) - Chỉ Admin
-  - [ ] updateCategory (PUT /v1/api/categories/:categoryId) - Chỉ Admin
-  - [ ] deleteCategory (DELETE /v1/api/categories/:categoryId) - Chỉ Admin
+- [x] Tạo `category.controller.ts`
+  - [x] getAllCategories (GET /v1/api/categories)
+  - [x] getSingleCategory (GET /v1/api/categories/:categoryId)
+  - [x] getCategoryBySlug (GET /v1/api/categories/slug/:slug)
+  - [x] createCategory (POST /v1/api/categories) - Chỉ Admin
+  - [x] updateCategory (PUT /v1/api/categories/:categoryId) - Chỉ Admin
+  - [x] deleteCategory (DELETE /v1/api/categories/:categoryId) - Chỉ Admin
 
 #### Buổi Chiều (2-3 giờ)
 
-- [ ] Tạo category routes trong `src/routes/category/index.ts`
-  - [ ] Thiết lập tất cả category endpoints
-  - [ ] Thêm authentication cho protected routes
-  - [ ] Thêm admin authorization cho create/update/delete
+- [x] Tạo category routes trong `src/routes/category/index.ts`
+  - [x] Thiết lập tất cả category endpoints
+  - [x] Thêm authentication cho protected routes
+  - [x] Thêm admin authorization cho create/update/delete
 
-- [ ] Đăng ký category routes vào main router
+- [x] Đăng ký category routes vào main router
 
 #### Testing
 
-- [ ] Test tất cả category endpoints
-- [ ] Tạo `src/tests/category.routes.test.ts`
-- [ ] Seed database với categories ban đầu (Technology, Lifestyle, Business, v.v.)
+- [x] Test tất cả category endpoints
+- [x] Tạo `src/tests/category.routes.test.ts`
+- [x] Seed database với categories ban đầu (Technology, Lifestyle, Business, v.v.)
 
 **Thời gian ước tính: 5-7 giờ**
 
