@@ -3,7 +3,7 @@ import { model, Schema } from "mongoose";
 const DOCUMENT_NAME = "Post";
 const COLLECTION_NAME = "Posts";
 
-interface IPost {
+export interface IPost {
   authorId: Schema.Types.ObjectId;
   title: string;
   content: string;
@@ -12,7 +12,7 @@ interface IPost {
   slug: string;
   status: "draft" | "published" | "archived";
   tags: Array<string>;
-  category: string;
+  category: Schema.Types.ObjectId;
   viewCount: number;
   likesCount: number;
   commentsCount: number;
@@ -35,7 +35,7 @@ const postSchema = new Schema<IPost>(
       index: true,
     },
     tags: { type: [String], default: [], index: true },
-    category: { type: String, required: true, index: true },
+    category: { type: Schema.Types.ObjectId, ref: "Category", required: true },
     viewCount: { type: Number, default: 0 },
     likesCount: { type: Number, default: 0 },
     commentsCount: { type: Number, default: 0 },
