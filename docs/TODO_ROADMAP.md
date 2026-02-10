@@ -181,30 +181,30 @@
 
 #### Buổi Sáng (4-5 giờ)
 
-- [ ] Tạo `post.service.ts` - CRUD cơ bản
-  - [ ] Method getAllPostsWithFilters (pagination, search, sort, status filter)
-  - [ ] Method getPostById (kèm author và category population)
-  - [ ] Method getPostBySlug
-  - [ ] Method createPost với tạo slug tự động
-  - [ ] Method updatePost với kiểm tra authorization
-  - [ ] Method deletePost (soft delete - chuyển sang archived)
-  - [ ] Method incrementViewCount
+- [x] Tạo `post.service.ts` - CRUD cơ bản
+  - [x] Method getAllPostsWithFilters (pagination, search, sort, status filter)
+  - [x] Method getPostById (kèm author và category population)
+  - [x] Method getPostBySlug
+  - [x] Method createPost với tạo slug tự động
+  - [x] Method updatePost với kiểm tra authorization
+  - [x] Method deletePost (soft delete - chuyển sang archived)
+  - [x] Method incrementViewCount
 
 #### Buổi Chiều (3-4 giờ)
 
-- [ ] Tạo `post.controller.ts` - Endpoints cơ bản
-  - [ ] getAllPosts (GET /v1/api/posts)
-  - [ ] getSinglePost (GET /v1/api/posts/:postId)
-  - [ ] getPostBySlug (GET /v1/api/posts/slug/:slug)
-  - [ ] createPost (POST /v1/api/posts) - Chỉ Poster/Admin
-  - [ ] updatePost (PUT /v1/api/posts/:postId) - Chỉ Author/Admin
-  - [ ] deletePost (DELETE /v1/api/posts/:postId) - Chỉ Author/Admin
+- [x] Tạo `post.controller.ts` - Endpoints cơ bản
+  - [x] getAllPosts (GET /v1/api/posts)
+  - [x] getSinglePost (GET /v1/api/posts/:postId)
+  - [x] getPostBySlug (GET /v1/api/posts/slug/:slug)
+  - [x] createPost (POST /v1/api/posts) - Chỉ Poster/Admin
+  - [x] updatePost (PUT /v1/api/posts/:postId) - Chỉ Author/Admin
+  - [x] deletePost (DELETE /v1/api/posts/:postId) - Chỉ Author/Admin
 
-- [ ] Tạo post routes trong `src/routes/post/index.ts`
-  - [ ] Thiết lập CRUD endpoints cơ bản
-  - [ ] Thêm authentication middleware
-  - [ ] Thêm role-based authorization (author/admin cho create)
-  - [ ] Thêm ownership check middleware (cho update/delete)
+- [x] Tạo post routes trong `src/routes/post/index.ts`
+  - [x] Thiết lập CRUD endpoints cơ bản
+  - [x] Thêm authentication middleware
+  - [x] Thêm role-based authorization (author/admin cho create)
+  - [x] Thêm ownership check middleware (cho update/delete)
 
 **Thời gian ước tính: 7-9 giờ**
 
