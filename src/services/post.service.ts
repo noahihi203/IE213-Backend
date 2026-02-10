@@ -46,7 +46,7 @@ class PostService {
       postQueryParams;
     page = page || 1;
     limit = limit || 10;
-    sortBy = sortBy || "createOn";
+    sortBy = sortBy || "createdOn";
     order = order || "desc";
 
     const skip = (page - 1) * limit;
@@ -93,25 +93,7 @@ class PostService {
     const hasNextPage = page < totalPages;
     const hasPrevPage = page > 1;
 
-    return {
-      posts: posts,
-      pagination: {
-        currentPage: page,
-        totalPages: totalPages,
-        totalPosts: totalCount,
-        limit: limit,
-        hasNextPage: hasNextPage,
-        hasPrevPage: hasPrevPage,
-      },
-      filters: {
-        search: search,
-        status: status,
-        category: category,
-        tags: tags,
-        sortBy: sortBy,
-        order: order,
-      },
-    };
+    return posts;
   };
   static getPostById = async (postId: string) => {
     if (!postId) {

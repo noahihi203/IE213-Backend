@@ -9,7 +9,7 @@ const router = express.Router();
 // PUBLIC ROUTES - No authentication
 router.get("/", asyncHandler(PostController.getAllPosts));
 router.get("/:postId", asyncHandler(PostController.getSinglePost));
-router.get("/:slug", asyncHandler(PostController.getPostBySlug));
+router.get("/slug/:slug", asyncHandler(PostController.getPostBySlug));
 
 // PROTECTED ROUTES - Require authentication
 router.post(

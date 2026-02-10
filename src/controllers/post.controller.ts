@@ -7,7 +7,7 @@ class PostController {
   getAllPosts = async (req: Request, res: Response) => {
     new SuccessResponse({
       message: "Get all Post success!",
-      metadata: await PostService.getAllPostsWithFilters(req.params),
+      metadata: await PostService.getAllPostsWithFilters(req.query),
     }).send(res);
   };
 
