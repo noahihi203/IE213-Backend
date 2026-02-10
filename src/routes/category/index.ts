@@ -12,16 +12,21 @@ router.get("/slug/:slug", asyncHandler(CategoryController.getCategoryBySlug));
 router.get("/:categoryId", asyncHandler(CategoryController.getSingleCategory));
 
 // PROTECTED ROUTES - Require authentication
-router.use(authentication); // Apply middleware to all routes below
-
-router.post("/", checkAdmin, asyncHandler(CategoryController.createCategory));
+router.post(
+  "/",
+  authentication,
+  checkAdmin,
+  asyncHandler(CategoryController.createCategory),
+);
 router.put(
   "/:categoryId",
+  authentication,
   checkAdmin,
   asyncHandler(CategoryController.updateCategory),
-);  
+);
 router.delete(
   "/:categoryId",
+  authentication,
   checkAdmin,
   asyncHandler(CategoryController.deleteCategory),
 );

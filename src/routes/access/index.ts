@@ -8,14 +8,17 @@ const router = express.Router();
 router.post("/register", asyncHandler(accessController.signUp));
 router.post("/login", asyncHandler(accessController.login));
 
+// authentication
 router.post(
   "/refresh-token",
   authentication,
   asyncHandler(accessController.handleRefreshToken as any),
 );
 
-// authentication
-router.use(authentication);
-router.post("/logout", asyncHandler(accessController.logout as any));
+router.post(
+  "/logout",
+  authentication,
+  asyncHandler(accessController.logout as any),
+);
 
 export default router;
