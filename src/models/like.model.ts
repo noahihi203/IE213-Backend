@@ -1,11 +1,11 @@
-import { model, Schema } from "mongoose";
+import { model, Schema, Types } from "mongoose";
 
 const DOCUMENT_NAME = "Like";
 const COLLECTION_NAME = "Likes";
 
 export interface ILike {
-  userId: Schema.Types.ObjectId;
-  targetId: Schema.Types.ObjectId;
+  userId: Types.ObjectId;
+  targetId: Types.ObjectId;
   targetType: "post" | "comment";
 }
 

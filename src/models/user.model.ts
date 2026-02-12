@@ -1,4 +1,4 @@
-import { model, Schema, Document } from "mongoose";
+import { model, Schema, Document, Types } from "mongoose";
 
 const DOCUMENT_NAME = "User";
 const COLLECTION_NAME = "Users";
@@ -14,8 +14,8 @@ export interface IUser {
   isSuperAdmin: boolean;
   tokenVersion: number;
   isActive: boolean;
-  followers?: Schema.Types.ObjectId;
-  following?: Schema.Types.ObjectId;
+  followers?: Types.ObjectId;
+  following?: Types.ObjectId;
 }
 
 const userSchema = new Schema<IUser>(

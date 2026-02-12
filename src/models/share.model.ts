@@ -1,11 +1,11 @@
-import { model, Schema } from "mongoose";
+import { model, Schema, Types } from "mongoose";
 
 const DOCUMENT_NAME = "Share";
 const COLLECTION_NAME = "Shares";
 
 export interface IShare {
-  postId: Schema.Types.ObjectId;
-  userId: Schema.Types.ObjectId;
+  postId: Types.ObjectId;
+  userId: Types.ObjectId;
   platform: string;
   message: string;
 }

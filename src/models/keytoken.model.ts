@@ -1,10 +1,10 @@
-import { Schema, model } from "mongoose";
+import { Schema, Types, model } from "mongoose";
 
 const DOCUMENT_NAME = "Key";
 const COLLECTION_NAME = "Keys";
 
 interface IKeyToken {
-  user: Schema.Types.ObjectId;
+  user: Types.ObjectId;
   privateKey: string;
   publicKey: string;
   refreshTokensUsed: Array<string>;

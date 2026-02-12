@@ -1,14 +1,14 @@
-import { model, Schema } from "mongoose";
+import { model, Schema, Types } from "mongoose";
 
 const DOCUMENT_NAME = "Notification";
 const COLLECTION_NAME = "Notifications";
 
 interface INotification {
-  userId: Schema.Types.ObjectId;
+  userId: Types.ObjectId;
 
-  actorId: Schema.Types.ObjectId;
+  actorId: Types.ObjectId;
   type: string;
-  targetId: Schema.Types.ObjectId;
+  targetId: Types.ObjectId;
   targetType: "post" | "comment" | "user";
   message: string;
   isRead: boolean;

@@ -1,10 +1,10 @@
-import { model, Schema } from "mongoose";
+import { model, Schema, Types } from "mongoose";
 
 const DOCUMENT_NAME = "Post";
 const COLLECTION_NAME = "Posts";
 
 export interface IPost {
-  authorId: Schema.Types.ObjectId;
+  authorId: Types.ObjectId;
   title: string;
   content: string;
   excerpt: string;
@@ -12,7 +12,7 @@ export interface IPost {
   slug: string;
   status: "draft" | "published" | "archived";
   tags: Array<string>;
-  category: Schema.Types.ObjectId;
+  category: Types.ObjectId;
   viewCount: number;
   likesCount: number;
   commentsCount: number;
