@@ -1,5 +1,5 @@
-import _ from "lodash"
-import { Types } from "mongoose";
+import _ from "lodash";
+import { Schema, Types } from "mongoose";
 
 /**
  * Chuyển đổi string thành ObjectId của MongoDB
@@ -7,8 +7,8 @@ import { Types } from "mongoose";
  * @returns ObjectId tương ứng
  * @example convertToObjectIdMongodb("507f1f77bcf86cd799439011") => ObjectId("507f1f77bcf86cd799439011")
  */
-const convertToObjectIdMongodb = (id: string) => new Types.ObjectId(id);
-
+const convertToObjectIdMongodb = (id: string): Types.ObjectId =>
+  new Types.ObjectId(id);
 /**
  * Lọc và chỉ lấy các trường cần thiết từ object (dùng lodash.pick)
  * Thường dùng để loại bỏ các trường nhạy cảm như password khi trả về response
