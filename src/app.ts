@@ -3,6 +3,7 @@ import express, { Request, Response, NextFunction } from "express";
 import morgan from "morgan";
 import helmet from "helmet";
 import compression from "compression";
+import cors from "cors";
 
 interface HttpError extends Error {
   status?: number;
@@ -12,6 +13,14 @@ interface HttpError extends Error {
 const app = express();
 
 // init middleware
+app.use(
+  cors({
+    origin: process.env.FRONTEND_URL || "http://localhost:3000",
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization", "x-client-id"],
+  }),
+);
 app.use(morgan("dev"));
 app.use(helmet());
 app.use(compression());
