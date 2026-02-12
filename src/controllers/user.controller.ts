@@ -1,6 +1,8 @@
 import { Request, Response } from "express";
 import { SuccessResponse, CREATED } from "../core/success.response.js";
 import UserService from "../services/user.service.js";
+import CommentService from "../services/comment.service.js";
+import { convertToObjectIdMongodb } from "../utils/index.js";
 
 class UserController {
   getUserProfile = async (req: Request, res: Response): Promise<void> => {
@@ -66,6 +68,19 @@ class UserController {
       metadata: await UserService.updateUserRole({
         userId,
         newRole: role,
+      }),
+    }).send(res);
+  };
+
+  getUserComments = async (req: Request, res: Response): Promise<void> => {
+    const { userId, skip, limit } = req.query;
+
+    new SuccessResponse({
+      message: "Get user comments success!",
+      metadata: await CommentService.getUserComments({
+        userId: convertToObjectIdMongodb(userId as string),
+        skip: skip ? parseInt(skip as string) : 0,
+        limit: limit ? parseInt(limit as string) : 10,
       }),
     }).send(res);
   };

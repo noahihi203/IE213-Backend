@@ -55,5 +55,10 @@ router.put(
   checkMinimumAdmins,
   asyncHandler(userController.changeUserRole),
 );
+router.get(
+  "/comments",
+  authentication,
+  asyncHandler(userController.getUserComments),
+);
 
 export default router;

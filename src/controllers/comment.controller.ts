@@ -24,20 +24,6 @@ class CommentController {
     }).send(res);
   };
 
-  getPostComments = async (req: Request, res: Response) => {
-    const postId = req.params.postId;
-    if (typeof postId !== "string")
-      throw new BadRequestError("Invalid postId format");
-
-    new SuccessResponse({
-      message: "Get post comments success!",
-      metadata: await CommentService.getCommentByParentId(
-        convertToObjectIdMongodb(postId),
-        req.body.parentCommentId,
-      ),
-    }).send(res);
-  };
-
   deleteCommentById = async (req: Request, res: Response) => {
     new SuccessResponse({
       message: "Delete comment success!",
@@ -60,6 +46,60 @@ class CommentController {
         userIdEdit: convertToObjectIdMongodb(userId),
         content: req.body.content,
       }),
+    }).send(res);
+  };
+
+  getCommentById = async (req: Request, res: Response) => {
+    const commentId = req.params.commentId;
+    if (typeof commentId !== "string")
+      throw new BadRequestError("Invalid commentId format");
+
+    new SuccessResponse({
+      message: "Get comment success!",
+      metadata: await CommentService.getCommentById(
+        convertToObjectIdMongodb(commentId),
+      ),
+    }).send(res);
+  };
+
+  toggleLikeComment = async (req: Request, res: Response) => {
+    const commentId = req.params.commentId;
+    if (typeof commentId !== "string")
+      throw new BadRequestError("Invalid commentId format");
+
+    const userId = req.user?.userId;
+    if (typeof userId !== "string")
+      throw new BadRequestError("Invalid userId format");
+
+    new SuccessResponse({
+      message: "Toggle like comment success",
+      metadata: await CommentService.toggleLikeComment(
+        convertToObjectIdMongodb(commentId),
+        convertToObjectIdMongodb(userId),
+      ),
+    }).send(res);
+  };
+
+  reportComment = async (req: Request, res: Response) => {
+    const commentId = req.params.commentId;
+    if (typeof commentId !== "string")
+      throw new BadRequestError("Invalid commentId format");
+
+    const userId = req.user?.userId;
+    if (typeof userId !== "string")
+      throw new BadRequestError("Invalid userId format");
+
+    const { reason } = req.body;
+    if (!reason || typeof reason !== "string")
+      throw new BadRequestError("Reason is required");
+
+    new SuccessResponse({
+      message: "Report comment success!",
+      metadata: await CommentService.reportComment(
+        convertToObjectIdMongodb(commentId),
+        convertToObjectIdMongodb(userId),
+        reason,
+      ),
     }).send(res);
   };
 }

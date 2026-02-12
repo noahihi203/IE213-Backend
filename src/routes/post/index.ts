@@ -52,4 +52,16 @@ router.post(
   asyncHandler(PostController.sharePost),
 );
 
+router.get(
+  "/comments",
+  authentication,
+  asyncHandler(PostController.getPostComments),
+);
+
+router.get(
+  "/comment-count",
+  authentication,
+  asyncHandler(PostController.getCommentCount),
+);
+
 export default router;

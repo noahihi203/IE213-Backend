@@ -6,6 +6,7 @@ import LikeService from "../services/like.service.js";
 import { convertToObjectIdMongodb } from "../utils/index.js";
 import { Schema } from "mongoose";
 import ShareService from "../services/share.service.js";
+import CommentService from "../services/comment.service.js";
 
 class PostController {
   getAllPosts = async (req: Request, res: Response) => {
@@ -136,6 +137,30 @@ class PostController {
     new SuccessResponse({
       message: "Get trending post success!",
       metadata: await PostService.getTrendingPosts(),
+    }).send(res);
+  };
+
+  getPostComments = async (req: Request, res: Response) => {
+    const postId = req.params.postId;
+    if (typeof postId !== "string")
+      throw new BadRequestError("Invalid postId format");
+
+    new SuccessResponse({
+      message: "Get post comments success!",
+      metadata: await CommentService.getCommentByParentId(
+        convertToObjectIdMongodb(postId),
+        req.body.parentCommentId,
+      ),
+    }).send(res);
+  };
+
+  getCommentCount = async (req: Request, res: Response) => {
+    new SuccessResponse({
+      message: "Get comment count success!",
+      metadata: await CommentService.getCommentCount(
+        convertToObjectIdMongodb(req.body.postId),
+        convertToObjectIdMongodb(req.body.parentCommentId),
+      ),
     }).send(res);
   };
 }

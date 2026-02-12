@@ -26,6 +26,18 @@ interface updateParams {
   content: string;
 }
 
+interface reportParams {
+  commentId: Types.ObjectId;
+  reportedBy: Types.ObjectId;
+  reason: string;
+}
+
+interface IUserComments {
+  userId: Types.ObjectId;
+  skip: number;
+  limit: number;
+}
+
 class CommentService {
   static createComment = async (createCommentParams: createCommentParams) => {
     const comment = new commentModel({
@@ -292,11 +304,8 @@ class CommentService {
     };
   }
 
-  static async getUserComments(
-    userId: Types.ObjectId,
-    skip: number,
-    limit: number,
-  ) {
+  static async getUserComments(IUserComments: IUserComments) {
+    const { userId, skip, limit } = IUserComments;
     const comments = await commentModel
       .find({ userId: userId })
       .populate("postId", "title")
