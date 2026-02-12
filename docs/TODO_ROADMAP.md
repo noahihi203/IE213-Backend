@@ -233,24 +233,24 @@
 
 #### Buổi Chiều (3-4 giờ)
 
-- [ ] Mở rộng `post.service.ts` với engagement methods
-  - [ ] Method getTrendingPosts (tính toán dựa trên views, likes, comments)
-  - [ ] Method getPostWithEngagement (bao gồm likes, shares counts)
+- [x] Mở rộng `post.service.ts` với engagement methods
+  - [x] Method getTrendingPosts (tính toán dựa trên views, likes, comments)
+  - [x] Method getPostWithEngagement (bao gồm likes, shares counts)
 
-- [ ] Mở rộng `post.controller.ts` với engagement endpoints
-  - [ ] likePost (POST /v1/api/posts/:postId/like)
-  - [ ] unlikePost (DELETE /v1/api/posts/:postId/like)
-  - [ ] sharePost (POST /v1/api/posts/:postId/share)
-  - [ ] getTrendingPosts (GET /v1/api/posts/trending)
+- [x] Mở rộng `post.controller.ts` với engagement endpoints
+  - [x] likePost (POST /v1/api/posts/:postId/like)
+  - [x] unlikePost (DELETE /v1/api/posts/:postId/like)
+  - [x] sharePost (POST /v1/api/posts/:postId/share)
+  - [x] getTrendingPosts (GET /v1/api/posts/trending)
 
-- [ ] Cập nhật post routes với endpoints mới
+- [x] Cập nhật post routes với endpoints mới
 
 #### Testing
 
-- [ ] Test chức năng like/unlike
-- [ ] Test chức năng share
-- [ ] Test thuật toán trending posts
-- [ ] Tạo integration tests
+- [x] Test chức năng like/unlike
+- [x] Test chức năng share
+- [x] Test thuật toán trending posts
+- [x] Tạo integration tests
 
 **Thời gian ước tính: 6-8 giờ**
 
