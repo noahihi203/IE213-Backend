@@ -6,7 +6,7 @@ import postRouter from "./post/index.js";
 const router = express.Router();
 // import { apiKey, permission } from "../auth/checkAuth";
 // import { pushToLogDiscord } from "../middlewares/index";
-router.use("/v1/api/category", categoryRouter);
+router.use("/v1/api/categories", categoryRouter);
 router.use("/v1/api/posts", postRouter);
 router.use("/v1/api", accessRouter);
 router.use("/v1/api/user", userRouter);
