@@ -216,20 +216,20 @@
 
 #### Buổi Sáng (3-4 giờ)
 
-- [ ] Tạo `like.service.ts`
-  - [ ] Method likePost (tạo like record)
-  - [ ] Method unlikePost (xóa like record)
-  - [ ] Method isPostLikedByUser
-  - [ ] Method getPostLikesCount
-  - [ ] Method likeComment
-  - [ ] Method unlikeComment
-  - [ ] Method isCommentLikedByUser
-  - [ ] Method getCommentLikesCount
+- [x] Tạo `like.service.ts`
+  - [x] Method likePost (tạo like record)
+  - [x] Method unlikePost (xóa like record)
+  - [x] Method isPostLikedByUser
+  - [x] Method getPostLikesCount
+  - [x] Method likeComment
+  - [x] Method unlikeComment
+  - [x] Method isCommentLikedByUser
+  - [x] Method getCommentLikesCount
 
-- [ ] Tạo `share.service.ts`
-  - [ ] Method createShare
-  - [ ] Method getPostSharesCount
-  - [ ] Method getUserShares
+- [x] Tạo `share.service.ts`
+  - [x] Method createShare
+  - [x] Method getPostSharesCount
+  - [x] Method getUserShares
 
 #### Buổi Chiều (3-4 giờ)
 

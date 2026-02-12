@@ -3,7 +3,7 @@ import { model, Schema } from "mongoose";
 const DOCUMENT_NAME = "Share";
 const COLLECTION_NAME = "Shares";
 
-interface IShare {
+export interface IShare {
   postId: Schema.Types.ObjectId;
   userId: Schema.Types.ObjectId;
   platform: string;
