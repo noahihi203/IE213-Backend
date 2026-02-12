@@ -4,6 +4,8 @@ import morgan from "morgan";
 import helmet from "helmet";
 import compression from "compression";
 import cors from "cors";
+import swaggerUi from "swagger-ui-express";
+import { swaggerSpec } from "./config/swagger.config.js";
 
 interface HttpError extends Error {
   status?: number;
@@ -29,6 +31,22 @@ app.use(express.urlencoded({ extended: true }));
 
 // init db
 import "./dbs/init.mongodb";
+
+// Swagger API Documentation
+app.use(
+  "/api-docs",
+  swaggerUi.serve,
+  swaggerUi.setup(swaggerSpec, {
+    customCss: ".swagger-ui .topbar { display: none }",
+    customSiteTitle: "IE213 Blog API Docs",
+  }),
+);
+
+// Swagger JSON endpoint
+app.get("/api-docs.json", (_req: Request, res: Response) => {
+  res.setHeader("Content-Type", "application/json");
+  res.send(swaggerSpec);
+});
 
 // init routes
 import routes from "./routes/index.js";
