@@ -1,12 +1,12 @@
-import { Schema } from "mongoose";
+import { Types } from "mongoose";
 import { BadRequestError } from "../core/error.response.js";
 import { commentModel } from "../models/comment.model.js";
 import { likeModel, ILike } from "../models/like.model.js";
 import { postModel } from "../models/post.model.js";
 
 interface likeParams {
-  userId: Schema.Types.ObjectId;
-  targetId: Schema.Types.ObjectId;
+  userId: Types.ObjectId;
+  targetId: Types.ObjectId;
 }
 
 class LikeService {
@@ -32,7 +32,7 @@ class LikeService {
         throw new BadRequestError("Create like record failed!");
       else {
         const result = await postModel.findByIdAndUpdate(likeParams.targetId, {
-          $inc: { likeCount: 1 },
+          $inc: { likesCount: 1 },
         });
         if (!result) throw new BadRequestError("Like failed!");
       }
@@ -60,7 +60,7 @@ class LikeService {
         throw new BadRequestError("Delete like record failed!");
       else {
         const result = await postModel.findByIdAndUpdate(likeParams.targetId, {
-          $inc: { likeCount: -1 },
+          $inc: { likesCount: -1 },
         });
         if (!result) throw new BadRequestError("UnLike failed!");
       }
