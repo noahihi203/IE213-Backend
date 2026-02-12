@@ -17,6 +17,7 @@ export interface IPost {
   likesCount: number;
   commentsCount: number;
   sharesCount: number;
+  trendingScore: number;
   publishedAt: Date;
 }
 
@@ -40,6 +41,7 @@ const postSchema = new Schema<IPost>(
     likesCount: { type: Number, default: 0 },
     commentsCount: { type: Number, default: 0 },
     sharesCount: { type: Number, default: 0 },
+    trendingScore: { type: Number, default: 0, index: true },
     publishedAt: { type: Date, default: null, index: true },
   },
   {

@@ -3,7 +3,7 @@ import { model, Schema } from "mongoose";
 const DOCUMENT_NAME = "Comment";
 const COLLECTION_NAME = "Comments";
 
-interface IComment {
+export interface IComment {
   postId: Schema.Types.ObjectId;
   authorId: Schema.Types.ObjectId;
   content: string;

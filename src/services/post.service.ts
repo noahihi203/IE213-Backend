@@ -1,6 +1,9 @@
-import { Types } from "mongoose";
+import { Schema, Types } from "mongoose";
 import { BadRequestError } from "../core/error.response.js";
 import { IPost, postModel } from "../models/post.model.js";
+import { likeModel } from "../models/like.model.js";
+import { commentModel } from "../models/comment.model.js";
+import { shareModel } from "../models/share.model.js";
 
 interface PostQueryParams {
   page?: number;
@@ -104,7 +107,7 @@ class PostService {
       .findOne({ _id: postId })
       .populate("category")
       .populate("authorId");
-    PostService.incrementViewCount(postId).catch(console.error);
+    // PostService.incrementViewCount(postId).catch(console.error);
 
     if (!post) {
       throw new BadRequestError("Post not found!");
@@ -189,6 +192,58 @@ class PostService {
       { $inc: { viewCount: 1 } }, // Tăng viewCount lên 1
       { new: true },
     );
+  };
+
+  static updateTrendingScores = async () => {
+    const recentPosts = await postModel.find({
+      status: "published",
+      publishedAt: { $gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) },
+    });
+
+    const now = Date.now();
+    for (const post of recentPosts) {
+      const ageInHours = (now - post.publishedAt.getTime()) / (1000 * 60 * 60);
+      const engagementScore =
+        post.viewCount +
+        post.likesCount * 5 +
+        post.commentsCount * 10 +
+        post.sharesCount * 20;
+      const trendingScore = engagementScore / Math.pow(ageInHours + 2, 1.5);
+
+      await postModel.updateOne({ _id: post._id }, { trendingScore });
+    }
+  };
+
+  static getTrendingPosts = async (limit: number = 10) => {
+    return await postModel
+      .find({ status: "published" })
+      .sort({ trendingScore: -1 })
+      .limit(limit)
+      .populate("authorId category");
+  };
+
+  static getPostWithEngagement = async (postId: Schema.Types.ObjectId) => {
+    const postWithEngagemment = await postModel
+      .findOne({ _id: postId })
+      .select("viewCount likesCount sharesCount commentsCount");
+
+    // Lấy 10 users LIKE GẦN NHẤT (mới nhất)
+    const users = await likeModel
+      .find({ targetId: postId })
+      .populate("userId")
+      .limit(10)
+      .sort({ createdAt: -1 });
+
+    // Lấy 5 comment gần đây nhất
+    const comments = await commentModel
+      .find({ postId: postId })
+      .populate("authorId")
+      .limit(5)
+      .sort({ createdAt: -1 });
+
+    const shares = await shareModel.find({ postId: postId });
+
+    return { postWithEngagemment, users, comments, shares };
   };
 }
 
