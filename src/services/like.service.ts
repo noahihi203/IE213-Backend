@@ -1,7 +1,7 @@
 import { Types } from "mongoose";
 import { BadRequestError } from "../core/error.response.js";
 import { commentModel } from "../models/comment.model.js";
-import { likeModel, ILike } from "../models/like.model.js";
+import { likeModel } from "../models/like.model.js";
 import { postModel } from "../models/post.model.js";
 
 interface likeParams {

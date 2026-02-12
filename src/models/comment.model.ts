@@ -5,14 +5,21 @@ const COLLECTION_NAME = "Comments";
 
 export interface IComment {
   postId: Types.ObjectId;
-  authorId: Types.ObjectId;
+  userId: Types.ObjectId;
   content: string;
   commentLeft: number;
   commentRight: number;
   parentId: Types.ObjectId;
   likesCount: number;
+  reports: [
+    {
+      reportedBy: Types.ObjectId;
+      reason: string;
+      createdAt: Date;
+    },
+  ];
+  reportCount: number;
   isEdited: boolean;
-  isDeleted: boolean;
 }
 
 const commentSchema = new Schema<IComment>(
@@ -23,7 +30,7 @@ const commentSchema = new Schema<IComment>(
       ref: "Post",
       index: true,
     },
-    authorId: {
+    userId: {
       type: Schema.Types.ObjectId,
       required: true,
       ref: "User",
@@ -39,9 +46,33 @@ const commentSchema = new Schema<IComment>(
       ref: "Comment",
       index: true,
     },
+
+    reports: [
+      {
+        reportedBy: {
+          type: Schema.Types.ObjectId,
+          required: true,
+          ref: "User",
+        },
+        reason: {
+          type: String,
+          enum: ["spam", "harassment", "misinformation", "offensive", "other"],
+          required: true,
+        },
+        createdAt: {
+          type: Date,
+          default: Date.now,
+        },
+      },
+    ],
+
+    reportCount: {
+      type: Number,
+      default: 0,
+    },
+
     likesCount: { type: Number, default: 0 },
     isEdited: { type: Boolean, default: false },
-    isDeleted: { type: Boolean, default: false },
   },
   {
     collection: COLLECTION_NAME,

@@ -17,7 +17,7 @@ class PostController {
 
   getSinglePost = async (req: Request, res: Response) => {
     const postId = req.params.postId;
-    if (Array.isArray(postId)) {
+    if (typeof postId !== "string") {
       throw new BadRequestError("Invalid Post Id format");
     }
 
@@ -29,7 +29,7 @@ class PostController {
 
   getPostBySlug = async (req: Request, res: Response) => {
     const slug = req.params.slug;
-    if (Array.isArray(slug)) {
+    if (typeof slug !== "string") {
       throw new BadRequestError("Invalid slug format");
     }
 

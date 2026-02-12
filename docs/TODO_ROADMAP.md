@@ -256,44 +256,98 @@
 
 ---
 
-### Ngày 6 (12 tháng 2, 2026) - Quản Lý Comment
+### Ngày 6 (12-13 tháng 2, 2026) - Quản Lý Comment ⏳ ĐANG LÀM (70% hoàn thành)
 
 **Độ ưu tiên: CAO**
 
-#### Buổi Sáng (4-5 giờ)
+**Progress Summary:**
 
-- [ ] Tạo `comment.service.ts`
-  - [ ] Method getPostComments (với pagination, sorting)
-  - [ ] Method getCommentById
-  - [ ] Method createComment
-  - [ ] Method createReply (parentId không null)
-  - [ ] Method updateComment (với kiểm tra ownership)
-  - [ ] Method deleteComment (cascade delete replies)
-  - [ ] Method getCommentReplies
-  - [ ] Method getCommentCount (cho post)
+- ✅ Service Layer: 90% (8/9 core methods hoàn thành)
+- ⏳ Controller Layer: 62% (5/8 endpoints implemented)
+- ❌ Routes: 0% (chưa tạo file)
+- ❌ Testing: 0% (chưa bắt đầu)
 
-#### Buổi Chiều (3-4 giờ)
+#### Buổi Sáng (4-5 giờ) ✅ HOÀN THÀNH
 
-- [ ] Tạo `comment.controller.ts`
-  - [ ] getPostComments (GET /v1/api/posts/:postId/comments)
-  - [ ] createComment (POST /v1/api/posts/:postId/comments)
-  - [ ] createReply (POST /v1/api/posts/:postId/comments) - với parentId
-  - [ ] updateComment (PUT /v1/api/comments/:commentId)
-  - [ ] deleteComment (DELETE /v1/api/comments/:commentId)
-  - [ ] likeComment (POST /v1/api/comments/:commentId/like)
-  - [ ] unlikeComment (DELETE /v1/api/comments/:commentId/like)
-  - [ ] getCommentReplies (GET /v1/api/comments/:commentId/replies)
+- [x] Tạo `comment.service.ts`
+  - [x] Method createComment (với nested set model cho tree structure)
+  - [x] Method createReply (merged vào createComment với parentCommentId)
+  - [x] Method getCommentByParentId (lấy replies theo nested set)
+  - [x] Method deleteComments (cascade delete với nested set)
+  - [x] Method updateComment (với kiểm tra ownership + ForBiddenError)
+  - [x] Method getCommentById
+  - [x] Method getCommentCount (với support parentCommentId cho replies count)
+  - [x] Method toggleLikeComment (kết hợp like/unlike trong 1 method)
+  - [x] Method reportComment (với embedded reports array) - 80% hoàn thành
+  - [ ] Method pinComment (cho author/admin pin comment quan trọng)
+  - [ ] Method getUserComments (lấy comment history của user)
+  - [ ] Method searchComments (tìm kiếm comment theo keyword)
+  - [ ] Method getCommentDepth (tính độ sâu của comment tree)
+  - [ ] Method restoreComment (khôi phục comment đã soft delete)
 
-- [ ] Tạo comment routes trong `src/routes/comment/index.ts`
+#### Buổi Chiều (3-4 giờ) ⏳ ĐANG LÀM (50% hoàn thành)
 
-#### Testing
+- [x] Tạo `comment.controller.ts` - **HOÀN THÀNH 4/7 endpoints**
+  - [x] getPostComments (GET /v1/api/posts/:postId/comments) ✅
+  - [x] createComment (POST /v1/api/posts/:postId/comments) ✅
+  - [x] createReply (POST /v1/api/posts/:postId/comments) - **MERGED vào createComment với parentCommentId** ✅
+  - [x] editComment (PUT /v1/api/comments/:commentId) ✅
+  - [x] deleteCommentById (DELETE /v1/api/comments/:commentId) ✅
+  - [ ] toggleLikeComment (POST /v1/api/comments/:commentId/like) ❌
+  - [ ] getCommentReplies (GET /v1/api/comments/:commentId/replies) ❌
+  - [ ] reportComment (POST /v1/api/comments/:commentId/report) ❌
+
+- [ ] Tạo comment routes trong `src/routes/comment/index.ts` ❌ CHƯA TẠO
+  - [ ] Thiết lập tất cả comment endpoints
+  - [ ] Thêm authentication middleware
+  - [ ] Thêm ownership check cho update/delete
+
+#### Notes Controller Implementation
+
+- ⚠️ **deleteCommentById**: Đang dùng `req.body` cho commentId/postId - NÊN chuyển sang `req.params`
+- ⚠️ **editComment**: Đang dùng `req.body` cho commentId - NÊN chuyển sang `req.params`
+- ✅ **createComment**: Hỗ trợ cả reply thông qua `req.body.parentCommentId` (optional)
+- ⚠️ **getPostComments**: Đang get parentCommentId từ `req.body` - NÊN dùng `req.query` cho optional filter
+
+#### Testing ❌ CHƯA BẮT ĐẦU
 
 - [ ] Test các thao tác CRUD comment
-- [ ] Test chức năng nested replies
-- [ ] Test comment likes
+  - [ ] Test createComment (top-level)
+  - [ ] Test createComment với parentCommentId (replies)
+  - [ ] Test getPostComments
+  - [ ] Test editComment (ownership check)
+  - [ ] Test deleteCommentById (cascade delete)
+- [ ] Test chức năng nested replies với nested set model
+- [ ] Test comment likes (toggle functionality) - Service có, chưa có controller
+- [ ] Test report comment - Service có, chưa có controller
 - [ ] Tạo test file `src/tests/comment.routes.test.ts`
 
-**Thời gian ước tính: 7-9 giờ**
+#### Notes & Improvements Made
+
+**Service Layer (Buổi Sáng):**
+
+- ✅ Sử dụng **Nested Set Model** (commentLeft/commentRight) thay vì simple parent-child để query tree hiệu quả hơn
+- ✅ Implement **toggleLikeComment** thay vì likeComment/unlikeComment riêng → Đơn giản hóa API
+- ✅ Added **reports** embedded array vào Comment model cho report functionality
+- ✅ Added **isEdited** flag để track edited comments
+
+**Controller Layer (Buổi Chiều):**
+
+- ✅ Implemented 5/8 core endpoints (createComment, getPostComments, editComment, deleteCommentById)
+- ✅ createComment hỗ trợ cả top-level comments và replies (via parentCommentId)
+- ⚠️ RESTful issues cần fix:
+  - `deleteCommentById`: Dùng `req.body` thay vì `req.params.commentId`
+  - `editComment`: Dùng `req.body.commentId` thay vì `req.params.commentId`
+  - `getPostComments`: Dùng `req.body.parentCommentId` thay vì `req.query.parentCommentId`
+
+**Còn Thiếu:**
+
+- 🔧 3 controller methods: toggleLikeComment, getCommentReplies, reportComment
+- 🔧 Routes file: Chưa tạo `src/routes/comment/index.ts`
+- 🔧 Middleware: Chưa apply authentication, ownership checks
+- 🔧 Testing: Chưa bắt đầu
+
+**Thời gian thực tế:** ~6-7 giờ (service 4-5h + controller 2h), còn ~2-3 giờ nữa
 
 ---
 

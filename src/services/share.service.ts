@@ -15,7 +15,9 @@ class ShareService {
 
   static getUserShares = async (userId: Schema.Types.ObjectId) => {
     if (!userId) throw new BadRequestError("userId is valid");
-    return await shareModel.find({ userId: userId }).populate("postId");
+    return await shareModel
+      .find({ userId: userId })
+      .populate("postId", "authorId title coverImage");
   };
 }
 

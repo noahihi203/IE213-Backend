@@ -86,8 +86,8 @@ class PostService {
       .sort(sortObject)
       .skip(skip)
       .limit(limit)
-      .populate("category")
-      .populate("authorId")
+      .populate("category", "icon name")
+      .populate("authorId", "fullName avatar")
       .lean();
 
     const totalCount: any = postModel.countDocuments(filter);
@@ -105,8 +105,8 @@ class PostService {
 
     const post = await postModel
       .findOne({ _id: postId })
-      .populate("category")
-      .populate("authorId");
+      .populate("category", "icon name")
+      .populate("authorId", "fullName avatar");
     // PostService.incrementViewCount(postId).catch(console.error);
 
     if (!post) {
@@ -121,8 +121,8 @@ class PostService {
 
     const post = await postModel
       .findOne({ slug: slug })
-      .populate("category")
-      .populate("authorId");
+      .populate("category", "icon name")
+      .populate("authorId", "fullName avatar");
 
     const postId = String(post?._id);
     PostService.incrementViewCount(postId).catch(console.error);
@@ -219,7 +219,8 @@ class PostService {
       .find({ status: "published" })
       .sort({ trendingScore: -1 })
       .limit(limit)
-      .populate("authorId category");
+      .populate("authorId", "fullName avatar")
+      .populate("category", "icon name");
   };
 
   static getPostWithEngagement = async (postId: Schema.Types.ObjectId) => {
@@ -230,14 +231,14 @@ class PostService {
     // Lấy 10 users LIKE GẦN NHẤT (mới nhất)
     const users = await likeModel
       .find({ targetId: postId })
-      .populate("userId")
+      .populate("userId", "fullName avatar")
       .limit(10)
       .sort({ createdAt: -1 });
 
     // Lấy 5 comment gần đây nhất
     const comments = await commentModel
       .find({ postId: postId })
-      .populate("authorId")
+      .populate("authorId", "fullName avatar")
       .limit(5)
       .sort({ createdAt: -1 });
 
