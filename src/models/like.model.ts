@@ -3,7 +3,7 @@ import { model, Schema } from "mongoose";
 const DOCUMENT_NAME = "Like";
 const COLLECTION_NAME = "Likes";
 
-interface ILike {
+export interface ILike {
   userId: Schema.Types.ObjectId;
   targetId: Schema.Types.ObjectId;
   targetType: "post" | "comment";
