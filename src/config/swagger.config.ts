@@ -108,7 +108,7 @@ const options: swaggerJsdoc.Options = {
     ],
   },
   apis: [
-    "./src/routes/**/*.ts",
+    "./src/docs/**/*.ts",
     "./src/controllers/**/*.ts",
     "./src/models/**/*.ts",
   ],
