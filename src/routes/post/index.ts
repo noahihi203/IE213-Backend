@@ -7,6 +7,7 @@ import PostController from "../../controllers/post.controller.js";
 const router = express.Router();
 
 // PUBLIC ROUTES - No authentication
+router.get("/trending", asyncHandler(PostController.getTrendingPosts));
 router.get("/", asyncHandler(PostController.getAllPosts));
 router.get("/:postId", asyncHandler(PostController.getSinglePost));
 router.get("/slug/:slug", asyncHandler(PostController.getPostBySlug));
@@ -31,6 +32,24 @@ router.delete(
   authentication,
   checkAuthorOrAdmin,
   asyncHandler(PostController.deletePost),
+);
+
+router.post(
+  "/:postId/like",
+  authentication,
+  asyncHandler(PostController.likePost),
+);
+
+router.delete(
+  "/:postId/like",
+  authentication,
+  asyncHandler(PostController.unlikePost),
+);
+
+router.post(
+  "/:postId/share",
+  authentication,
+  asyncHandler(PostController.sharePost),
 );
 
 export default router;
