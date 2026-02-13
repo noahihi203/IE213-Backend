@@ -316,21 +316,20 @@
 
 #### Buổi Chiều (3-4 giờ)
 
-- [ ] Tạo `notification.controller.ts`
-  - [ ] getUserNotifications (GET /v1/api/notifications)
-  - [ ] getUnreadCount (GET /v1/api/notifications/unread-count)
-  - [ ] markAsRead (PUT /v1/api/notifications/:notificationId/read)
-  - [ ] markAllAsRead (PUT /v1/api/notifications/read-all)
-  - [ ] deleteNotification (DELETE /v1/api/notifications/:notificationId)
-  - [ ] deleteAllRead (DELETE /v1/api/notifications/read)
+- [x] Tạo `notification.controller.ts`
+  - [x] getUserNotifications (GET /v1/api/notifications)
+  - [x] markAsRead (PUT /v1/api/notifications/:notificationId/read)
+  - [x] markAllAsRead (PUT /v1/api/notifications/read-all)
+  - [x] deleteNotification (DELETE /v1/api/notifications/:notificationId)
+  - [x] deleteAllRead (DELETE /v1/api/notifications/read)
 
-- [ ] Tạo notification routes trong `src/routes/notification/index.ts`
+- [x] Tạo notification routes trong `src/routes/notification/index.ts`
 
-- [ ] Tích hợp notification triggers vào:
-  - [ ] Các thao tác like/unlike post
-  - [ ] Tạo comment
-  - [ ] Các thao tác like comment
-  - [ ] Các thao tác share post
+- [x] Tích hợp notification triggers vào:
+  - [x] Các thao tác like/unlike post
+  - [x] Tạo comment
+  - [x] Các thao tác like comment
+  - [x] Các thao tác share post
 
 #### Buổi Tối / Tối ưu hóa (3-4 giờ)
 
