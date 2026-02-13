@@ -1,5 +1,7 @@
+import { Types } from "mongoose";
 import { BadRequestError } from "../core/error.response.js";
 import { userModel } from "../models/user.model.js";
+import NotificationService from "./notification.service.js";
 
 interface UserFindByEmail {
   email: string;
@@ -9,6 +11,11 @@ interface UserFindByEmail {
 interface UserFindById {
   _id: string;
   select?: Record<string, number>;
+}
+
+interface followPayload {
+  userId: Types.ObjectId;
+  followerId: Types.ObjectId;
 }
 
 class UserService {
@@ -250,6 +257,30 @@ class UserService {
     }
 
     return updatedUser;
+  };
+
+  static followUser = async (payload: followPayload) => {
+    const follow = await userModel.findByIdAndUpdate(
+      payload.userId,
+      {
+        $addToSet: { followers: payload.followerId },
+      },
+      { new: true },
+    );
+
+    if (!follow) throw new BadRequestError("Follow failed!");
+    else {
+      const noti = await NotificationService.notifyOnUser({
+        userId: payload.userId,
+        actorId: payload.followerId,
+        type: "follow",
+        message: "follow you",
+      });
+      return {
+        follow,
+        noti,
+      };
+    }
   };
 }
 

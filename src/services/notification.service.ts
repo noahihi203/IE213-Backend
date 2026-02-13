@@ -13,7 +13,7 @@ import { convertToObjectIdMongodb } from "../utils/index.js";
 interface notificationPayload {
   userId: Types.ObjectId;
   actorId: Types.ObjectId;
-  type: "like" | "comment" | "share" | "follow" | "mention";
+  type: "like" | "comment" | "share" | "follow" | "mention" | "newPost";
   targetId: Types.ObjectId;
   targetType: "post" | "comment" | "user";
   message: string;
@@ -42,14 +42,14 @@ interface notifyOnPostPayload {
 interface notifyOnCommentPayload {
   commentId: Types.ObjectId;
   actorId: Types.ObjectId;
-  type: "like" | "mention";
+  type: "like";
   message: string;
 }
 
 interface notifyOnUserPayload {
   userId: Types.ObjectId;
   actorId: Types.ObjectId;
-  type: "follow";
+  type: "follow" | "newPost" | "mention";
   message: string;
 }
 

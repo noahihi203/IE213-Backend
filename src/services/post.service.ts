@@ -1,9 +1,12 @@
 import { Schema, Types } from "mongoose";
-import { BadRequestError } from "../core/error.response.js";
+import { BadRequestError, ForBiddenError } from "../core/error.response.js";
 import { IPost, postModel } from "../models/post.model.js";
 import { likeModel } from "../models/like.model.js";
 import { commentModel } from "../models/comment.model.js";
 import { shareModel } from "../models/share.model.js";
+import { userModel } from "../models/user.model.js";
+import NotificationService from "./notification.service.js";
+import { convertToObjectIdMongodb } from "../utils/index.js";
 
 interface PostQueryParams {
   page?: number;
@@ -25,6 +28,13 @@ interface updateData {
   statusUpdate: string;
   tagsUpdate: string; // #chinhtri #lichsu
   categoryUpdate: Types.ObjectId; //{Công Nghệ, }
+}
+
+interface notifyOnUserPayload {
+  userId: Types.ObjectId;
+  actorId: Types.ObjectId;
+  type: "follow";
+  message: string;
 }
 
 function slugify(string: string) {
@@ -193,7 +203,6 @@ class PostService {
       { new: true },
     );
   };
-
   static updateTrendingScores = async () => {
     const recentPosts = await postModel.find({
       status: "published",
@@ -213,7 +222,6 @@ class PostService {
       await postModel.updateOne({ _id: post._id }, { trendingScore });
     }
   };
-
   static getTrendingPosts = async (limit: number = 10) => {
     return await postModel
       .find({ status: "published" })
@@ -222,7 +230,6 @@ class PostService {
       .populate("authorId", "fullName avatar")
       .populate("category", "icon name");
   };
-
   static getPostWithEngagement = async (postId: Schema.Types.ObjectId) => {
     const postWithEngagemment = await postModel
       .findOne({ _id: postId })
@@ -245,6 +252,44 @@ class PostService {
     const shares = await shareModel.find({ postId: postId });
 
     return { postWithEngagemment, users, comments, shares };
+  };
+  static changeStatusPostToPublished = async (postId: Types.ObjectId) => {
+    const session = await postModel.startSession();
+    session.startTransaction();
+
+    try {
+      const changeStatus = await postModel.findByIdAndUpdate(
+        postId,
+        {
+          status: "published",
+        },
+        { session },
+      );
+      if (!changeStatus) throw new BadRequestError("Change status failed!");
+
+      const user = await userModel
+        .findOne({ _id: changeStatus.authorId }, { session })
+        .select("followers");
+      if (typeof changeStatus.authorId !== "string")
+        throw new ForBiddenError("Invalid authorId format");
+      const userId = convertToObjectIdMongodb(changeStatus.authorId);
+      if (user && user.followers) {
+        user?.followers?.map(async (followerId) => {
+          await NotificationService.notifyOnUser({
+            userId,
+            actorId: followerId,
+            type: "newPost",
+            message: "published a new post",
+          });
+        });
+      }
+      session.commitTransaction();
+    } catch (error) {
+      await session.abortTransaction();
+      return;
+    } finally {
+      session.endSession();
+    }
   };
 }
 

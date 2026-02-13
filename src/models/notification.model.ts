@@ -6,7 +6,7 @@ const COLLECTION_NAME = "Notifications";
 export interface INotification {
   userId: Types.ObjectId;
   actorId: Types.ObjectId;
-  type: "like" | "comment" | "share" | "follow" | "mention";
+  type: "like" | "comment" | "share" | "follow" | "mention" | "newPost";
   targetId: Types.ObjectId;
   targetType: "post" | "comment" | "user";
   message: string;
@@ -24,7 +24,7 @@ const notificationSchema = new Schema<INotification>(
     actorId: { type: Schema.Types.ObjectId, required: true, ref: "User" },
     type: {
       type: String,
-      enum: ["like", "comment", "share", "follow", "mention"],
+      enum: ["like", "comment", "share", "follow", "mention", "newPost"],
       required: true,
       index: true,
     },

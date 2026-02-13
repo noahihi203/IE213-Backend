@@ -7,6 +7,7 @@ import {
 } from "../core/error.response.js";
 import { postModel } from "../models/post.model.js";
 import { likeModel } from "../models/like.model.js";
+import NotificationService from "./notification.service.js";
 
 interface createCommentParams {
   postId: Types.ObjectId;
@@ -24,12 +25,6 @@ interface updateParams {
   commentId: Types.ObjectId;
   userIdEdit: Types.ObjectId;
   content: string;
-}
-
-interface reportParams {
-  commentId: Types.ObjectId;
-  reportedBy: Types.ObjectId;
-  reason: string;
 }
 
 interface IUserComments {
@@ -74,6 +69,13 @@ class CommentService {
         },
         { $inc: { commentLeft: 2 } },
       );
+
+      await NotificationService.notifyOnUser({
+        userId: comment.parentId,
+        actorId: comment.userId,
+        type: "mention",
+        message: "reply you in comment",
+      });
     } else {
       const maxRightValue = await commentModel.findOne(
         {
@@ -93,6 +95,12 @@ class CommentService {
     comment.commentRight = rightValue + 1;
 
     await comment.save();
+    await NotificationService.notifyOnPost({
+      postId: comment.postId,
+      actorId: comment.userId,
+      type: "comment",
+      message: "comment your post",
+    });
     return comment;
   };
 
@@ -255,6 +263,12 @@ class CommentService {
         comment.likesCount = comment.likesCount + 1;
         comment.save();
       }
+      await NotificationService.notifyOnComment({
+        commentId: comment._id,
+        actorId: comment.userId,
+        type: "like",
+        message: "like your comment",
+      });
       return {
         liked: true,
         likesCount: comment.likesCount,
@@ -271,6 +285,12 @@ class CommentService {
         comment.likesCount = comment.likesCount - 1;
         comment.save();
       }
+      await NotificationService.notifyOnComment({
+        commentId: comment._id,
+        actorId: comment.userId,
+        type: "like",
+        message: "unlike your comment",
+      });
       return {
         liked: false,
         likesCount: comment.likesCount,

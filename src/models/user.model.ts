@@ -14,8 +14,8 @@ export interface IUser {
   isSuperAdmin: boolean;
   tokenVersion: number;
   isActive: boolean;
-  followers?: Types.ObjectId;
-  following?: Types.ObjectId;
+  followers?: Array<Types.ObjectId>;
+  following?: Array<Types.ObjectId>;
 }
 
 const userSchema = new Schema<IUser>(
@@ -35,8 +35,8 @@ const userSchema = new Schema<IUser>(
     isSuperAdmin: { type: Boolean, default: false, index: true },
     tokenVersion: { type: Number, default: 0 },
     isActive: { type: Boolean, default: true },
-    followers: { type: Schema.Types.ObjectId, ref: "User" },
-    following: { type: Schema.Types.ObjectId, ref: "User" },
+    followers: { type: [Schema.Types.ObjectId], ref: "User" },
+    following: { type: [Schema.Types.ObjectId], ref: "User" },
   },
   {
     collection: COLLECTION_NAME,
