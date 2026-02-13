@@ -302,19 +302,17 @@
 
 #### Buổi Sáng (4-5 giờ)
 
-- [ ] Tạo `notification.service.ts`
-  - [ ] Method createNotification (generic)
-  - [ ] Method getUserNotifications (với filters: isRead, type)
-  - [ ] Method getUnreadCount
-  - [ ] Method markAsRead
-  - [ ] Method markAllAsRead
-  - [ ] Method deleteNotification
-  - [ ] Method deleteAllRead
-  - [ ] Các methods kích hoạt Notification:
-    - [ ] notifyOnPostLike
-    - [ ] notifyOnComment
-    - [ ] notifyOnCommentLike
-    - [ ] notifyOnShare
+- [x] Tạo `notification.service.ts`
+  - [x] Method createNotification (generic)
+  - [x] Method getUserNotifications (với filters: isRead, type)
+  - [x] Method markAsRead
+  - [x] Method markAllAsRead
+  - [x] Method deleteNotification
+  - [x] Method deleteAllRead
+  - [x] Các methods kích hoạt Notification:
+    - [x] notifyOnPost
+    - [x] notifyOnComment
+    - [x] notifyOnUser
 
 #### Buổi Chiều (3-4 giờ)
 
@@ -334,7 +332,38 @@
   - [ ] Các thao tác like comment
   - [ ] Các thao tác share post
 
-**Thời gian ước tính: 7-9 giờ**
+#### Buổi Tối / Tối ưu hóa (3-4 giờ)
+
+- [ ] **Apache Kafka Integration cho Notification System**
+  - [ ] Thiết lập Kafka Producer
+    - [ ] Tạo `src/services/kafka/kafka.producer.ts`
+    - [ ] Cấu hình Kafka client kết nối đến Kafka broker (localhost:9092)
+    - [ ] Implement Producer với các methods:
+      - [ ] `publishNotificationEvent(topic, message)` - Publish event notification
+      - [ ] `connect()` và `disconnect()` lifecycle methods
+      - [ ] Error handling và retry logic
+  - [ ] Thiết lập Kafka Consumer
+    - [ ] Tạo `src/services/kafka/kafka.consumer.ts`
+    - [ ] Implement Consumer để lắng nghe notification events
+    - [ ] Subscribe to topics: `notification-created`, `notification-batch`
+    - [ ] Process messages và lưu vào MongoDB
+    - [ ] Implement batching cho high traffic scenarios
+  - [ ] Kafka Topics Configuration
+    - [ ] `notification-created` - Single notification events
+    - [ ] `notification-batch` - Batch notifications (viral posts)
+    - [ ] `notification-priority` - High priority notifications (admin alerts)
+  - [ ] Tích hợp vào Notification Service
+    - [ ] Update `notification.service.ts` để publish events to Kafka thay vì write trực tiếp DB
+    - [ ] Implement async notification processing
+    - [ ] Add fallback mechanism nếu Kafka unavailable
+  - [ ] Benefits của Kafka Integration:
+    - Giảm load trực tiếp lên database
+    - Xử lý được notification bursts khi post viral
+    - Có thể scale horizontally bằng cách thêm consumers
+    - Event replay capability cho debugging
+    - Decoupling giữa notification creation và storage
+
+**Thời gian ước tính: 10-13 giờ tổng cộng (bao gồm Kafka integration)**
 
 ---
 
