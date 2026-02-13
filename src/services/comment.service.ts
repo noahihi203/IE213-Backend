@@ -96,6 +96,7 @@ class CommentService {
     return comment;
   };
 
+  // post use
   static getCommentByParentId = async (
     postId: Types.ObjectId,
     parentCommentId?: Types.ObjectId,
@@ -208,6 +209,7 @@ class CommentService {
     return comment;
   }
 
+  // post use
   static async getCommentCount(
     postId: Types.ObjectId,
     parentCommentId?: Types.ObjectId,
@@ -304,6 +306,7 @@ class CommentService {
     };
   }
 
+  //user use
   static async getUserComments(IUserComments: IUserComments) {
     const { userId, skip, limit } = IUserComments;
     const comments = await commentModel

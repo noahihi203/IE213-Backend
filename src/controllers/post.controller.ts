@@ -140,6 +140,7 @@ class PostController {
     }).send(res);
   };
 
+  // Lấy các comment của post
   getPostComments = async (req: Request, res: Response) => {
     const postId = req.params.postId;
     if (typeof postId !== "string")
@@ -154,6 +155,7 @@ class PostController {
     }).send(res);
   };
 
+  // get số comment của post
   getCommentCount = async (req: Request, res: Response) => {
     new SuccessResponse({
       message: "Get comment count success!",

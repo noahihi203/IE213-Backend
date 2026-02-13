@@ -6,7 +6,7 @@ import { convertToObjectIdMongodb } from "../utils/index.js";
 
 class CommentController {
   createComment = async (req: Request, res: Response) => {
-    const postId = req.params.postId;
+    const postId = req.body.postId;
     if (typeof postId !== "string")
       throw new BadRequestError("Invalid postId format");
 
