@@ -3,11 +3,10 @@ import { model, Schema, Types } from "mongoose";
 const DOCUMENT_NAME = "Notification";
 const COLLECTION_NAME = "Notifications";
 
-interface INotification {
+export interface INotification {
   userId: Types.ObjectId;
-
   actorId: Types.ObjectId;
-  type: string;
+  type: "like" | "comment" | "share" | "follow" | "mention";
   targetId: Types.ObjectId;
   targetType: "post" | "comment" | "user";
   message: string;
