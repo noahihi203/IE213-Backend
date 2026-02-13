@@ -57,8 +57,7 @@ class NotificationService {
   static createNotification = async (
     notificationPayload: notificationPayload,
   ) => {
-    const { userId, actorId, type, targetId, targetType, message } =
-      notificationPayload;
+    const { userId, actorId, targetId, targetType } = notificationPayload;
 
     const user = await userModel.findById(userId);
     if (!user) throw new NotFoundError("User not found");
