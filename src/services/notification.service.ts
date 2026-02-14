@@ -9,6 +9,7 @@ import {
 import { postModel } from "../models/post.model.js";
 import { commentModel } from "../models/comment.model.js";
 import { convertToObjectIdMongodb } from "../utils/index.js";
+import { kafkaProducer, KafkaProducer } from "./kafka/kafka.producer.js";
 
 interface notificationPayload {
   userId: Types.ObjectId;
@@ -79,11 +80,17 @@ class NotificationService {
       if (!targetPost) throw new NotFoundError("Post not found");
     }
 
-    const noti = notificationModel.create(notificationPayload);
+    // const noti = notificationModel.create(notificationPayload);
 
-    if (!noti) throw new ForBiddenError("Create notification error!");
+    // if (!noti) throw new ForBiddenError("Create notification error!");
 
-    return noti;
+    // return noti;
+    await kafkaProducer.publishNotificationEvent("notification-created", {
+      notificationPayload,
+      createdAt: new Date(),
+    });
+
+    return { success: true, message: "Notification is being processed" };
   };
 
   static getUserNotifications = async (payload: getUserNotisPayload) => {
@@ -186,15 +193,16 @@ class NotificationService {
       throw new BadRequestError("Missing parameter");
 
     const post = await postModel.findById(postId);
-    const userId = post?.authorId;
+    if (!post) throw new NotFoundError("Post not found");
 
-    if (typeof userId !== "string")
-      throw new ForBiddenError("Invalid userId format!");
+    const userId = post.authorId;
+    if (!userId) throw new ForBiddenError("Post has no author!");
 
-    if (userId === actorId) return;
+    // Compare as strings to avoid ObjectId comparison issues
+    if (userId.toString() === actorId.toString()) return;
 
     const noti = await NotificationService.createNotification({
-      userId: convertToObjectIdMongodb(userId),
+      userId: convertToObjectIdMongodb(userId.toString()),
       actorId,
       message,
       type,
@@ -215,15 +223,16 @@ class NotificationService {
       throw new BadRequestError("Missing parameter");
 
     const comment = await commentModel.findById(commentId);
-    const userId = comment?.userId;
+    if (!comment) throw new NotFoundError("Comment not found");
 
-    if (typeof userId !== "string")
-      throw new ForBiddenError("Invalid userId format!");
+    const userId = comment.userId;
+    if (!userId) throw new ForBiddenError("Comment has no user!");
 
-    if (userId === actorId) return;
+    // Compare as strings
+    if (userId.toString() === actorId.toString()) return;
 
     const noti = await NotificationService.createNotification({
-      userId: convertToObjectIdMongodb(userId),
+      userId: convertToObjectIdMongodb(userId.toString()),
       actorId,
       message,
       type,
@@ -243,12 +252,11 @@ class NotificationService {
     if (!userId || !actorId || !type)
       throw new BadRequestError("Missing parameter");
 
-    if (typeof userId !== "string")
-      throw new ForBiddenError("Invalid userId format!");
-    if (userId === actorId) return;
+    // Compare as strings
+    if (userId.toString() === actorId.toString()) return;
 
     const noti = await NotificationService.createNotification({
-      userId: convertToObjectIdMongodb(userId),
+      userId: convertToObjectIdMongodb(userId.toString()),
       actorId,
       message,
       type,
