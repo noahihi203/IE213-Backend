@@ -696,7 +696,7 @@ describe("Error Handling Tests", () => {
 
 ---
 
-## 🚀 Running Tests
+## Running Tests
 
 ### Run All Tests
 

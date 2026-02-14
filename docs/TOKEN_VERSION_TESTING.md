@@ -413,7 +413,7 @@ Token version in DB: 1
 
 ---
 
-## 🚀 Next Steps
+## Next Steps
 
 1. Test thoroughly với Postman
 2. Implement frontend interceptor

@@ -1,6 +1,6 @@
 # Swagger API Documentation - Quick Guide
 
-## 🚀 Truy cập Swagger UI
+## Truy cập Swagger UI
 
 Sau khi start server, truy cập:
 

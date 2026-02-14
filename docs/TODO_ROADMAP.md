@@ -689,7 +689,7 @@
 
 ---
 
-## 🚀 Danh Sách Kiểm Tra Triển Khai
+## Danh Sách Kiểm Tra Triển Khai
 
 ### Trước Khi Triển Khai
 
