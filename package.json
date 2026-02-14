@@ -8,7 +8,14 @@
     "dev": "tsx watch server.ts",
     "build": "tsc",
     "start": "node dist/server.js",
-    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js"
+    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js",
+    "test:coverage": "npm test -- --coverage",
+    "test:watch": "npm test -- --watch",
+    "test:producer": "tsx scripts/test-producer.ts",
+    "test:e2e": "tsx scripts/test-e2e.ts",
+    "test:quick": "tsx scripts/quick-test.ts",
+    "test:performance": "tsx scripts/performance-test.ts",
+    "kafka:monitor": "tsx scripts/kafka-monitor.ts"
   },
   "keywords": [
     "blog",
@@ -27,6 +34,7 @@
     "express": "^5.0.0",
     "helmet": "^8.1.0",
     "jsonwebtoken": "^9.0.3",
+    "kafkajs": "^2.2.4",
     "lodash": "^4.17.23",
     "mongoose": "^9.1.5",
     "morgan": "^1.10.0",
