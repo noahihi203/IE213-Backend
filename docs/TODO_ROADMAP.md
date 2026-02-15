@@ -333,29 +333,29 @@
 
 #### Buổi Tối / Tối ưu hóa (3-4 giờ)
 
-- [ ] **Apache Kafka Integration cho Notification System**
-  - [ ] Thiết lập Kafka Producer
-    - [ ] Tạo `src/services/kafka/kafka.producer.ts`
-    - [ ] Cấu hình Kafka client kết nối đến Kafka broker (localhost:9092)
-    - [ ] Implement Producer với các methods:
-      - [ ] `publishNotificationEvent(topic, message)` - Publish event notification
-      - [ ] `connect()` và `disconnect()` lifecycle methods
-      - [ ] Error handling và retry logic
-  - [ ] Thiết lập Kafka Consumer
-    - [ ] Tạo `src/services/kafka/kafka.consumer.ts`
-    - [ ] Implement Consumer để lắng nghe notification events
-    - [ ] Subscribe to topics: `notification-created`, `notification-batch`
-    - [ ] Process messages và lưu vào MongoDB
-    - [ ] Implement batching cho high traffic scenarios
-  - [ ] Kafka Topics Configuration
-    - [ ] `notification-created` - Single notification events
-    - [ ] `notification-batch` - Batch notifications (viral posts)
-    - [ ] `notification-priority` - High priority notifications (admin alerts)
-  - [ ] Tích hợp vào Notification Service
-    - [ ] Update `notification.service.ts` để publish events to Kafka thay vì write trực tiếp DB
-    - [ ] Implement async notification processing
-    - [ ] Add fallback mechanism nếu Kafka unavailable
-  - [ ] Benefits của Kafka Integration:
+- [x] **Apache Kafka Integration cho Notification System**
+  - [x] Thiết lập Kafka Producer
+    - [x] Tạo `src/services/kafka/kafka.producer.ts`
+    - [x] Cấu hình Kafka client kết nối đến Kafka broker (localhost:9092)
+    - [x] Implement Producer với các methods:
+      - [x] `publishNotificationEvent(topic, message)` - Publish event notification
+      - [x] `connect()` và `disconnect()` lifecycle methods
+      - [x] Error handling và retry logic
+  - [x] Thiết lập Kafka Consumer
+    - [x] Tạo `src/services/kafka/kafka.consumer.ts`
+    - [x] Implement Consumer để lắng nghe notification events
+    - [x] Subscribe to topics: `notification-created`, `notification-batch`
+    - [x] Process messages và lưu vào MongoDB
+    - [x] Implement batching cho high traffic scenarios
+  - [x] Kafka Topics Configuration
+    - [x] `notification-created` - Single notification events
+    - [x] `notification-batch` - Batch notifications (viral posts)
+    - [x] `notification-priority` - High priority notifications (admin alerts)
+  - [x] Tích hợp vào Notification Service
+    - [x] Update `notification.service.ts` để publish events to Kafka thay vì write trực tiếp DB
+    - [x] Implement async notification processing
+    - [x] Add fallback mechanism nếu Kafka unavailable
+  - [x] Benefits của Kafka Integration:
     - Giảm load trực tiếp lên database
     - Xử lý được notification bursts khi post viral
     - Có thể scale horizontally bằng cách thêm consumers
@@ -372,46 +372,39 @@
 
 #### Buổi Sáng (4-5 giờ)
 
-- [ ] Tạo `statistics.service.ts`
-  - [ ] Method getDashboardStats
-    - Tổng số users, posts, comments, likes, shares
-    - Users/posts mới trong tuần/tháng này
-    - Số lượng active users
+- [x] Tạo `statistics.service.ts`
+  - [x] Method getDashboardStats
+    - Tổng users, posts, comments, likes, shares, views
+    - Số lượng user/post mới (Growth chart)
+    - Tỷ lệ content health (published/draft/archived)
     - Top categories
-  - [ ] Method getUserStatistics
-    - Xu hướng đăng ký user
-    - Users theo role
-    - Top contributors
-    - Active vs inactive users
-  - [ ] Method getPostStatistics
-    - Posts theo status (published/draft/archived)
-    - Tổng views, likes, comments, shares
-    - Các chỉ số engagement trung bình
-    - Posts theo category
-    - Top posts
+  - [x] Method getUserStatistics
+    - Phân loại Users (Role, Active/Inactive)
+    - Top contributors (theo độ tương tác)
+  - [x] Method getPostStatistics
+    - Top posts (theo views & engagement)
 
 #### Buổi Chiều (3-4 giờ)
 
-- [ ] Mở rộng `statistics.service.ts`
-  - [ ] Method getActivityStatistics
-    - Xu hướng hoạt động (likes, comments, shares theo ngày)
-    - Những giờ hoạt động nhiều nhất
-    - Các mẫu engagement
-  - [ ] Method getCategoryStatistics
-    - Posts theo từng category
+- [x] Mở rộng `statistics.service.ts`
+  - [x] Method getActivityStatistics
+    - Xu hướng hoạt động (likes, comments, shares theo ngày - 30 ngày)
+    - Những giờ hoạt động nhiều nhất (peak hours)
+  - [x] Method getCategoryStatistics
+    - Posts theo từng category (kèm status breakdown)
     - Engagement theo từng category
-    - Các chỉ số hiệu suất category
+    - Avg engagement per post
 
-- [ ] Tạo `statistics.controller.ts`
-  - [ ] getDashboardStats (GET /v1/api/admin/stats/dashboard)
-  - [ ] getUserStats (GET /v1/api/admin/stats/users)
-  - [ ] getPostStats (GET /v1/api/admin/stats/posts)
-  - [ ] getActivityStats (GET /v1/api/admin/stats/activity)
-  - [ ] getCategoryStats (GET /v1/api/admin/stats/categories)
+- [x] Tạo `statistics.controller.ts`
+  - [x] getDashboardStats (GET /v1/api/admin/stats/dashboard)
+  - [x] getUserStats (GET /v1/api/admin/stats/users)
+  - [x] getPostStats (GET /v1/api/admin/stats/posts)
+  - [x] getActivityStats (GET /v1/api/admin/stats/activity)
+  - [x] getCategoryStats (GET /v1/api/admin/stats/categories)
 
-- [ ] Tạo admin routes trong `src/routes/admin/index.ts`
-  - [ ] Thêm admin-only middleware
-  - [ ] Đăng ký tất cả statistics endpoints
+- [x] Tạo admin routes trong `src/routes/admin/index.ts`
+  - [x] Thêm admin-only middleware
+  - [x] Đăng ký tất cả statistics endpoints
 
 **Thời gian ước tính: 7-9 giờ**
 
