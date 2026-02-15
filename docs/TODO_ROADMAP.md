@@ -410,61 +410,101 @@
 
 ---
 
-### Ngày 9 (15 tháng 2, 2026) - Middleware & Phân Quyền
+### Ngày 9 (15 tháng 2, 2026) - Input Validation & Hoàn Thiện Middleware
 
 **Độ ưu tiên: CAO**
 
-#### Công Việc (4-6 giờ)
+#### Đã Hoàn Thành Trước Đó (từ Ngày 1-2)
 
-- [ ] Tạo `src/middleware/authorization.ts`
-  - [ ] checkRole middleware (cho kiểm tra role admin/author)
-  - [ ] checkPostOwnership middleware (xác minh user sở hữu post)
-  - [ ] checkCommentOwnership middleware (xác minh user sở hữu comment)
+- [x] `src/middleware/authorization.ts` — 8 middleware functions đã triển khai:
+  - [x] `checkAdmin` — Kiểm tra role admin (đã áp dụng cho Category CUD, Admin stats, User admin routes)
+  - [x] `checkRoles(...roles)` — Hỗ trợ nhiều roles (đã định nghĩa)
+  - [x] `checkOwnershipOrAdmin(param)` — Owner hoặc admin (đã áp dụng cho PUT /user/:userId)
+  - [x] `checkAuthorOrAdmin` — Author/admin gate (đã áp dụng cho Post CUD)
+  - [x] `checkNotSelfDemotion` — Chống admin tự hạ role
+  - [x] `checkSuperAdminProtection` — Bảo vệ super admin
+  - [x] `checkAdminToAdminPermission` — Chỉ super admin đổi role admin khác
+  - [x] `checkMinimumAdmins` / `checkMaximumAdmins` — Giới hạn số lượng admin
+- [x] `src/auth/authUtils.ts` — Authentication middleware hoàn chỉnh (RSA RS256, token versioning)
 
-- [ ] Tạo `src/middleware/validation.ts`
-  - [ ] validateUserInput (cho đăng ký/cập nhật user)
-  - [ ] validatePostInput (cho tạo/cập nhật post)
-  - [ ] validateCommentInput (cho tạo/cập nhật comment)
-  - [ ] validateCategoryInput (cho tạo/cập nhật category)
+#### Công Việc Hôm Nay (4-6 giờ)
 
-- [ ] Cập nhật tất cả routes để sử dụng middleware mới
-  - [ ] Áp dụng kiểm tra role cho admin endpoints
-  - [ ] Áp dụng kiểm tra ownership cho update/delete endpoints
-  - [ ] Áp dụng input validation cho tất cả POST/PUT endpoints
+- [ ] **Tạo `src/middleware/validation.ts`** — Input validation cho tất cả endpoints
+  - [ ] Cài đặt thư viện validation (zod hoặc joi)
+  - [ ] `validateRegisterInput` — email format, password strength, username length (3-30 chars)
+  - [ ] `validateLoginInput` — email required, password required
+  - [ ] `validateUpdateUserInput` — email format (optional), username uniqueness
+  - [ ] `validatePostInput` — title required (5-200 chars), content required, categoryId valid ObjectId
+  - [ ] `validateUpdatePostInput` — partial validation cho update
+  - [ ] `validateCommentInput` — content required (1-2000 chars), postId valid ObjectId
+  - [ ] `validateCategoryInput` — name required (2-50 chars), description optional
+  - [ ] `validateObjectIdParam` — Kiểm tra params là valid MongoDB ObjectId
+  - [ ] `validatePaginationQuery` — page >= 1, limit 1-100, sort fields hợp lệ
+
+- [ ] **Bổ sung ownership middleware còn thiếu**
+  - [ ] `checkPostOwnership` — Xác minh user sở hữu post (hiện chỉ có role check, chưa verify ownership thực sự)
+  - [ ] `checkCommentOwnership` — Xác minh user sở hữu comment (hiện chỉ check ở service layer)
+
+- [ ] **Áp dụng validation middleware vào routes**
+  - [ ] Access routes: validateRegisterInput, validateLoginInput
+  - [ ] User routes: validateUpdateUserInput, validateObjectIdParam
+  - [ ] Post routes: validatePostInput, validateUpdatePostInput, validatePaginationQuery
+  - [ ] Comment routes: validateCommentInput
+  - [ ] Category routes: validateCategoryInput
+
+- [ ] **Sửa lỗi error status codes**
+  - [ ] `BadRequestError` — Đổi default status từ 403 → 400
+  - [ ] `ConflictRequestError` — Đổi default status từ 403 → 409
 
 - [ ] Testing
-  - [ ] Test authorization middleware với các roles khác nhau
-  - [ ] Test xác minh ownership
-  - [ ] Test validation với các inputs không hợp lệ
+  - [ ] Test validation với inputs không hợp lệ (missing fields, wrong types, quá dài)
+  - [ ] Test ownership middleware
+  - [ ] Test error responses trả về đúng status code
 
 **Thời gian ước tính: 4-6 giờ**
 
 ---
 
-### Ngày 10 (16 tháng 2, 2026) - Xử Lý Lỗi & Logging
+### Ngày 10 (16 tháng 2, 2026) - Xử Lý Lỗi & Structured Logging
 
 **Độ ưu tiên: TRUNG BÌNH**
 
+#### Đã Có Sẵn
+
+- [x] Error classes cơ bản trong `src/core/error.response.ts` (ErrorResponse, BadRequestError, AuthFailureError, NotFoundError, ForBiddenError)
+- [x] Global error handler trong `src/app.ts` (404 catch-all + final error handler)
+- [x] Admin error codes (`AdminErrorCodes`, `AdminErrorMessages`)
+- [x] Morgan HTTP request logging (stdout only)
+- [x] `asyncHandler` cho promise rejection catching
+
 #### Công Việc (4-5 giờ)
 
-- [ ] Cải thiện xử lý lỗi
-  - [ ] Rà soát tất cả service methods cho việc throw error đúng cách
-  - [ ] Đảm bảo các thông báo lỗi nhất quán
-  - [ ] Thêm custom error classes nếu cần (đã có một số trong error.response.ts)
+- [ ] **Cài đặt và cấu hình Winston logger**
+  - [ ] `npm install winston winston-daily-rotate-file`
+  - [ ] Tạo `src/config/logger.config.ts`
+    - [ ] Transport: Console (colorized cho dev) + File rotation
+    - [ ] Log levels: error, warn, info, http, debug
+    - [ ] Format: timestamp + JSON cho production, pretty-print cho development
+  - [ ] Tạo cấu trúc log files:
+    - [ ] `logs/error-%DATE%.log` — Chỉ errors
+    - [ ] `logs/combined-%DATE%.log` — Tất cả logs
+    - [ ] Log rotation: giữ 14 ngày, max 20MB/file
 
-- [ ] Thêm logging system
-  - [ ] Cài đặt winston hoặc pino logger
-  - [ ] Tạo logger configuration
-  - [ ] Thêm logging vào tất cả services:
-    - [ ] Info logs cho các thao tác thành công
-    - [ ] Error logs với stack traces
-    - [ ] Debug logs cho development
-  - [ ] Log tất cả incoming requests (middleware)
-  - [ ] Log database queries (nếu cần)
+- [ ] **Thay thế console.log/console.error bằng Winston**
+  - [ ] `authUtils.ts` — Auth failures, token verification errors
+  - [ ] `authorization.ts` — Authorization denials, admin operations
+  - [ ] Tất cả services — Business logic operations
+  - [ ] `init.mongodb.ts` — Database connection events
 
-- [ ] Tạo cấu trúc log file
-  - [ ] File riêng cho errors, combined, và exceptions
-  - [ ] Cấu hình log rotation
+- [ ] **Tạo HTTP request logging middleware**
+  - [ ] Thay morgan bằng Winston-based request logger
+  - [ ] Log: method, url, status, response time, user ID (nếu authenticated)
+  - [ ] Skip logging cho health check endpoints
+
+- [ ] **Thêm error classes mới nếu cần**
+  - [ ] `ValidationError` (422) — Cho input validation failures
+  - [ ] `TooManyRequestsError` (429) — Chuẩn bị cho rate limiting
+  - [ ] `InternalServerError` (500) — Explicit internal errors
 
 **Thời gian ước tính: 4-5 giờ**
 
@@ -474,30 +514,43 @@
 
 **Độ ưu tiên: CAO**
 
+#### Đã Có Sẵn
+
+- [x] Jest config (`jest.config.cjs`) với ts-jest + ESM support
+- [x] Test dependencies: jest@30.2.0, ts-jest, supertest
+- [x] `user.service.test.ts` — 759 dòng, unit tests cho UserService
+- [x] `user.routes.test.ts` — 613 dòng, integration tests cho user routes
+- [x] `notification.e2e.test.ts` — 145 dòng, E2E tests
+- [x] `kafka-producer.test.ts` + `kafka-consumer.test.ts` — Kafka integration tests
+- [ ] ⚠️ Coverage report hiện tại: 0% — Tests có thể chưa chạy thành công (ESM/connection issues)
+
 #### Buổi Sáng (4-5 giờ)
 
-- [ ] Hoàn thành unit tests
-  - [ ] Access service tests
-  - [ ] User service tests
-  - [ ] Post service tests
-  - [ ] Comment service tests
-  - [ ] Category service tests
-  - [ ] Notification service tests
+- [ ] **Sửa test infrastructure**
+  - [ ] Debug và fix Jest ESM issues (coverage = 0%)
+  - [ ] Đảm bảo tất cả tests hiện có chạy được (`npm test`)
+  - [ ] Fix database connection issues trong test environment (mock hoặc test DB)
+
+- [ ] **Hoàn thành unit tests cho các services còn thiếu**
+  - [ ] `access.service.test.ts` — signUp, login, refreshToken, logout
+  - [ ] `post.service.test.ts` — CRUD, filters, trending, engagement
+  - [ ] `comment.service.test.ts` — CRUD, nested comments, like toggle, report
+  - [ ] `category.service.test.ts` — CRUD, slug generation, post count check
+  - [ ] `like.service.test.ts` — like/unlike post & comment
+  - [ ] `statistics.service.test.ts` — Dashboard, user, post, activity, category stats
 
 #### Buổi Chiều (4-5 giờ)
 
-- [ ] Integration tests
-  - [ ] End-to-end user flow (đăng ký → đăng nhập → tạo post → comment)
-  - [ ] Authentication flow tests
-  - [ ] Authorization tests (role-based access)
-  - [ ] Engagement flow (like → comment → share)
+- [ ] **Integration tests**
+  - [ ] Full user flow: đăng ký → đăng nhập → tạo post → comment → like
+  - [ ] Authentication flow: register → login → refresh token → logout
+  - [ ] Authorization tests: admin vs user vs poster access control
+  - [ ] Engagement flow: like → unlike → share → trending calculation
 
-- [ ] API testing với Postman
-  - [ ] Tạo Postman collection toàn diện
-  - [ ] Test tất cả endpoints với dữ liệu hợp lệ
-  - [ ] Test các trường hợp lỗi
-  - [ ] Test lỗi authorization
-  - [ ] Export collection cho tài liệu
+- [ ] **Chạy coverage và đạt mục tiêu**
+  - [ ] Target: ≥ 60% statement coverage cho services
+  - [ ] Target: ≥ 80% coverage cho middleware/auth
+  - [ ] Fix any uncovered edge cases
 
 **Thời gian ước tính: 8-10 giờ**
 
@@ -505,134 +558,170 @@
 
 ## 🎯 Giai Đoạn 2 - Tính Năng Nâng Cao (Tuần 3+)
 
-### Tuần 3 - Hiệu Suất & Tối Ư u Hóa
+### Tuần 3 - Hiệu Suất & Tối Ưu Hóa
 
-#### Ngày 12-13 (18-19 tháng 2, 2026): Caching
+#### Ngày 12-13 (18-19 tháng 2, 2026): Caching với Redis
 
-- [ ] Cài đặt và cấu hình Redis
+- [ ] Cài đặt và cấu hình Redis (`ioredis`)
+- [ ] Tạo `src/services/redis.service.ts`
+  - [ ] Connection singleton pattern
+  - [ ] Helper methods: get, set, del, setWithTTL
 - [ ] Triển khai caching cho:
-  - [ ] Trending posts
-  - [ ] Danh sách categories
-  - [ ] Dữ liệu user profile
-  - [ ] Số lượng view của post
-- [ ] Chiến lược cache invalidation
+  - [ ] Trending posts (TTL: 5 phút)
+  - [ ] Danh sách categories (TTL: 1 giờ, invalidate khi CUD)
+  - [ ] User profile công khai (TTL: 10 phút)
+  - [ ] Post view counts (batch write mỗi 30s thay vì mỗi request)
+- [ ] Cache invalidation strategy:
+  - [ ] Write-through cho categories
+  - [ ] TTL-based cho trending/profiles
+  - [ ] Pub/sub cho multi-instance invalidation
 
 #### Ngày 14-15 (20-21 tháng 2, 2026): Tối Ưu Hóa Database
 
-- [ ] Thêm indexes cho các fields thường xuyên query
-- [ ] Tối ưu hóa aggregation queries cho statistics
-- [ ] Triển khai database query profiling
-- [ ] Thêm database connection pooling
-- [ ] Tối ưu hóa populate operations (chọn các fields cụ thể)
+- [ ] Thêm MongoDB indexes cho các fields thường xuyên query:
+  - [ ] Posts: `{ slug: 1 }`, `{ author: 1, status: 1 }`, `{ category: 1, status: 1 }`, text index `{ title, content, excerpt }`
+  - [ ] Comments: `{ commentPostId: 1, commentParentId: 1 }`
+  - [ ] Likes: `{ userId: 1, targetId: 1, targetType: 1 }` (unique compound)
+  - [ ] Notifications: `{ userId: 1, isRead: 1, createdOn: -1 }`
+- [ ] Tối ưu hóa aggregation pipelines trong StatisticsService
+- [ ] Tối ưu hóa populate operations (select chỉ fields cần thiết)
+- [ ] Thêm lean() cho read-only queries
+- [ ] Analyze slow queries với MongoDB profiler
 
-#### Ngày 16 (22 tháng 2, 2026): Rate Limiting
+#### Ngày 16 (22 tháng 2, 2026): Rate Limiting & Security Hardening
 
-- [ ] Cài đặt express-rate-limit
+- [ ] Cài đặt `express-rate-limit` + `rate-limit-redis` (nếu Redis đã có)
 - [ ] Triển khai rate limiting:
-  - [ ] Giới hạn khác nhau cho authenticated vs anonymous
-  - [ ] Giới hạn cao hơn cho admin users
-  - [ ] Giới hạn cụ thể cho các endpoints tốn nhiều tài nguyên
-- [ ] Thêm rate limit headers vào responses
+  - [ ] Global: 100 requests/15 phút cho anonymous
+  - [ ] Authenticated: 300 requests/15 phút
+  - [ ] Auth endpoints (login/register): 5 requests/15 phút (chống brute force)
+  - [ ] Admin endpoints: 500 requests/15 phút
+  - [ ] POST endpoints (create): 30 requests/15 phút
+- [ ] Thêm rate limit headers (`X-RateLimit-*`) vào responses
+- [ ] Security hardening:
+  - [ ] Rà soát cấu hình helmet
+  - [ ] Thêm CORS whitelist cụ thể (thay vì wildcard)
+  - [ ] Sanitize MongoDB queries (chống NoSQL injection)
 
 ---
 
 ### Tuần 4 - Tính Năng Nâng Cao
 
-#### Ngày 17-18 (23-24 tháng 2, 2026): Chức Năng Tìm Kiếm
+#### Ngày 17-18 (23-24 tháng 2, 2026): Full-text Search & Upload File
 
-- [ ] Triển khai full-text search cho posts
-  - [ ] MongoDB text indexes
-  - [ ] Tìm kiếm trong title, content, excerpt
-  - [ ] Search relevance scoring
-- [ ] Bộ lọc tìm kiếm nâng cao
-  - [ ] Khoảng thời gian
-  - [ ] Nhiều categories
-  - [ ] Hỗ trợ tags
-- [ ] Highlighting kết quả tìm kiếm
-- [ ] Gợi ý tìm kiếm/autocomplete
+- [ ] **Full-text Search cho Posts**
+  - [ ] Tạo MongoDB text indexes trên title, content, excerpt
+  - [ ] Implement search endpoint với relevance scoring (`$meta: "textScore"`)
+  - [ ] Bộ lọc nâng cao: khoảng thời gian, nhiều categories, status
+  - [ ] Search suggestions/autocomplete (prefix matching trên title)
+  - [ ] Highlight matched terms trong kết quả
 
-#### Ngày 19-20 (25-26 tháng 2, 2026): Upload File
+- [ ] **Upload File System**
+  - [ ] Cài đặt `multer` + `sharp` (image optimization)
+  - [ ] Cấu hình storage: local `uploads/` folder (chuyển cloud sau)
+  - [ ] Tạo `src/services/upload.service.ts`
+  - [ ] Tạo `src/controllers/upload.controller.ts`
+  - [ ] Endpoints:
+    - [ ] POST /v1/api/upload/image — Upload ảnh chung (max 5MB, jpg/png/webp)
+    - [ ] POST /v1/api/upload/avatar — Upload avatar (resize 200x200)
+    - [ ] DELETE /v1/api/upload/:fileId
+  - [ ] Serve static files: `GET /uploads/*`
+  - [ ] Tích hợp avatar upload vào User update
+  - [ ] Tích hợp cover image vào Post create/update
 
-- [ ] Thiết lập hệ thống upload file
-  - [ ] Cài đặt multer
-  - [ ] Cấu hình storage (local hoặc cloud)
-  - [ ] Validation ảnh (kích thước, định dạng)
-  - [ ] Tối ưu hóa ảnh (thư viện sharp)
-- [ ] Endpoints:
-  - [ ] POST /v1/api/upload/image
-  - [ ] POST /v1/api/upload/avatar
-  - [ ] DELETE /v1/api/upload/:fileId
-- [ ] Cập nhật upload avatar cho user
-- [ ] Cập nhật upload cover image cho post
+#### Ngày 19-20 (25-26 tháng 2, 2026): Tích Hợp Frontend (Backend Support)
 
-#### Ngày 21 (27 tháng 2, 2026): Dịch Vụ Email
+- [ ] **Rà soát và fix CORS cho Frontend**
+  - [ ] Cấu hình CORS origin cụ thể: `http://localhost:3000`
+  - [ ] Cho phép credentials (cookies/auth headers)
+  - [ ] Test tất cả endpoints từ Frontend axios client
+- [ ] **Fix các vấn đề tích hợp**
+  - [ ] Đảm bảo response format nhất quán (`{ message, status, metadata }`)
+  - [ ] Verify token flow: login → store → attach header → refresh
+  - [ ] Test 401 handling → auto redirect to login
+- [ ] **API Documentation cập nhật**
+  - [ ] Cập nhật Swagger docs với tất cả endpoints mới (validation, upload, search)
+  - [ ] Thêm ví dụ request/response cho Frontend team
+  - [ ] Tạo hướng dẫn tích hợp Frontend (`docs/FRONTEND_INTEGRATION.md`)
 
-- [ ] Thiết lập email service (NodeMailer)
-- [ ] Email templates:
-  - [ ] Email chào mừng khi đăng ký
-  - [ ] Email đặt lại mật khẩu
-  - [ ] Email tổng hợp thông báo
-- [ ] Email queue system (tùy chọn: Bull + Redis)
+#### Ngày 21 (27 tháng 2, 2026): Dịch Vụ Email & Password Reset
+
+- [ ] Cài đặt `nodemailer`
+- [ ] Tạo `src/services/email.service.ts`
+  - [ ] Cấu hình SMTP (Gmail/Mailtrap cho dev)
+  - [ ] Email templates (HTML):
+    - [ ] Email chào mừng khi đăng ký
+    - [ ] Email đặt lại mật khẩu (với token link)
+- [ ] Implement password reset flow:
+  - [ ] POST /v1/api/forgot-password — Gửi email reset
+  - [ ] POST /v1/api/reset-password — Reset password với token
+  - [ ] Tạo `resetToken` field trong User model (hashed, TTL 1 giờ)
 
 ---
 
-### Tuần 5 - Tính Năng Real-time & Tích Hợp Frontend
+### Tuần 5 - Real-time & Hoàn Thiện
 
-#### Ngày 22-23 (28 tháng 2 - 1 tháng 3, 2026): Triển Khai WebSocket
+#### Ngày 22-23 (28 tháng 2 - 1 tháng 3, 2026): WebSocket Real-time
 
-- [ ] Cài đặt socket.io
-- [ ] Thiết lập WebSocket server
+- [ ] Cài đặt `socket.io`
+- [ ] Thiết lập WebSocket server tích hợp với Express
+- [ ] Xác thực WebSocket connections (verify JWT on handshake)
 - [ ] Các sự kiện real-time:
-  - [ ] Thông báo mới
-  - [ ] Post được like
-  - [ ] Comment mới
-  - [ ] Theo dõi lượt view post
-- [ ] Xác thực cho WebSocket connections
-- [ ] Quản lý room (rooms cụ thể cho từng user)
+  - [ ] `notification:new` — Push notification mới tới user
+  - [ ] `post:liked` — Realtime like count update
+  - [ ] `comment:new` — Comment mới trên post đang xem
+  - [ ] `post:views` — Live view count
+- [ ] Room management: mỗi user join room `user:{userId}`
+- [ ] Tích hợp vào NotificationService — emit event sau khi tạo notification
 
-#### Ngày 24-26 (2-4 tháng 3, 2026): Hỗ Trợ Tích Hợp Frontend
+#### Ngày 24-26 (2-4 tháng 3, 2026): Polish, Database Seeding & Deploy Prep
 
-- [ ] Rà soát cấu hình CORS
-- [ ] Test API client của Frontend
-- [ ] Sửa các vấn đề tích hợp
-- [ ] Cập nhật tài liệu API với ví dụ frontend
-- [ ] Tạo hướng dẫn tích hợp frontend
+- [ ] **Database Seeding Script** (`scripts/seed.ts`)
+  - [ ] Tạo admin account mặc định
+  - [ ] Seed categories (Technology, Lifestyle, Business, Education, Health, Entertainment)
+  - [ ] Tạo sample posts, comments, likes cho testing
+- [ ] **Health Check Endpoint**
+  - [ ] GET /v1/api/health — Server status, DB connection, Kafka status
+- [ ] **Final Integration Testing**
+  - [ ] Full flow test: Frontend ↔ Backend ↔ DB ↔ Kafka
+  - [ ] Performance baseline: response times cho các endpoints chính
+- [ ] **Deployment Preparation**
+  - [ ] Dockerfile cho Backend
+  - [ ] Environment variables documentation
+  - [ ] Production build script
 
 ---
 
-## 📦 Tính Năng Bổ Sung (Cải Tiến Tương Lai)
+## 📦 Tính Năng Bổ Sung (Backlog - Cải Tiến Tương Lai)
 
 ### Tính Năng User
 
-- [ ] Chức năng đặt lại mật khẩu
-- [ ] Xác thực email
-- [ ] Xác thực hai yếu tố (2FA)
-- [ ] Hệ thống follow/unfollow user
+- [ ] Xác thực email (email verification on signup)
+- [ ] Xác thực hai yếu tố (2FA với TOTP)
 - [ ] Bookmark/lưu posts của user
-- [ ] Bảng tin hoạt động user
+- [ ] Bảng tin hoạt động user (activity feed)
+- [ ] OAuth2 login (Google, GitHub)
 
 ### Tính Năng Post
 
-- [ ] Tự động lưu bản nháp post
-- [ ] Lên lịch post (đăng vào thời gian cụ thể)
-- [ ] Hệ thống tags cho post
-- [ ] Lịch sử chỉnh sửa/phiên bản post
-- [ ] Gợi ý bài viết liên quan
+- [ ] Tự động lưu bản nháp post (auto-save draft)
+- [ ] Lên lịch post (scheduled publishing)
+- [ ] Hệ thống tags cho post (many-to-many)
+- [ ] Lịch sử chỉnh sửa/phiên bản post (revision history)
+- [ ] Gợi ý bài viết liên quan (related posts by category/tags)
 - [ ] Series/bộ sưu tập bài viết
 
 ### Kiểm Duyệt Nội Dung
 
-- [ ] Hệ thống báo cáo nội dung
-- [ ] Hàng đợi kiểm duyệt của Admin
-- [ ] Lọc nội dung tự động (tục tịu, spam)
-- [ ] Hệ thống cấm user
+- [ ] Hàng đợi kiểm duyệt của Admin (moderation queue)
+- [ ] Lọc nội dung tự động (profanity filter, spam detection)
+- [ ] Hệ thống cấm user (ban/suspend system)
 
-### Phân Tích
+### Phân Tích Nâng Cao
 
-- [ ] Tích hợp Google Analytics
-- [ ] Theo dõi hành vi user chi tiết
-- [ ] Framework A/B testing
-- [ ] Theo dõi sự kiện tùy chỉnh
+- [ ] Theo dõi hành vi user chi tiết (user analytics)
+- [ ] Export statistics ra CSV/Excel
+- [ ] Scheduled reports (weekly email digest)
 
 ---
 
@@ -640,45 +729,54 @@
 
 ### Unit Tests
 
-- [ ] Tất cả các methods của service
-- [ ] Tất cả các methods của controller
-- [ ] Các functions middleware
-- [ ] Các functions utility
+- [x] User service methods (user.service.test.ts — 759 dòng)
+- [ ] Access service methods
+- [ ] Post service methods
+- [ ] Comment service methods
+- [ ] Category service methods
+- [ ] Like/Share service methods
+- [ ] Statistics service methods
+- [ ] Notification service methods
+- [ ] Authorization middleware functions
+- [ ] Validation middleware functions
 
 ### Integration Tests
 
-- [ ] Authentication flow
-- [ ] Kiểm tra Authorization
-- [ ] Các thao tác CRUD cho tất cả resources
-- [ ] Các thao tác quan hệ (likes, comments, v.v.)
+- [x] User routes (user.routes.test.ts — 613 dòng)
+- [ ] Authentication flow (register → login → refresh → logout)
+- [ ] Authorization flow (admin vs user vs poster)
+- [ ] Post CRUD + engagement
+- [ ] Comment CRUD + nested replies
+- [ ] Category CRUD
+- [ ] Notification CRUD
 
 ### End-to-End Tests
 
-- [ ] Hành trình user hoàn chỉnh
-- [ ] Quy trình làm việc của Admin
-- [ ] Các kịch bản xử lý lỗi
+- [x] Notification E2E (notification.e2e.test.ts)
+- [x] Kafka producer/consumer (kafka-\*.test.ts)
+- [ ] Full user journey: signup → create post → get engagement → notifications
+- [ ] Admin workflow: manage users → manage categories → view statistics
 
 ### Performance Tests
 
-- [ ] Load testing với nhiều users đồng thời
-- [ ] Hiệu suất database query
-- [ ] Thời gian phản hồi API
-- [ ] Phát hiện memory leak
+- [ ] Load testing với Artillery hoặc k6
+- [ ] Database query performance benchmarks
+- [ ] API response time monitoring
+- [ ] Memory leak detection (long-running tests)
 
 ---
 
 ## 📝 Danh Sách Kiểm Tra Tài Liệu
 
-- [x] Tài liệu API với tất cả endpoints
-- [x] Schemas của các database models
-- [ ] Hướng dẫn thiết lập và cài đặt
-- [ ] Hướng dẫn cấu hình môi trường
-- [ ] Hướng dẫn triển khai
+- [x] Tài liệu API với tất cả endpoints (Swagger + API_Documentation.md)
+- [x] Schemas của các database models (ERD_Blog_System.md)
+- [x] Admin role management docs (ADMIN_ROLE_MANAGEMENT_IMPLEMENTATION_GUIDE.md)
+- [x] Authorization guide (AUTHORIZATION_GUIDE.md)
+- [x] Token version testing (TOKEN_VERSION_TESTING.md)
+- [ ] Hướng dẫn thiết lập và cài đặt (README/SETUP.md)
 - [ ] Hướng dẫn tích hợp frontend
-- [ ] Export Postman collection
-- [ ] Tài liệu code (JSDoc comments)
-- [ ] Tài liệu kiến trúc
-- [ ] Hướng dẫn thực hành bảo mật tốt nhất
+- [ ] Tài liệu code (JSDoc comments cho public APIs)
+- [ ] Hướng dẫn deployment
 
 ---
 
@@ -686,52 +784,54 @@
 
 ### Trước Khi Triển Khai
 
-- [ ] Cấu hình biến môi trường
-- [ ] Scripts migration cho database
-- [ ] Scripts seeding cho database
-- [ ] Tối ưu hóa build
-- [ ] Kiểm toán bảo mật
-- [ ] Đánh giá hiệu suất
+- [ ] Cấu hình biến môi trường production
+- [ ] Database seeding script
+- [ ] Production build + test
+- [ ] Security audit (dependencies, headers, input validation)
+- [ ] Performance baseline
 
 ### Triển Khai
 
-- [ ] Chọn nhà cung cấp hosting (AWS, Heroku, DigitalOcean, v.v.)
-- [ ] Thiết lập MongoDB Atlas (cloud database)
-- [ ] Cấu hình biến môi trường trên server
-- [ ] Thiết lập CI/CD pipeline (GitHub Actions, v.v.)
-- [ ] Cấu hình chứng chỉ SSL/TLS
-- [ ] Thiết lập giám sát (PM2, New Relic, v.v.)
-- [ ] Thiết lập theo dõi lỗi (Sentry, v.v.)
-- [ ] Cấu hình sao lưu tự động
+- [ ] Dockerfile + docker-compose.prod.yml
+- [ ] MongoDB Atlas (cloud database) hoặc self-hosted
+- [ ] CI/CD pipeline (GitHub Actions)
+- [ ] SSL/TLS certificates
+- [ ] PM2 process manager
+- [ ] Error tracking (Sentry)
 
 ### Sau Khi Triển Khai
 
 - [ ] Smoke testing trong production
-- [ ] Giám sát logs và errors
-- [ ] Giám sát hiệu suất
-- [ ] Thiết lập cảnh báo cho các vấn đề nghiêm trọng
-- [ ] Cập nhật tài liệu với URLs production
+- [ ] Monitoring setup (logs, performance, uptime)
+- [ ] Thiết lập alerts cho critical errors
+- [ ] Cập nhật docs với production URLs
 
 ---
 
 ## 📊 Theo Dõi Tiến Độ
 
-**Tiến Độ Tuần 1:** 14.3% (1/7 ngày hoàn thành)
+**Tiến Độ Tuần 1 (Ngày 1-8):** 100% ✅
 
 - ✅ Ngày 1 (5/2): Quản Lý User - HOÀN THÀNH
-- Ngày 2 (8/2): Admin Role Management
-- Ngày 3 (9/2): Quản Lý Category
-- Ngày 4 (10/2): Quản Lý Post (Phần 1)
-- Ngày 5 (11/2): Quản Lý Post (Phần 2)
-- Ngày 6 (12/2): Quản Lý Comment
-- Ngày 7 (13/2): Hệ Thống Notification
-- Ngày 8 (14/2): Thống Kê & Admin
+- ✅ Ngày 2 (8/2): Admin Role Management - HOÀN THÀNH
+- ✅ Ngày 3 (9/2): Quản Lý Category - HOÀN THÀNH
+- ✅ Ngày 4 (10/2): Quản Lý Post (Phần 1) - HOÀN THÀNH
+- ✅ Ngày 5 (11/2): Quản Lý Post (Phần 2) - Likes & Shares - HOÀN THÀNH
+- ✅ Ngày 6 (12-13/2): Quản Lý Comment - HOÀN THÀNH
+- ✅ Ngày 7 (13/2): Hệ Thống Notification + Kafka - HOÀN THÀNH
+- ✅ Ngày 8 (14/2): Thống Kê & Admin Dashboard - HOÀN THÀNH
 
-**Tiến Độ Tuần 2:** 0%
+**Tiến Độ Tuần 2 (Ngày 9-11):** 0% → Đang tiến hành
 
-- Ngày 9 (15/2): Middleware & Phân Quyền
-- Ngày 10 (16/2): Xử Lý Lỗi & Logging
+- 🔄 Ngày 9 (15/2): Input Validation & Hoàn Thiện Middleware
+- Ngày 10 (16/2): Xử Lý Lỗi & Structured Logging
 - Ngày 11 (17/2): Testing & QA
+
+**Giai Đoạn 2 (Tuần 3-5):** Chưa bắt đầu
+
+- Ngày 12-16 (18-22/2): Caching, DB Optimization, Rate Limiting
+- Ngày 17-21 (23-27/2): Search, Upload, Frontend Integration, Email
+- Ngày 22-26 (28/2-4/3): WebSocket, Seeding, Deploy Prep
 
 ---
 
@@ -760,10 +860,19 @@
 6. Commit và push các thay đổi
 7. Lên kế hoạch cho công việc ngày tiếp theo
 
+### Ghi Chú Kỹ Thuật
+
+- **Authorization middleware** đã triển khai đầy đủ 8 functions, chỉ `checkRoles()` chưa sử dụng trong route nào
+- **Comment/Post ownership** hiện check ở service layer, cần chuyển lên middleware layer cho consistency
+- **Error status codes** có bug: `BadRequestError` = 403 (phải 400), `ConflictRequestError` = 403 (phải 409)
+- **Test coverage = 0%** mặc dù có 5 test files — cần debug Jest ESM configuration
+- **Kafka** đã tích hợp cho notification system (producer + consumer)
+- **Swagger** đã có tại `/api-docs`
+
 ---
 
-**Lần Cập Nhật Cuối:** 7 tháng 2, 2026  
-**Trạng Thái Dự Án:** Đang Phát Triển Tích Cực  
-**Mục Tiêu Hoàn Thành:** 4 tháng 3, 2026 (điều chỉnh do trễ 2 ngày)
+**Lần Cập Nhật Cuối:** 15 tháng 2, 2026  
+**Trạng Thái Dự Án:** Đang Phát Triển Tích Cực — Giai đoạn 1 gần hoàn thành  
+**Mục Tiêu Hoàn Thành:** 4 tháng 3, 2026
 
-**Ghi Chú Cập Nhật:** Đã dời lịch trình 2 ngày do bỏ lỡ ngày 6-7/2. Task tiếp theo là Admin Role Management vào ngày 8/2.
+**Ghi Chú Cập Nhật:** Ngày 1-8 đã hoàn thành tất cả core features (Auth, User, Admin, Category, Post, Likes/Shares, Comment, Notification+Kafka, Statistics). Ngày 9 tập trung vào input validation — tính năng quan trọng còn thiếu. Authorization middleware đã có sẵn từ trước.
