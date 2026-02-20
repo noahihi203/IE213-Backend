@@ -66,11 +66,7 @@ class AccessService {
     email,
     password,
     fullName,
-  }: SignUpParams): Promise<{
-    code: number | string;
-    message?: string;
-    metadata?: object | null;
-  }> => {
+  }: SignUpParams) => {
     // validate
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {

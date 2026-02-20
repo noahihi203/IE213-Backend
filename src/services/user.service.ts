@@ -1,7 +1,8 @@
 import { Types } from "mongoose";
-import { BadRequestError } from "../core/error.response.js";
+import { AuthFailureError, BadRequestError } from "../core/error.response.js";
 import { userModel } from "../models/user.model.js";
 import NotificationService from "./notification.service.js";
+import bcrypt from "bcrypt";
 
 interface UserFindByEmail {
   email: string;
@@ -16,6 +17,17 @@ interface UserFindById {
 interface followPayload {
   userId: Types.ObjectId;
   followerId: Types.ObjectId;
+}
+
+interface UpdateInput {
+  fullName: string;
+  bio: string;
+  avatar: string;
+}
+
+interface ChangeEmailInput {
+  currentPassword: string;
+  newEmail: string;
 }
 
 class UserService {
@@ -48,89 +60,71 @@ class UserService {
     return await userModel.findOne({ _id }).select(select).lean();
   };
 
-  static updateUser = async ({
-    userId,
-    updateData,
-  }: {
-    userId: string;
-    updateData: Partial<{
-      fullName: string;
-      bio: string;
-      avatar: string;
-      email: string;
-      username: string;
-    }>;
-  }) => {
-    // 1. Validate input fields
-    const allowedFields = ["fullName", "bio", "avatar", "email", "username"];
-    const updateFields = Object.keys(updateData);
-
-    const invalidFields = updateFields.filter(
-      (field) => !allowedFields.includes(field),
-    );
-    if (invalidFields.length > 0) {
-      throw new BadRequestError(`Invalid fields: ${invalidFields.join(", ")}`);
-    }
-
-    // 2. Validate email format if provided
-    if (updateData.email) {
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(updateData.email)) {
-        throw new BadRequestError("Invalid email format");
-      }
-
-      // Check email uniqueness
-      const existingUser = await userModel.findOne({
-        email: updateData.email,
-        _id: { $ne: userId },
-      });
-      if (existingUser) {
-        throw new BadRequestError("Email already exists");
-      }
-    }
-
-    // 3. Validate username if provided
-    if (updateData.username) {
-      if (updateData.username.length < 3 || updateData.username.length > 30) {
-        throw new BadRequestError(
-          "Username must be between 3 and 30 characters",
-        );
-      }
-
-      // Check username uniqueness
-      const existingUser = await userModel.findOne({
-        username: updateData.username,
-        _id: { $ne: userId },
-      });
-      if (existingUser) {
-        throw new BadRequestError("Username already exists");
-      }
-    }
-
-    // 4. Validate fullName if provided
-    if (updateData.fullName && updateData.fullName.trim().length < 2) {
-      throw new BadRequestError("Full name must be at least 2 characters");
-    }
-
-    // 5. Validate bio length
-    if (updateData.bio && updateData.bio.length > 500) {
-      throw new BadRequestError("Bio cannot exceed 500 characters");
-    }
-
-    // Update user
+  static updateProfile = async (updateInput: UpdateInput, userId: string) => {
     const updatedUser = await userModel
       .findByIdAndUpdate(
         userId,
-        { $set: updateData },
+        { $set: updateInput },
         { new: true, runValidators: true },
       )
-      .select("-password");
+      .select("bio avatar fullName");
 
     if (!updatedUser) {
       throw new BadRequestError("User not found");
     }
 
     return updatedUser;
+  };
+
+  static changeEmail = async (
+    changeEmailInput: ChangeEmailInput,
+    userId: string,
+  ) => {
+    const newEmailExist = await userModel.findOne({
+      email: changeEmailInput.newEmail,
+    });
+    if (newEmailExist) throw new BadRequestError("Email is existed");
+
+    const foundUser = await userModel.findById(userId);
+    if (!foundUser) throw new BadRequestError("User not existed!");
+
+    const match = await bcrypt.compare(
+      changeEmailInput.currentPassword,
+      foundUser.password,
+    );
+    if (!match) throw new AuthFailureError("Authentication error");
+
+    // send email xac nhan
+    ///
+    ///
+    ///
+
+    const updateEmail = await userModel
+      .findByIdAndUpdate(userId, { $set: changeEmailInput }, { new: true })
+      .select("email");
+
+    if (!updateEmail)
+      throw new BadRequestError("User not found, update failed!");
+
+    return updateEmail;
+  };
+
+  static changeUserName = async (userId: string, newUsername: string) => {
+    const foundUser = await userModel
+      .find({ username: newUsername })
+      .select("_id");
+    if (foundUser) throw new BadRequestError("username is existed");
+
+    const updateUsername = await userModel
+      .findByIdAndUpdate(userId, {
+        $set: { username: newUsername },
+      })
+      .select("username");
+
+    if (!updateUsername)
+      throw new BadRequestError("User not found, update username failed");
+
+    return updateUsername;
   };
 
   static getAllUsersWithPagination = async ({
