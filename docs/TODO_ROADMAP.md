@@ -429,32 +429,28 @@
 
 #### Công Việc Hôm Nay (4-6 giờ)
 
-- [ ] **Tạo `src/middleware/validation.ts`** — Input validation cho tất cả endpoints
-  - [ ] Cài đặt thư viện validation (zod hoặc joi)
-  - [ ] `validateRegisterInput` — email format, password strength, username length (3-30 chars)
-  - [ ] `validateLoginInput` — email required, password required
-  - [ ] `validateUpdateUserInput` — email format (optional), username uniqueness
-  - [ ] `validatePostInput` — title required (5-200 chars), content required, categoryId valid ObjectId
-  - [ ] `validateUpdatePostInput` — partial validation cho update
-  - [ ] `validateCommentInput` — content required (1-2000 chars), postId valid ObjectId
-  - [ ] `validateCategoryInput` — name required (2-50 chars), description optional
-  - [ ] `validateObjectIdParam` — Kiểm tra params là valid MongoDB ObjectId
-  - [ ] `validatePaginationQuery` — page >= 1, limit 1-100, sort fields hợp lệ
+- [x] **Tạo `src/middleware/validation.ts`** — Input validation cho tất cả endpoints
+  - [x] Cài đặt thư viện validation (zod hoặc joi)
+  - [x] `validateRegisterInput` — email format, password strength, username length (3-30 chars)
+  - [x] `validateLoginInput` — email required, password required
+  - [x] `validateUpdateUserInput` — avatar, bio, fullName valid
+  - [x] `validateUpdateUserEmailInput` — email valid
+  - [x] `validateUpdateUsernameInput` — username valid
+  - [x] `validatePostInput` — title required (5-200 chars), content required, categoryId valid ObjectId
+  - [x] `validateUpdatePostInput` — partial validation cho update
+  - [x] `validateCommentInput` — content required (1-2000 chars), postId valid ObjectId
+  - [x] `validateCategoryInput` — name required (2-50 chars), description optional
 
-- [ ] **Bổ sung ownership middleware còn thiếu**
-  - [ ] `checkPostOwnership` — Xác minh user sở hữu post (hiện chỉ có role check, chưa verify ownership thực sự)
-  - [ ] `checkCommentOwnership` — Xác minh user sở hữu comment (hiện chỉ check ở service layer)
+- [x] **Bổ sung ownership middleware còn thiếu**
+  - [x] `checkPostOwnership` — Xác minh user sở hữu post (hiện chỉ có role check, chưa verify ownership thực sự)
+  - [x] `checkCommentOwnership` — Xác minh user sở hữu comment (hiện chỉ check ở service layer)
 
-- [ ] **Áp dụng validation middleware vào routes**
-  - [ ] Access routes: validateRegisterInput, validateLoginInput
-  - [ ] User routes: validateUpdateUserInput, validateObjectIdParam
-  - [ ] Post routes: validatePostInput, validateUpdatePostInput, validatePaginationQuery
-  - [ ] Comment routes: validateCommentInput
-  - [ ] Category routes: validateCategoryInput
-
-- [ ] **Sửa lỗi error status codes**
-  - [ ] `BadRequestError` — Đổi default status từ 403 → 400
-  - [ ] `ConflictRequestError` — Đổi default status từ 403 → 409
+- [x] **Áp dụng validation middleware vào routes**
+  - [x] Access routes: validateRegisterInput, validateLoginInput
+  - [x] User routes: validateUpdateUserInput
+  - [x] Post routes: validatePostInput, validateUpdatePostInput
+  - [x] Comment routes: validateCommentInput
+  - [x] Category routes: validateCategoryInput
 
 - [ ] Testing
   - [ ] Test validation với inputs không hợp lệ (missing fields, wrong types, quá dài)
