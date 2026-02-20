@@ -2,11 +2,17 @@ import express from "express";
 import { asyncHandler } from "../../auth/checkAuth.js";
 import { authentication } from "../../auth/authUtils.js";
 import CommentController from "../../controllers/comment.controller.js";
+import { validateCommentInput } from "../../middleware/validation.js";
 
 const router = express.Router();
 
 // Comment CRUD
-router.post("/", authentication, asyncHandler(CommentController.createComment));
+router.post(
+  "/",
+  authentication,
+  validateCommentInput,
+  asyncHandler(CommentController.createComment),
+);
 router.get(
   "/:commentId",
   authentication,

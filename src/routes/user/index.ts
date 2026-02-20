@@ -8,9 +8,14 @@ import {
   checkMaximumAdmins,
   checkMinimumAdmins,
   checkNotSelfDemotion,
-  checkOwnershipOrAdmin,
+  checkOwnership,
   checkSuperAdminProtection,
 } from "../../middleware/authorization.js";
+import {
+  validateUpdateUserEmailInput,
+  validateUpdateUserInput,
+  validateUpdateUsernameInput,
+} from "../../middleware/validation.js";
 
 const router = express.Router();
 
@@ -25,15 +30,32 @@ router.get(
 
 // User can update their own profile, or admin can update any
 router.put(
-  "/:userId",
+  "/",
+  validateUpdateUserInput,
   authentication,
-  checkOwnershipOrAdmin("userId"),
+  checkOwnership,
   asyncHandler(userController.updateUserProfile),
+);
+
+router.put(
+  "/update-email",
+  validateUpdateUserEmailInput,
+  authentication,
+  checkOwnership,
+  asyncHandler(userController.updateUserEmail),
+);
+
+router.put(
+  "/update-username",
+  validateUpdateUsernameInput,
+  authentication,
+  checkOwnership,
+  asyncHandler(userController.updateUserUsername),
 );
 
 // Admin-only routes
 router.get(
-  "/users",
+  "/all",
   authentication,
   checkAdmin,
   asyncHandler(userController.getAllUsers),

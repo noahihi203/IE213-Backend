@@ -2,7 +2,10 @@ import express from "express";
 import CategoryController from "../../controllers/category.controller.js";
 import { asyncHandler } from "../../auth/checkAuth.js";
 import { authentication } from "../../auth/authUtils.js";
-import { checkAdmin } from "../../middleware/authorization.js";
+import {
+  checkAdmin,
+  checkCommentOwnership,
+} from "../../middleware/authorization.js";
 
 const router = express.Router();
 
@@ -21,12 +24,14 @@ router.post(
 router.put(
   "/:categoryId",
   authentication,
+  checkCommentOwnership,
   checkAdmin,
   asyncHandler(CategoryController.updateCategory),
 );
 router.delete(
   "/:categoryId",
   authentication,
+  checkCommentOwnership,
   checkAdmin,
   asyncHandler(CategoryController.deleteCategory),
 );

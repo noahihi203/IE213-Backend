@@ -1,8 +1,15 @@
 import express from "express";
 import { asyncHandler } from "../../auth/checkAuth.js";
 import { authentication } from "../../auth/authUtils.js";
-import { checkAuthorOrAdmin } from "../../middleware/authorization.js";
+import {
+  checkAuthorOrAdmin,
+  checkPostOwnership,
+} from "../../middleware/authorization.js";
 import PostController from "../../controllers/post.controller.js";
+import {
+  validatePostInput,
+  validateUpdatePostInput,
+} from "../../middleware/validation.js";
 
 const router = express.Router();
 
@@ -15,6 +22,7 @@ router.get("/slug/:slug", asyncHandler(PostController.getPostBySlug));
 // PROTECTED ROUTES - Require authentication
 router.post(
   "/",
+  validatePostInput,
   authentication,
   checkAuthorOrAdmin,
   asyncHandler(PostController.createPost),
@@ -22,7 +30,9 @@ router.post(
 
 router.put(
   "/:postId",
+  validateUpdatePostInput,
   authentication,
+  checkPostOwnership,
   checkAuthorOrAdmin,
   asyncHandler(PostController.updatePost),
 );
@@ -31,6 +41,7 @@ router.delete(
   "/:postId",
   authentication,
   checkAuthorOrAdmin,
+  checkPostOwnership,
   asyncHandler(PostController.deletePost),
 );
 
