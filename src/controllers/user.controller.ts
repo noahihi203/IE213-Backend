@@ -3,6 +3,7 @@ import { SuccessResponse, CREATED } from "../core/success.response.js";
 import UserService from "../services/user.service.js";
 import CommentService from "../services/comment.service.js";
 import { convertToObjectIdMongodb } from "../utils/index.js";
+import { BadRequestError } from "../core/error.response.js";
 
 class UserController {
   getUserProfile = async (req: Request, res: Response): Promise<void> => {
@@ -17,16 +18,29 @@ class UserController {
   };
 
   updateUserProfile = async (req: Request, res: Response): Promise<void> => {
-    const userId = Array.isArray(req.params.userId)
-      ? req.params.userId[0]
-      : req.params.userId;
-
+    if (typeof req.user?.userId !== "string")
+      throw new BadRequestError("Invalid userId format");
     new SuccessResponse({
       message: "Update user profile success!",
-      metadata: await UserService.updateUser({
-        userId,
-        updateData: req.body,
-      }),
+      metadata: await UserService.updateProfile(req.body, req.user?.userId),
+    }).send(res);
+  };
+
+  updateUserEmail = async (req: Request, res: Response): Promise<void> => {
+    if (typeof req.user?.userId !== "string")
+      throw new BadRequestError("Invalid userId format");
+    new SuccessResponse({
+      message: "Update user email success!",
+      metadata: await UserService.changeEmail(req.body, req.user?.userId),
+    }).send(res);
+  };
+
+  updateUserUsername = async (req: Request, res: Response): Promise<void> => {
+    if (typeof req.user?.userId !== "string")
+      throw new BadRequestError("Invalid userId format");
+    new SuccessResponse({
+      message: "Update user username success!",
+      metadata: await UserService.changeUserName(req.body, req.user?.userId),
     }).send(res);
   };
 
