@@ -7,6 +7,9 @@ import {
 } from "../core/error.response.js";
 import { userModel } from "../models/user.model.js";
 import { adminConfig } from "../config/admin.config.js";
+import { postModel } from "../models/post.model.js";
+import { convertToObjectIdMongodb } from "../utils/index.js";
+import { commentModel } from "../models/comment.model.js";
 
 // Extend Express Request type to include user
 declare global {
@@ -211,11 +214,6 @@ export const checkMaximumAdmins = async (
   }
   next();
 };
-
-/**
- * Middleware to check if user has specific roles
- * @param roles - Array of allowed roles
- */
 export const checkRoles = (...roles: string[]) => {
   return (req: Request, res: Response, next: NextFunction) => {
     const user = req.user;
@@ -233,24 +231,21 @@ export const checkRoles = (...roles: string[]) => {
     next();
   };
 };
-
-/**
- * Middleware to check if user owns the resource or is admin
- * @param resourceIdParam - Name of the parameter containing resource owner ID
- */
-export const checkOwnershipOrAdmin = (resourceIdParam: string = "userId") => {
+export const checkOwnership = () => {
   return (req: Request, res: Response, next: NextFunction) => {
     const user = req.user;
-    console.log("user", user);
+    const targetUser = req.body.userId;
 
     if (!user) {
       throw new ForBiddenError("Authentication required");
     }
 
-    const resourceOwnerId = req.params[resourceIdParam];
+    if (!targetUser) {
+      throw new ForBiddenError("Body required");
+    }
 
     // Allow if user is admin or owns the resource
-    if (user.role === "admin" || user.userId === resourceOwnerId) {
+    if (user.userId === targetUser) {
       next();
     } else {
       throw new ForBiddenError(
@@ -276,6 +271,40 @@ export const checkAuthorOrAdmin = (
   if (user.role !== "author" && user.role !== "admin") {
     throw new ForBiddenError("author or Admin access required");
   }
+
+  next();
+};
+
+export const checkPostOwnership = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  const user = req.user;
+  if (!user) {
+    throw new ForBiddenError("Authentication required");
+  }
+  const postId = req.params.postId;
+  const foundPost = await postModel.findById(postId);
+  if (convertToObjectIdMongodb(user.userId) !== foundPost?.authorId)
+    throw new ForBiddenError("Not owner ship");
+  next();
+};
+
+export const checkCommentOwnership = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  const user = req.user;
+  if (!user) {
+    throw new ForBiddenError("Authentication required");
+  }
+
+  const commentId = req.body.commentId;
+  const foundComment = await commentModel.findById(commentId);
+  if (convertToObjectIdMongodb(user.userId) !== foundComment?.userId)
+    throw new ForBiddenError("Not owner ship");
 
   next();
 };
