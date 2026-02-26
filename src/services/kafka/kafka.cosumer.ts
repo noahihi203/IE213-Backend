@@ -3,6 +3,7 @@ import { notificationModel } from "../../models/notification.model.js";
 import { userModel } from "../../models/user.model.js";
 import { postModel } from "../../models/post.model.js";
 import { commentModel } from "../../models/comment.model.js";
+import logger from "../../config/logger.config.js";
 
 export class KafkaConsumer {
   private consumer: Consumer;
@@ -42,7 +43,7 @@ export class KafkaConsumer {
       },
     });
 
-    console.log("Kafka Consumer is running...");
+    logger.info("Kafka Consumer is running...");
   }
 
   private async processAndSaveToDB(notifications: any[]) {
@@ -56,14 +57,14 @@ export class KafkaConsumer {
         // Validate user
         const userExists = await userModel.exists({ _id: userId });
         if (!userExists) {
-          console.warn(`Skip notification: user ${userId} not found`);
+          logger.warn(`Skip notification: user ${userId} not found`);
           continue;
         }
 
         // Validate actor
         const actorExists = await userModel.exists({ _id: actorId });
         if (!actorExists) {
-          console.warn(`Skip notification: actor ${actorId} not found`);
+          logger.warn(`Skip notification: actor ${actorId} not found`);
           continue;
         }
 
@@ -71,13 +72,13 @@ export class KafkaConsumer {
         if (targetType === "post") {
           const targetExists = await postModel.exists({ _id: targetId });
           if (!targetExists) {
-            console.warn(`Skip notification: post ${targetId} not found`);
+            logger.warn(`Skip notification: post ${targetId} not found`);
             continue;
           }
         } else if (targetType === "comment") {
           const targetExists = await commentModel.exists({ _id: targetId });
           if (!targetExists) {
-            console.warn(
+            logger.warn(
               `Skip notification: comment ${targetId} not found`,
             );
             continue;
@@ -85,7 +86,7 @@ export class KafkaConsumer {
         } else if (targetType === "user") {
           const targetExists = await userModel.exists({ _id: targetId });
           if (!targetExists) {
-            console.warn(
+            logger.warn(
               `Skip notification: target user ${targetId} not found`,
             );
             continue;
@@ -94,7 +95,7 @@ export class KafkaConsumer {
 
         validNotifications.push(msg.notificationPayload);
       } catch (error) {
-        console.error(`Error processing notification:`, error);
+        logger.error(`Error processing notification:`, error);
         // Continue processing other notifications
       }
     }
@@ -105,12 +106,12 @@ export class KafkaConsumer {
         const result = await notificationModel.insertMany(validNotifications, {
           ordered: false, // Continue on error
         });
-        console.log(`Saved ${result.length} notifications to DB`);
+        logger.info(`Saved ${result.length} notifications to DB`);
       } catch (error) {
-        console.error(`Failed to save notifications:`, error);
+        logger.error(`Failed to save notifications:`, error);
       }
     } else {
-      console.log(`No valid notifications to save`);
+      logger.error(`No valid notifications to save`);
     }
   }
 }

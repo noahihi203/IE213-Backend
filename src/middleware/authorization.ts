@@ -10,6 +10,7 @@ import { adminConfig } from "../config/admin.config.js";
 import { postModel } from "../models/post.model.js";
 import { convertToObjectIdMongodb } from "../utils/index.js";
 import { commentModel } from "../models/comment.model.js";
+import logger from "../config/logger.config.js";
 
 // Extend Express Request type to include user
 declare global {
@@ -121,7 +122,7 @@ export const checkAdminToAdminPermission = async (
   if (!superAdmin) {
     throw new ForBiddenError("User not found 2!");
   }
-  console.log("superAdmin superAdmin", superAdmin);
+  logger.debug("superAdmin superAdmin", superAdmin);
 
   if (targetUser.role === "admin") {
     if (currentUser.role === "admin" && !superAdmin.isSuperAdmin) {

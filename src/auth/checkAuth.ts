@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction, RequestHandler } from "express";
 import apiKeyService from "../services/apikey.service.js";
+import logger from "../config/logger.config.js";
 
 interface CustomRequest extends Request {
   objKey?: {
@@ -20,8 +21,8 @@ const apiKey = async (
 ): Promise<void | Response> => {
   try {
     const key = req.headers[HEADER.API_KEY]?.toString().trim();
-    console.log("[1]:::key:", key);
-    console.log(
+    logger.debug("[1]:::key:", key);
+    logger.debug(
       "[2]:::req.headers[HEADER.API_KEY]:",
       req.headers[HEADER.API_KEY],
     );
@@ -32,7 +33,7 @@ const apiKey = async (
     }
     // check objKey
     const objKey = await apiKeyService.findById(key);
-    console.log("[3]:::objKey:", objKey);
+    logger.debug("[3]:::objKey:", objKey);
 
     if (!objKey) {
       return res.status(403).json({
@@ -54,7 +55,7 @@ const permission = (permissionName: string): RequestHandler => {
       });
     }
 
-    console.log("permission::", req.objKey.permissions);
+    logger.debug("permission::", req.objKey.permissions);
     const validPermission = req.objKey.permissions.includes(permissionName);
     if (!validPermission) {
       return res.status(403).json({

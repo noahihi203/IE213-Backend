@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from "express";
 import { z } from "zod";
 import { ForBiddenError } from "../core/error.response.js";
 import { ObjectId } from "mongodb";
+import logger from "../config/logger.config.js";
 
 const RegisterInput = z.object({
   username: z
@@ -107,8 +108,8 @@ export const validateRegisterInput = async (
 
     const result = await RegisterInput.safeParse(registerInput);
 
-    if (!result.success) console.log(result.error);
-    else console.log(result.data);
+    if (!result.success) logger.error(result.error);
+    else logger.debug(result.data);
   } catch {
     throw new ForBiddenError("Error in validation");
   } finally {
@@ -126,8 +127,8 @@ export const validateLoginInput = async (
 
     const result = await LoginInput.safeParse(loginInput);
 
-    if (!result.success) console.log(result.error);
-    else console.log(result.data);
+    if (!result.success) logger.error(result.error);
+    else logger.debug(result.data);
   } catch {
     throw new ForBiddenError("Error in validation");
   } finally {
@@ -145,8 +146,8 @@ export const validateUpdateUserInput = async (
 
     const result = await UpdateProfileInput.safeParse(updateInput);
 
-    if (!result.success) console.log(result.error);
-    else console.log(result.data);
+    if (!result.success) logger.error(result.error);
+    else logger.debug(result.data);
   } catch {
     throw new ForBiddenError("Error in validation");
   } finally {
@@ -164,8 +165,8 @@ export const validateUpdateUserEmailInput = async (
 
     const result = await UpdateEmailInput.safeParse(updateInput);
 
-    if (!result.success) console.log(result.error);
-    else console.log(result.data);
+    if (!result.success) logger.error(result.error);
+    else logger.debug(result.data);
   } catch {
     throw new ForBiddenError("Error in validation");
   } finally {
@@ -183,8 +184,8 @@ export const validateUpdateUsernameInput = async (
 
     const result = await UpdateUsernameInput.safeParse(updateInput);
 
-    if (!result.success) console.log(result.error);
-    else console.log(result.data);
+    if (!result.success) logger.error(result.error);
+    else logger.debug(result.data);
   } catch {
     throw new ForBiddenError("Error in validation");
   } finally {
@@ -202,8 +203,8 @@ export const validatePostInput = async (
 
     const result = await PostInput.safeParse(postInput);
 
-    if (!result.success) console.log(result.error);
-    else console.log(result.data);
+    if (!result.success) logger.error(result.error);
+    else logger.debug(result.data);
   } catch {
     throw new ForBiddenError("Error in validation");
   } finally {
@@ -221,8 +222,8 @@ export const validateUpdatePostInput = async (
 
     const result = await UpdatePostInput.safeParse(updatePostInput);
 
-    if (!result.success) console.log(result.error);
-    else console.log(result.data);
+    if (!result.success) logger.error(result.error);
+    else logger.debug(result.data);
   } catch {
     throw new ForBiddenError("Error in validation");
   } finally {
@@ -240,8 +241,8 @@ export const validateCommentInput = async (
 
     const result = await CommentInput.safeParse(commentInput);
 
-    if (!result.success) console.log(result.error);
-    else console.log(result.data);
+    if (!result.success) logger.error(result.error);
+    else logger.debug(result.data);
   } catch {
     throw new ForBiddenError("Error in validation");
   } finally {
@@ -259,8 +260,8 @@ export const validateCategoryInput = async (
 
     const result = await CategoryInput.safeParse(categoryInput);
 
-    if (!result.success) console.log(result.error);
-    else console.log(result.data);
+    if (!result.success) logger.error(result.error);
+    else logger.debug(result.data);
   } catch {
     throw new ForBiddenError("Error in validation");
   } finally {

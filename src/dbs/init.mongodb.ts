@@ -2,6 +2,7 @@
 
 import mongoose from "mongoose";
 import configMongodb from "../config/config.mongodb.js";
+import logger from "../config/logger.config.js";
 
 const { host, name, port } = configMongodb.db;
 const connectString = `mongodb://${host}:${port}/${name}`;
@@ -22,9 +23,9 @@ class Database {
     mongoose
       .connect(connectString, { maxPoolSize: 50 })
       .then((_) => {
-        console.log(`Connected Mongodb Success to: ${connectString}`);
+        logger.info(`Connected Mongodb Success to: ${connectString}`);
       })
-      .catch((err) => console.log(`Error Connect!${err}`));
+      .catch((err) => logger.error(`Error Connect!${err}`));
   }
   static getInstance() {
     if (!Database.instance) {

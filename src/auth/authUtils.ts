@@ -9,7 +9,8 @@ import {
 //service
 import KeyTokenService from "../services/keyToken.service.js";
 import { userModel } from "../models/user.model.js";
-import { Request, Response,NextFunction } from "express";
+import { Request, Response, NextFunction } from "express";
+import logger from "../config/logger.config.js";
 
 const HEADER = {
   API_KEY: "x-api-key",
@@ -42,9 +43,9 @@ const createTokenPair = async (
       { algorithms: ["RS256"] },
       (err, decode) => {
         if (err) {
-          console.error(`error verify::`, err);
+          logger.error(`error verify::`, err);
         } else {
-          console.log(`decode verify::`, decode);
+          logger.debug(`decode verify::`, { decode });
         }
       },
     );
@@ -80,23 +81,50 @@ const checkTokenVersion = async (decodedToken: JwtPayload) => {
   }
 };
 
-const authentication = asyncHandler(async (req :Request, res: Response, next: NextFunction) => {
-  const userId = req.headers[HEADER.CLIENT_ID];
-  if (!userId) throw new AuthFailureError("Invalid Request");
+const authentication = asyncHandler(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const userId = req.headers[HEADER.CLIENT_ID];
+    if (!userId) throw new AuthFailureError("Invalid Request");
 
-  if (typeof userId !== "string")
-    throw new BadRequestError("Invalid userId format");
-  const keyStore = await KeyTokenService.findByUserId(userId);
-  if (!keyStore) throw new NotFoundError("Not found keyStore");
+    if (typeof userId !== "string")
+      throw new BadRequestError("Invalid userId format");
+    const keyStore = await KeyTokenService.findByUserId(userId);
+    if (!keyStore) throw new NotFoundError("Not found keyStore");
 
-  const refreshToken = req.headers[HEADER.REFRESHTOKEN];
+    const refreshToken = req.headers[HEADER.REFRESHTOKEN];
 
-  if (typeof refreshToken !== "string")
-    throw new BadRequestError("Invalid refresh token format!");
+    if (typeof refreshToken !== "string")
+      throw new BadRequestError("Invalid refresh token format!");
 
-  if (refreshToken) {
+    if (refreshToken) {
+      try {
+        const decodeUser = JWT.verify(refreshToken, keyStore.publicKey, {
+          algorithms: ["RS256"],
+        }) as JwtPayload;
+        if (userId !== decodeUser.userId)
+          throw new AuthFailureError("Invalid Userid");
+
+        // Check token version
+        await checkTokenVersion(decodeUser);
+
+        (req as any).keyStore = keyStore;
+        (req as any).user = decodeUser;
+        (req as any).refreshToken = refreshToken;
+        return next();
+      } catch (error) {
+        throw error;
+      }
+    }
+
+    // Nếu không có refresh token, kiểm tra access token
+    const accessToken = req.headers[HEADER.AUTHORIZATION];
+    if (!accessToken) throw new AuthFailureError("Invalid Request");
+
+    if (typeof accessToken !== "string")
+      throw new BadRequestError("Invalid accessToken format");
+
     try {
-      const decodeUser = JWT.verify(refreshToken, keyStore.publicKey, {
+      const decodeUser = JWT.verify(accessToken, keyStore.publicKey, {
         algorithms: ["RS256"],
       }) as JwtPayload;
       if (userId !== decodeUser.userId)
@@ -107,37 +135,12 @@ const authentication = asyncHandler(async (req :Request, res: Response, next: Ne
 
       (req as any).keyStore = keyStore;
       (req as any).user = decodeUser;
-      (req as any).refreshToken = refreshToken;
       return next();
     } catch (error) {
       throw error;
     }
-  }
-
-  // Nếu không có refresh token, kiểm tra access token
-  const accessToken = req.headers[HEADER.AUTHORIZATION];
-  if (!accessToken) throw new AuthFailureError("Invalid Request");
-
-  if (typeof accessToken !== "string")
-    throw new BadRequestError("Invalid accessToken format");
-
-  try {
-    const decodeUser = JWT.verify(accessToken, keyStore.publicKey, {
-      algorithms: ["RS256"],
-    }) as JwtPayload;
-    if (userId !== decodeUser.userId)
-      throw new AuthFailureError("Invalid Userid");
-
-    // Check token version
-    await checkTokenVersion(decodeUser);
-
-    (req as any).keyStore = keyStore;
-    (req as any).user = decodeUser;
-    return next();
-  } catch (error) {
-    throw error;
-  }
-});
+  },
+);
 
 const verifyJWT = async (token: string, keySecret: Secret) => {
   return JWT.verify(token, keySecret, { algorithms: ["RS256"] });

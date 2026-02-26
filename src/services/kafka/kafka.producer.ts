@@ -1,4 +1,5 @@
 import { Kafka, Producer, Partitioners } from "kafkajs";
+import logger from "../../config/logger.config.js";
 
 export class KafkaProducer {
   private producer: Producer;
@@ -20,7 +21,7 @@ export class KafkaProducer {
 
   async connect() {
     await this.producer.connect();
-    console.log("Kafka Producer connected");
+    logger.info("Kafka Producer connected");
   }
 
   async disconnect() {
@@ -36,7 +37,7 @@ export class KafkaProducer {
         acks: 1,
       });
     } catch (error) {
-      console.error(`Kafka Publish Error [${topic}]:`, error);
+      logger.error(`Kafka Publish Error [${topic}]:`, error);
     }
   }
 }

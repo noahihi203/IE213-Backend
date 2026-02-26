@@ -7,6 +7,7 @@ import { convertToObjectIdMongodb } from "../utils/index.js";
 import { Schema } from "mongoose";
 import ShareService from "../services/share.service.js";
 import CommentService from "../services/comment.service.js";
+import logger from "../config/logger.config.js";
 
 class PostController {
   getAllPosts = async (req: Request, res: Response) => {
@@ -85,7 +86,7 @@ class PostController {
       userId: convertToObjectIdMongodb(userId),
     };
 
-    console.log("likeParams", likeParams);
+    logger.debug("likeParams", likeParams);
 
     new SuccessResponse({
       message: "Like post success!",

@@ -1,4 +1,5 @@
 import app from "./src/app";
+import logger from "./src/config/logger.config.js";
 // const { initRedis } = require("./src/services/redis.service");
 
 const PORT = process.env.PORT || 5000;
@@ -15,20 +16,20 @@ async function bootstrap() {
     const consumer = new KafkaConsumer();
     await consumer.connect();
 
-    console.log(" Notification System is ready with Kafka");
+    logger.info("Notification System is ready with Kafka");
 
     // 3. Khởi động Express Server (hoặc framework bạn dùng)
     // app.listen(3000, () => ...)
   } catch (error) {
-    console.error("❌ Failed to start application:", error);
-    process.exit(1); // Thoát nếu không kết nối được hạ tầng quan trọng
+    logger.error("Failed to start application:", error);
+    process.exit(1);
   }
 }
 
 bootstrap();
 const server = app.listen(PORT, async () => {
   // await initRedis();
-  console.log(`WSV eCommerce start with port ${PORT}`);
+  logger.info(`WSV eCommerce start with port ${PORT}`);
 });
 
 // process.on("SIGINT", () => {
