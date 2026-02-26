@@ -1,3 +1,4 @@
+import { JsonObject } from "swagger-ui-express";
 import { StatusCodes, ReasonPhrases } from "../utils/httpStatusCode.js";
 
 const StatusCode = {
@@ -89,10 +90,40 @@ class ForBiddenError extends ErrorResponse {
   }
 }
 
+class ValidationError extends ErrorResponse {
+  constructor(
+    message: string = ReasonPhrases.UNPROCESSABLE_ENTITY,
+    statusCode: number = StatusCodes.UNPROCESSABLE_ENTITY,
+  ) {
+    super(message, statusCode);
+  }
+}
+
+class TooManyRequestsError extends ErrorResponse {
+  constructor(
+    message: string = ReasonPhrases.TOO_MANY_REQUESTS,
+    statusCode: number = StatusCodes.TOO_MANY_REQUESTS,
+  ) {
+    super(message, statusCode);
+  }
+}
+
+class InternalServerError extends ErrorResponse {
+  constructor(
+    message: string = ReasonPhrases.INTERNAL_SERVER_ERROR,
+    statusCode: number = StatusCodes.INTERNAL_SERVER_ERROR,
+  ) {
+    super(message, statusCode);
+  }
+}
+
 export {
   ConflictRequestError,
   BadRequestError,
   AuthFailureError,
   NotFoundError,
   ForBiddenError,
+  ValidationError,
+  TooManyRequestsError,
+  InternalServerError,
 };
