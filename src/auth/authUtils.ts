@@ -1,10 +1,15 @@
 import JWT, { JwtPayload, Secret } from "jsonwebtoken";
 import asyncHandler from "../helpers/asyncHandler.js";
-import { AuthFailureError, NotFoundError } from "../core/error.response.js";
+import {
+  AuthFailureError,
+  BadRequestError,
+  NotFoundError,
+} from "../core/error.response.js";
 
 //service
 import KeyTokenService from "../services/keyToken.service.js";
 import { userModel } from "../models/user.model.js";
+import { Request, Response,NextFunction } from "express";
 
 const HEADER = {
   API_KEY: "x-api-key",
@@ -17,7 +22,10 @@ const createTokenPair = async (
   payLoad: JwtPayload,
   publicKey: Secret,
   privateKey: Secret,
-): Promise<{ accessToken: string; refreshToken: string }> => {
+): Promise<{
+  accessToken: string;
+  refreshToken: string;
+}> => {
   try {
     const accessToken = JWT.sign(payLoad, privateKey, {
       algorithm: "RS256",
@@ -47,10 +55,6 @@ const createTokenPair = async (
   }
 };
 
-/**
- * Check if token version matches current user's token version
- * If mismatch, throw specific error for frontend to handle auto-refresh
- */
 const checkTokenVersion = async (decodedToken: JwtPayload) => {
   const user = await userModel
     .findById(decodedToken.userId)
@@ -76,14 +80,19 @@ const checkTokenVersion = async (decodedToken: JwtPayload) => {
   }
 };
 
-const authentication = asyncHandler(async (req, res, next) => {
+const authentication = asyncHandler(async (req :Request, res: Response, next: NextFunction) => {
   const userId = req.headers[HEADER.CLIENT_ID];
   if (!userId) throw new AuthFailureError("Invalid Request");
 
+  if (typeof userId !== "string")
+    throw new BadRequestError("Invalid userId format");
   const keyStore = await KeyTokenService.findByUserId(userId);
   if (!keyStore) throw new NotFoundError("Not found keyStore");
 
   const refreshToken = req.headers[HEADER.REFRESHTOKEN];
+
+  if (typeof refreshToken !== "string")
+    throw new BadRequestError("Invalid refresh token format!");
 
   if (refreshToken) {
     try {
@@ -92,13 +101,13 @@ const authentication = asyncHandler(async (req, res, next) => {
       }) as JwtPayload;
       if (userId !== decodeUser.userId)
         throw new AuthFailureError("Invalid Userid");
-      
+
       // Check token version
       await checkTokenVersion(decodeUser);
-      
-      req.keyStore = keyStore;
-      req.user = decodeUser;
-      req.refreshToken = refreshToken;
+
+      (req as any).keyStore = keyStore;
+      (req as any).user = decodeUser;
+      (req as any).refreshToken = refreshToken;
       return next();
     } catch (error) {
       throw error;
@@ -109,21 +118,24 @@ const authentication = asyncHandler(async (req, res, next) => {
   const accessToken = req.headers[HEADER.AUTHORIZATION];
   if (!accessToken) throw new AuthFailureError("Invalid Request");
 
+  if (typeof accessToken !== "string")
+    throw new BadRequestError("Invalid accessToken format");
+
   try {
     const decodeUser = JWT.verify(accessToken, keyStore.publicKey, {
       algorithms: ["RS256"],
     }) as JwtPayload;
     if (userId !== decodeUser.userId)
       throw new AuthFailureError("Invalid Userid");
-    
+
     // Check token version
     await checkTokenVersion(decodeUser);
-    
-    req.keyStore = keyStore;
-    req.user = decodeUser;
+
+    (req as any).keyStore = keyStore;
+    (req as any).user = decodeUser;
     return next();
   } catch (error) {
-    throw error; 
+    throw error;
   }
 });
 

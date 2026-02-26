@@ -3,7 +3,7 @@ import { Schema, Types, model } from "mongoose";
 const DOCUMENT_NAME = "Key";
 const COLLECTION_NAME = "Keys";
 
-interface IKeyToken {
+export interface IKeyToken {
   user: Types.ObjectId;
   privateKey: string;
   publicKey: string;

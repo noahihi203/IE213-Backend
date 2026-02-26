@@ -7,8 +7,13 @@ import notificationRouter from "./notification/index.js";
 import postRouter from "./post/index.js";
 import adminRouter from "./admin/index.js";
 const router = express.Router();
-// import { apiKey, permission } from "../auth/checkAuth";
-// import { pushToLogDiscord } from "../middlewares/index";
+import { apiKey, permission } from "../auth/checkAuth.js";
+
+// check api key
+router.use(apiKey);
+// check permission
+router.use(permission("0000"));
+
 router.use("/v1/api/categories", categoryRouter);
 router.use("/v1/api/comments", commentRouter);
 router.use("/v1/api/notifications", notificationRouter);

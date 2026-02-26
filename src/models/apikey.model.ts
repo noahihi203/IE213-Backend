@@ -3,7 +3,7 @@ import { model, Schema } from "mongoose";
 const DOCUMENT_NAME = "ApiKey";
 const COLLECTION_NAME = "ApiKeys";
 
-interface IApiKey {
+export interface IApiKey {
   key: string;
   status: boolean;
   permissions: "0000" | "1111" | "2222";

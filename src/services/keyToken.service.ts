@@ -6,7 +6,7 @@ interface CreateKeyTokenParams {
   userId: Types.ObjectId;
   publicKey: string;
   privateKey: string;
-  refreshToken: string;
+  refreshToken: string | string[];
 }
 
 class KeyTokenService {
