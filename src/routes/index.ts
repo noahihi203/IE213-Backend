@@ -9,6 +9,9 @@ import adminRouter from "./admin/index.js";
 const router = express.Router();
 import { apiKey, permission } from "../auth/checkAuth.js";
 
+
+router.use("/v1/api", accessRouter);
+
 // check api key
 router.use(apiKey);
 // check permission
@@ -18,7 +21,6 @@ router.use("/v1/api/categories", categoryRouter);
 router.use("/v1/api/comments", commentRouter);
 router.use("/v1/api/notifications", notificationRouter);
 router.use("/v1/api/posts", postRouter);
-router.use("/v1/api", accessRouter);
 router.use("/v1/api/user", userRouter);
 router.use("/v1/api/admin", adminRouter);
 export default router;
