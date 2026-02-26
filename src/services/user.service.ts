@@ -3,6 +3,7 @@ import { AuthFailureError, BadRequestError } from "../core/error.response.js";
 import { userModel } from "../models/user.model.js";
 import NotificationService from "./notification.service.js";
 import bcrypt from "bcrypt";
+import logger from "../config/logger.config.js";
 
 interface UserFindByEmail {
   email: string;
@@ -56,7 +57,7 @@ class UserService {
       tokenVersion: 1,
     },
   }: UserFindById) => {
-    console.log("userid", _id);
+    logger.debug("userid", _id);
     return await userModel.findOne({ _id }).select(select).lean();
   };
 

@@ -11,6 +11,7 @@ import {
 } from "../core/error.response.js";
 import { Types } from "mongoose";
 import UserService from "./user.service.js";
+import logger from "../config/logger.config.js";
 
 interface SignUpParams {
   username: string;
@@ -111,7 +112,7 @@ class AccessService {
           isSuperAdmin: true,
           role: "admin",
         });
-        console.log("Super Admin ID: ", newUser._id);
+        logger.debug("Super Admin ID: ", newUser._id);
         if (!updateSuperAdmin) {
           throw new BadRequestError("Update Super Admin failed!");
         }
@@ -265,7 +266,7 @@ class AccessService {
     keyStore: KeyStoreDocument,
   ): Promise<{ deletedCount: number }> => {
     const delKey = await KeyTokenService.removeKeyById(keyStore._id);
-    console.log({ delKey });
+    logger.debug("delKey", { delKey });
     return delKey;
   };
 }
