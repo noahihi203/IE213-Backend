@@ -6,7 +6,7 @@ import {
   NotFoundError,
 } from "../core/error.response.js";
 import { postModel } from "../models/post.model.js";
-import { likeModel } from "../models/like.model.js";
+import { likeCommentModel } from "../models/likeComment.model.js";
 import NotificationService from "./notification.service.js";
 
 interface createCommentParams {
@@ -246,16 +246,14 @@ class CommentService {
     const comment = await commentModel.findById(commentId);
     if (!comment) throw new NotFoundError("Comment not found");
 
-    const like = await likeModel.findOne({
+    const like = await likeCommentModel.findOne({
       targetId: commentId,
       userId: userId,
-      targetType: "comment",
     });
     if (!like) {
-      const newLike = await likeModel.create({
+      const newLike = await likeCommentModel.create({
         userId: userId,
         targetId: commentId,
-        targetType: "comment",
       });
 
       if (!newLike) throw new BadRequestError("Create like record error");
@@ -274,10 +272,9 @@ class CommentService {
         likesCount: comment.likesCount,
       };
     } else {
-      const deleteLikeRecord = await likeModel.deleteOne({
+      const deleteLikeRecord = await likeCommentModel.deleteOne({
         userId: userId,
         targetId: commentId,
-        targetType: "comment",
       });
       if (!deleteLikeRecord)
         throw new BadRequestError("Delete like record failed!");

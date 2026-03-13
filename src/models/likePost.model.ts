@@ -1,15 +1,14 @@
 import { model, Schema, Types } from "mongoose";
 
-const DOCUMENT_NAME = "Like";
-const COLLECTION_NAME = "Likes";
+const DOCUMENT_NAME = "LikePost";
+const COLLECTION_NAME = "LikesPost";
 
 export interface ILike {
   userId: Types.ObjectId;
   targetId: Types.ObjectId;
-  targetType: "post" | "comment";
 }
 
-const likeSchema = new Schema<ILike>(
+const likePostSchema = new Schema<ILike>(
   {
     userId: {
       type: Schema.Types.ObjectId,
@@ -18,12 +17,6 @@ const likeSchema = new Schema<ILike>(
       index: true,
     },
     targetId: { type: Schema.Types.ObjectId, required: true, index: true },
-    targetType: {
-      type: String,
-      enum: ["post", "comment"],
-      required: true,
-      index: true,
-    },
   },
   {
     collection: COLLECTION_NAME,
@@ -33,4 +26,4 @@ const likeSchema = new Schema<ILike>(
   },
 );
 
-export const likeModel = model<ILike>(DOCUMENT_NAME, likeSchema);
+export const likePostModel = model<ILike>(DOCUMENT_NAME, likePostSchema);

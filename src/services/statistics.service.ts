@@ -1,5 +1,5 @@
 import { commentModel } from "../models/comment.model.js";
-import { likeModel } from "../models/like.model.js";
+import { likePostModel } from "../models/likePost.model.js";
 import { postModel } from "../models/post.model.js";
 import { shareModel } from "../models/share.model.js";
 import { userModel } from "../models/user.model.js";
@@ -16,7 +16,7 @@ class StatisTicService {
     const [commentCount, likeCount, shareCount, [userStats], [postStats]] =
       await Promise.all([
         commentModel.countDocuments(),
-        likeModel.countDocuments(),
+        likePostModel.countDocuments(),
         shareModel.countDocuments(),
 
         // 1 query user: tổng + new7d + new30d
@@ -309,7 +309,7 @@ class StatisTicService {
 
     // 3 query song song: likes, comments, shares theo ngày (30 ngày gần nhất)
     const [likeTrend, commentTrend, shareTrend] = await Promise.all([
-      likeModel.aggregate([
+      likePostModel.aggregate([
         { $match: { createdOn: { $gte: thirtyDaysAgo } } },
         {
           $group: {

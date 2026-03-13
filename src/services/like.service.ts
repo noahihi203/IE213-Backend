@@ -1,7 +1,8 @@
 import { Types } from "mongoose";
 import { BadRequestError } from "../core/error.response.js";
 import { commentModel } from "../models/comment.model.js";
-import { likeModel } from "../models/like.model.js";
+import { likeCommentModel } from "../models/likeComment.model.js";
+import { likePostModel } from "../models/likePost.model.js";
 import { postModel } from "../models/post.model.js";
 
 interface likeParams {
@@ -14,19 +15,17 @@ class LikeService {
     const post = await postModel.findById(likeParams.targetId);
     if (!post) throw new BadRequestError("Post not found!");
 
-    const existingLike = await likeModel.findOne({
+    const existingLike = await likePostModel.findOne({
       userId: likeParams.userId,
       targetId: likeParams.targetId,
-      targetType: "post",
     });
 
     if (existingLike) {
       throw new BadRequestError("Already like post");
     } else {
-      const createLikeRecord = await likeModel.create({
+      const createLikeRecord = await likePostModel.create({
         userId: likeParams.userId,
         targetId: likeParams.targetId,
-        targetType: "post",
       });
       if (!createLikeRecord)
         throw new BadRequestError("Create like record failed!");
@@ -43,16 +42,15 @@ class LikeService {
     const post = await postModel.findById(likeParams.targetId);
     if (!post) throw new BadRequestError("Post not found!");
 
-    const existingLike = await likeModel.findOne({
+    const existingLike = await likePostModel.findOne({
       userId: likeParams.userId,
       targetId: likeParams.targetId,
-      targetType: "post",
     });
 
     if (!existingLike) {
       throw new BadRequestError("Like not found");
     } else {
-      const deleteLikeRecord = await likeModel.deleteOne({
+      const deleteLikeRecord = await likePostModel.deleteOne({
         userId: likeParams.userId,
         targetId: likeParams.targetId,
       });
@@ -68,19 +66,17 @@ class LikeService {
   };
 
   static isPostLikeByUser = async (likeParams: likeParams) => {
-    const result = await likeModel.findOne({
+    const result = await likePostModel.findOne({
       userId: likeParams.userId,
       targetId: likeParams.targetId,
-      targetType: "post",
     });
     return !!result;
   };
 
   static getPostLikesCount = async (likeParams: likeParams) => {
-    const result = await likeModel.countDocuments({
+    const result = await likePostModel.countDocuments({
       userId: likeParams.userId,
       targetId: likeParams.targetId,
-      targetType: "post",
     });
     return result;
   };
@@ -89,19 +85,17 @@ class LikeService {
     const comment = await commentModel.findById(likeParams.targetId);
     if (!comment) throw new BadRequestError("Comment not found!");
 
-    const existingLike = await likeModel.findOne({
+    const existingLike = await likeCommentModel.findOne({
       userId: likeParams.userId,
       targetId: likeParams.targetId,
-      targetType: "comment",
     });
 
     if (existingLike) {
       throw new BadRequestError("Already like comment");
     } else {
-      const createLikeRecord = await likeModel.create({
+      const createLikeRecord = await likeCommentModel.create({
         userId: likeParams.userId,
         targetId: likeParams.targetId,
-        targetType: "comment",
       });
       if (!createLikeRecord)
         throw new BadRequestError("Create like record failed!");
@@ -121,16 +115,15 @@ class LikeService {
     const comment = await commentModel.findById(likeParams.targetId);
     if (!comment) throw new BadRequestError("Comment not found!");
 
-    const existingLike = await likeModel.findOne({
+    const existingLike = await likeCommentModel.findOne({
       userId: likeParams.userId,
       targetId: likeParams.targetId,
-      targetType: "comment",
     });
 
     if (!existingLike) {
       throw new BadRequestError("Like not found");
     } else {
-      const deleteLikeRecord = await likeModel.deleteOne({
+      const deleteLikeRecord = await likeCommentModel.deleteOne({
         userId: likeParams.userId,
         targetId: likeParams.targetId,
       });
@@ -149,19 +142,17 @@ class LikeService {
   };
 
   static isCommentLikedByUser = async (likeParams: likeParams) => {
-    const result = await likeModel.findOne({
+    const result = await likeCommentModel.findOne({
       userId: likeParams.userId,
       targetId: likeParams.targetId,
-      targetType: "comment",
     });
     return !!result;
   };
 
   static getCommentLikesCount = async (likeParams: likeParams) => {
-    const result = await likeModel.countDocuments({
+    const result = await likeCommentModel.countDocuments({
       userId: likeParams.userId,
       targetId: likeParams.targetId,
-      targetType: "comment",
     });
     return result;
   };

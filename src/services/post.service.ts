@@ -1,7 +1,7 @@
 import { Schema, Types } from "mongoose";
 import { BadRequestError, ForBiddenError } from "../core/error.response.js";
 import { IPost, postModel } from "../models/post.model.js";
-import { likeModel } from "../models/like.model.js";
+import { likePostModel } from "../models/likePost.model.js";
 import { commentModel } from "../models/comment.model.js";
 import { shareModel } from "../models/share.model.js";
 import { userModel } from "../models/user.model.js";
@@ -236,7 +236,7 @@ class PostService {
       .select("viewCount likesCount sharesCount commentsCount");
 
     // Lấy 10 users LIKE GẦN NHẤT (mới nhất)
-    const users = await likeModel
+    const users = await likePostModel
       .find({ targetId: postId })
       .populate("userId", "fullName avatar")
       .limit(10)
