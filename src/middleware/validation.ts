@@ -98,6 +98,15 @@ const CategoryInput = z.object({
   postCount: z.number(),
 });
 
+const CreateTagInput = z.object({
+  name: z
+    .string()
+    .min(2, "Tag name không được ít hơn 2 ký tự")
+    .max(50, "Tag name không được quá 50 ký tự")
+    .nonempty(),
+  description: z.string(),
+});
+
 export const validateRegisterInput = async (
   req: Request,
   res: Response,
@@ -269,6 +278,26 @@ export const validateCategoryInput = async (
     const categoryInput = req.body;
 
     const result = await CategoryInput.safeParse(categoryInput);
+
+    if (!result.success) logger.error(result.error);
+    else {
+      logger.debug(result.data);
+      return next();
+    }
+  } catch {
+    throw new ValidationError("Error in validation");
+  }
+};
+
+export const validateCreateTagInput = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const createTagInput = req.body;
+
+    const result = await CreateTagInput.safeParse(createTagInput);
 
     if (!result.success) logger.error(result.error);
     else {

@@ -7,6 +7,8 @@ import { shareModel } from "../models/share.model.js";
 import { userModel } from "../models/user.model.js";
 import NotificationService from "./notification.service.js";
 import { convertToObjectIdMongodb } from "../utils/index.js";
+import TagService from "./tag.service.js";
+import { tagModel } from "../models/tag.model.js";
 
 interface PostQueryParams {
   page?: number;
@@ -16,7 +18,7 @@ interface PostQueryParams {
   order?: "asc" | "desc";
   status?: "draft" | "published" | "archived";
   category?: Types.ObjectId;
-  tags?: string[];
+  tags?: Types.ObjectId[];
 }
 
 interface updateData {
@@ -26,7 +28,7 @@ interface updateData {
   coverImageUpdate: string;
   slugUpdate: string;
   statusUpdate: string;
-  tagsUpdate: string; // #chinhtri #lichsu
+  tagsUpdate: Types.ObjectId[];
   categoryUpdate: Types.ObjectId; //{Công Nghệ, }
 }
 
@@ -143,7 +145,8 @@ class PostService {
     return post;
   };
   static createPost = async (postBody: IPost) => {
-    const { authorId, title, content, excerpt, category } = postBody;
+    const { authorId, title, content, excerpt, category, tags } = postBody;
+
     if (!authorId) {
       throw new BadRequestError("AuthorId is required!");
     }
@@ -173,24 +176,78 @@ class PostService {
       throw new BadRequestError("Category is required!");
     }
 
-    return await postModel.create(postBody);
+    const createPost = await postModel.create(postBody);
+    if (!createPost) throw new BadRequestError("Create post success!");
+
+    const updatePostCount = await TagService.updateTagCounts(tags, 1);
+    if (!updatePostCount)
+      throw new BadRequestError("Update post count for tag failed!");
+
+    return createPost;
   };
   static updatePost = async (postId: string, updateData: updateData) => {
     if (!postId) throw new BadRequestError("Missing parameter!");
     if (!updateData) throw new BadRequestError("Missing parameter!");
-    return await postModel.findByIdAndUpdate(
+
+    const beforePost = await postModel.findById(postId);
+    const oldTags = beforePost?.tags;
+
+    const updatePost = await postModel.findByIdAndUpdate(
       postId,
       { $set: updateData },
       { new: true, runValidators: true },
     );
+
+    if (!updatePost) throw new BadRequestError("Update post failed!");
+
+    const newTags = updateData.tagsUpdate || [];
+
+    const tagsToRemove = oldTags?.filter((id) => !newTags.includes(id)) || [];
+
+    const tagsToAdd = newTags?.filter((id) => !oldTags?.includes(id)) || [];
+
+    const updatePostCountToAdd = await TagService.updateTagCounts(tagsToAdd, 1);
+    if (!updatePostCountToAdd)
+      throw new BadRequestError("Update post count for tag failed!");
+
+    const updatePostCountToRemove = await TagService.updateTagCounts(
+      tagsToRemove,
+      -1,
+    );
+    if (!updatePostCountToRemove)
+      throw new BadRequestError("Update post count for tag failed!");
+
+    return updatePost;
   };
   static deletePost = async (postId: string) => {
     if (!postId) throw new BadRequestError("Missing parameter!");
-    return await postModel.findByIdAndUpdate(
-      postId,
-      { status: "archived" },
-      { new: true },
-    );
+
+    const session = postModel.startSession();
+    (await session).startTransaction;
+    try {
+      const deletePost = await postModel.findByIdAndUpdate(
+        postId,
+        { status: "archived" },
+        { new: true },
+      );
+      if (!deletePost) throw new BadRequestError("Delete post failed!");
+
+      const tagsToRemove = deletePost?.tags;
+
+      if (tagsToRemove) {
+        const removeTag = await TagService.updateTagCounts(tagsToRemove, -1);
+        if (!removeTag) {
+          throw new BadRequestError("Remove tag failed!");
+        }
+      }
+
+      (await session).commitTransaction();
+    } catch (error) {
+      (await session).abortTransaction();
+      return;
+    } finally {
+      (await session).endSession();
+    }
   };
   static incrementViewCount = async (postId: string) => {
     if (!postId) {

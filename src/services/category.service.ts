@@ -10,7 +10,7 @@ interface category {
   postCount: number;
 }
 
-function slugify(string: string) {
+export function slugify(string: string) {
   if (!string || string.trim() === "") {
     throw new BadRequestError("Cannot slugify empty string");
   } else {

@@ -11,7 +11,7 @@ export interface IPost {
   coverImage: string;
   slug: string;
   status: "draft" | "published" | "archived";
-  tags: Array<string>;
+  tags: Array<Types.ObjectId>;
   category: Types.ObjectId;
   viewCount: number;
   likesCount: number;
@@ -35,7 +35,7 @@ const postSchema = new Schema<IPost>(
       default: "draft",
       index: true,
     },
-    tags: { type: [String], default: [], index: true },
+    tags: [{ type: Schema.Types.ObjectId, ref: "Tag", index: true }],
     category: { type: Schema.Types.ObjectId, ref: "Category", required: true },
     viewCount: { type: Number, default: 0 },
     likesCount: { type: Number, default: 0 },

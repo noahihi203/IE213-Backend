@@ -6,7 +6,7 @@ const COLLECTION_NAME = "ApiKeys";
 export interface IApiKey {
   key: string;
   status: boolean;
-  permissions: "0000" | "1111" | "2222";
+  permissions: string[];
 }
 
 const apiKeySchema = new Schema<IApiKey>(
@@ -21,7 +21,7 @@ const apiKeySchema = new Schema<IApiKey>(
       default: true,
     },
     permissions: {
-      type: String,
+      type: [String],
       required: true,
       enum: ["0000", "1111", "2222"],
     },

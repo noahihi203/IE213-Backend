@@ -91,13 +91,12 @@ const authentication = asyncHandler(
     const keyStore = await KeyTokenService.findByUserId(userId);
     if (!keyStore) throw new NotFoundError("Not found keyStore");
 
-    const refreshToken = req.headers[HEADER.REFRESHTOKEN];
-
-    if (typeof refreshToken !== "string")
-      throw new BadRequestError("Invalid refresh token format!");
-
-    if (refreshToken) {
+    if (req.headers[HEADER.REFRESHTOKEN]) {
       try {
+        const refreshToken = req.headers[HEADER.REFRESHTOKEN];
+        if (typeof refreshToken !== "string")
+          throw new BadRequestError("Invalid refresh token format!");
+
         const decodeUser = JWT.verify(refreshToken, keyStore.publicKey, {
           algorithms: ["RS256"],
         }) as JwtPayload;
