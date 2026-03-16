@@ -24,14 +24,12 @@ router.post(
 router.put(
   "/:categoryId",
   authentication,
-  checkCommentOwnership,
   checkAdmin,
   asyncHandler(CategoryController.updateCategory),
 );
 router.delete(
   "/:categoryId",
   authentication,
-  checkCommentOwnership,
   checkAdmin,
   asyncHandler(CategoryController.deleteCategory),
 );
