@@ -15,7 +15,9 @@
     "test:e2e": "tsx scripts/test-e2e.ts",
     "test:quick": "tsx scripts/quick-test.ts",
     "test:performance": "tsx scripts/performance-test.ts",
-    "kafka:monitor": "tsx scripts/kafka-monitor.ts"
+    "kafka:monitor": "tsx scripts/kafka-monitor.ts",
+    "seed:categories": "tsx src/scripts/seed-categories.ts",
+    "seed:posts": "tsx src/scripts/seed-post.ts"
   },
   "keywords": [
     "blog",
@@ -27,6 +29,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "amqplib": "^0.10.9",
     "bcrypt": "^6.0.0",
     "compression": "^1.8.1",
     "cors": "^2.8.6",
@@ -34,7 +37,6 @@
     "express": "^5.0.0",
     "helmet": "^8.1.0",
     "jsonwebtoken": "^9.0.3",
-    "kafkajs": "^2.2.4",
     "lodash": "^4.17.23",
     "mongoose": "^9.1.5",
     "morgan": "^1.10.0",
@@ -44,6 +46,7 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
+    "@types/amqplib": "^0.10.8",
     "@types/bcrypt": "^5.0.2",
     "@types/compression": "^1.8.1",
     "@types/cors": "^2.8.19",

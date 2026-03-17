@@ -9,7 +9,8 @@ import {
 import { postModel } from "../models/post.model.js";
 import { commentModel } from "../models/comment.model.js";
 import { convertToObjectIdMongodb } from "../utils/index.js";
-import { kafkaProducer, KafkaProducer } from "./kafka/kafka.producer.js";
+
+import { rabbitMQProducer } from "./rabbitmq/rabbitmq.producer.js";
 
 interface notificationPayload {
   userId: Types.ObjectId;
@@ -80,12 +81,7 @@ class NotificationService {
       if (!targetPost) throw new NotFoundError("Post not found");
     }
 
-    // const noti = notificationModel.create(notificationPayload);
-
-    // if (!noti) throw new ForBiddenError("Create notification error!");
-
-    // return noti;
-    await kafkaProducer.publishNotificationEvent("notification-created", {
+    await rabbitMQProducer.send("notification-queue", {
       notificationPayload,
       createdAt: new Date(),
     });
@@ -99,14 +95,17 @@ class NotificationService {
 
     const query: any = { userId: userId };
 
-    if (!isRead !== undefined) query.isRead = isRead;
+    // Fixed a small typo here (!isRead !== undefined -> isRead !== undefined)
+    if (isRead !== undefined) query.isRead = isRead;
     if (type && type !== "") query.type = type;
+    
     const notifications = notificationModel
       .find(query)
       .populate("actorId", "_id username")
       .sort({ createdOn: -1 })
       .limit(20)
       .lean();
+      
     const total = await notificationModel.countDocuments({
       userId: userId,
     });
@@ -115,6 +114,7 @@ class NotificationService {
       userId: userId,
       isRead: false,
     });
+    
     return {
       notifications,
       total,

@@ -10,7 +10,8 @@ describe("Notification E2E Tests", () => {
   let testUser: any;
   let testActor: any;
   let testPost: any;
-  let authToken: string;
+  let actorToken: string; // Renamed for clarity
+  let userToken: string;  // Added for user-specific requests
 
   beforeAll(async () => {
     // Wait for MongoDB connection
@@ -38,13 +39,19 @@ describe("Notification E2E Tests", () => {
       authorId: testUser._id,
     });
 
-    // Login to get token
-    const loginResponse = await request(app).post("/v1/api/login").send({
+    // Login to get Actor token
+    const actorLoginResponse = await request(app).post("/v1/api/login").send({
       email: testActor.email,
       password: "password123",
     });
+    actorToken = actorLoginResponse.body.metadata.tokens.accessToken;
 
-    authToken = loginResponse.body.metadata.tokens.accessToken;
+    // Login to get User token (Needed for the user to check their own notifications)
+    const userLoginResponse = await request(app).post("/v1/api/login").send({
+      email: testUser.email,
+      password: "password123",
+    });
+    userToken = userLoginResponse.body.metadata.tokens.accessToken;
   });
 
   afterAll(async () => {
@@ -62,13 +69,13 @@ describe("Notification E2E Tests", () => {
     // Act: Like the post (triggers notification)
     const response = await request(app)
       .post(`/v1/api/posts/${testPost._id}/like`)
-      .set("Authorization", `Bearer ${authToken}`)
+      .set("Authorization", `Bearer ${actorToken}`)
       .set("x-client-id", testActor._id.toString());
 
     // Assert API response
     expect(response.status).toBe(200);
 
-    // Wait for Kafka consumer to process
+    // Wait for RabbitMQ consumer to process the queue message and save to DB
     await new Promise((resolve) => setTimeout(resolve, 2000));
 
     // Check notification created in DB
@@ -85,10 +92,10 @@ describe("Notification E2E Tests", () => {
   });
 
   test("Should retrieve user notifications", async () => {
-    // Create some test notifications via Kafka
+    // Create some test notifications via RabbitMQ
     const notifyResponse = await request(app)
       .post(`/v1/api/notifications/create`)
-      .set("Authorization", `Bearer ${authToken}`)
+      .set("Authorization", `Bearer ${actorToken}`)
       .set("x-client-id", testActor._id.toString())
       .send({
         userId: testUser._id,
@@ -104,10 +111,10 @@ describe("Notification E2E Tests", () => {
     // Wait for processing
     await new Promise((resolve) => setTimeout(resolve, 2000));
 
-    // Get notifications
+    // Get notifications (Using the USER token, not the ACTOR token)
     const getResponse = await request(app)
       .get("/v1/api/notifications")
-      .set("Authorization", `Bearer ${authToken}`)
+      .set("Authorization", `Bearer ${userToken}`)
       .set("x-client-id", testUser._id.toString());
 
     expect(getResponse.status).toBe(200);
@@ -128,10 +135,10 @@ describe("Notification E2E Tests", () => {
 
     const notiId = notifications[0]._id;
 
-    // Mark as read
+    // Mark as read (Using USER token)
     const response = await request(app)
       .patch(`/v1/api/notifications/${notiId}/read`)
-      .set("Authorization", `Bearer ${authToken}`)
+      .set("Authorization", `Bearer ${userToken}`)
       .set("x-client-id", testUser._id.toString());
 
     expect(response.status).toBe(200);

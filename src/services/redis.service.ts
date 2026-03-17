@@ -1,4 +1,3 @@
-// src/services/redis.service.ts
 import { createClient, RedisClientType } from "redis";
 
 class RedisService {
@@ -7,67 +6,61 @@ class RedisService {
   public subscriber: RedisClientType;
 
   private constructor() {
-    // Cấu hình kết nối Redis
-    const redisUrl = process.env.REDIS_URL || "redis://127.0.0.1:6379";
+    const redisUrl = process.env.REDIS_URL!;
 
     this.client = createClient({ url: redisUrl });
-
-    // Trong node-redis, client dùng để Subscribe không thể dùng để GET/SET
-    // Ta dùng duplicate() để tạo một bản sao kết nối cho việc Subscribe
     this.subscriber = this.client.duplicate();
 
-    this.client.on("connect", () => console.log("Redis Client connected"));
-    this.client.on("error", (err) => console.error("Redis Client Error", err));
+    this.client.on("connect", () => console.log("✅ Redis connected"));
+    this.client.on("error", (err) => console.error("❌ Redis error:", err));
 
     this.subscriber.on("error", (err) =>
-      console.error("Redis Subscriber Error", err),
+      console.error("❌ Redis subscriber error:", err),
     );
   }
 
-  public static getInstance(): RedisService {
+  static getInstance(): RedisService {
     if (!RedisService.instance) {
       RedisService.instance = new RedisService();
     }
     return RedisService.instance;
   }
 
-  // BẮT BUỘC: Phải gọi hàm này lúc khởi động app (trong index.ts / server.ts)
   async connect(): Promise<void> {
     await this.client.connect();
     await this.subscriber.connect();
   }
 
-  // --- HELPER METHODS ---
+  // --- BASIC CACHE ---
 
   async set(key: string, value: any): Promise<void> {
-    const stringValue =
-      typeof value === "string" ? value : JSON.stringify(value);
-    await this.client.set(key, stringValue);
+    const val = typeof value === "string" ? value : JSON.stringify(value);
+    await this.client.set(key, val);
   }
 
-  async setWithTTL(key: string, value: any, ttlSeconds: number): Promise<void> {
-    const stringValue =
-      typeof value === "string" ? value : JSON.stringify(value);
-    // Lưu ý: Trong node-redis v4, dùng setEx thay vì setex
-    await this.client.setEx(key, ttlSeconds, stringValue);
+  async setWithTTL(
+    key: string,
+    value: any,
+    ttlSeconds: number,
+  ): Promise<void> {
+    const val = typeof value === "string" ? value : JSON.stringify(value);
+    await this.client.setEx(key, ttlSeconds, val);
   }
 
   async get<T>(key: string): Promise<T | null> {
     const data = await this.client.get(key);
     if (!data) return null;
+
     try {
       return JSON.parse(data) as T;
-    } catch (e) {
+    } catch {
       return data as unknown as T;
     }
   }
 
   async del(key: string | string[]): Promise<void> {
     if (Array.isArray(key)) {
-      // Nếu mảng rỗng thì không làm gì cả (Redis sẽ lỗi nếu gọi DEL mà không có key nào)
       if (key.length === 0) return;
-
-      // Trong node-redis v4, DEL nhận trực tiếp một string hoặc mảng string
       await this.client.del(key);
     } else {
       await this.client.del(key);
@@ -78,18 +71,23 @@ class RedisService {
     return await this.client.incr(key);
   }
 
-  // --- PUB/SUB MULTI-INSTANCE ---
+  // --- PUB/SUB ---
 
-  async publish(channel: string, message: string): Promise<void> {
-    await this.client.publish(channel, message);
+  async publish(channel: string, message: any): Promise<void> {
+    const msg = typeof message === "string" ? message : JSON.stringify(message);
+    await this.client.publish(channel, msg);
   }
 
   async subscribe(
     channel: string,
-    callback: (message: string) => void,
+    callback: (message: any) => void,
   ): Promise<void> {
     await this.subscriber.subscribe(channel, (message) => {
-      callback(message);
+      try {
+        callback(JSON.parse(message));
+      } catch {
+        callback(message);
+      }
     });
   }
 }

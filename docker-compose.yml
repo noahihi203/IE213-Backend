@@ -9,23 +9,19 @@ services:
       - MONGO_INITDB_DATABASE=IE213
     volumes:
       - mongodb_data:/data/db
- 
-  kafka:
-    image: bitnami/kafka:latest
-    container_name: kafka
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
     ports:
-      - "9092:9092"
+      - "5672:5672"   # AMQP protocol port for Node.js
+      - "15672:15672" # RabbitMQ Management Web UI
     environment:
-      - KAFKA_CFG_PROCESS_ROLES=controller,broker
-      - KAFKA_CFG_NODE_ID=1
-      - KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
-      - KAFKA_CFG_LISTENERS=PLAINTEXT://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093
-      - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://localhost:9092
-      - KAFKA_CFG_CONTROLLER_QUORUM_VOTERS=1@localhost:9093
-      - KAFKA_CFG_CONTROLLER_LISTENER_NAMES=CONTROLLER
+      - RABBITMQ_DEFAULT_USER=guest
+      - RABBITMQ_DEFAULT_PASS=guest
     volumes:
-      - kafka_data:/bitnami/kafka
- 
+      - rabbitmq_data:/var/lib/rabbitmq
+
   redis:
     image: redis:7-alpine
     container_name: my_redis_container
@@ -34,7 +30,8 @@ services:
     volumes:
       - redis_data:/data
     command: redis-server --save 60 1 --loglevel warning
+
 volumes:
   mongodb_data:
-  kafka_data:
+  rabbitmq_data:
   redis_data:
