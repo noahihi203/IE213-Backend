@@ -15,9 +15,18 @@ const router = express.Router();
 
 // PUBLIC ROUTES - No authentication
 router.get("/trending", asyncHandler(PostController.getTrendingPosts));
-router.get("/", asyncHandler(PostController.getAllPosts));
-router.get("/:postId", asyncHandler(PostController.getSinglePost));
 router.get("/slug/:slug", asyncHandler(PostController.getPostBySlug));
+router.get("/", asyncHandler(PostController.getAllPosts));
+
+// PROTECTED READ ROUTES
+router.get(
+  "/my-posts",
+  authentication,
+  asyncHandler(PostController.getMyPosts),
+);
+
+// PUBLIC ROUTES WITH PATH PARAMS
+router.get("/:postId", asyncHandler(PostController.getSinglePost));
 
 // PROTECTED ROUTES - Require authentication
 router.post(

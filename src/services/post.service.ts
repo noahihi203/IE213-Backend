@@ -17,6 +17,7 @@ interface PostQueryParams {
   sortBy?: string; // ví dụ: 'createdOn', 'publishedAt', 'viewCount'
   order?: "asc" | "desc";
   status?: "draft" | "published" | "archived";
+  authorId?: Types.ObjectId;
   category?: Types.ObjectId;
   tags?: Types.ObjectId[];
 }
@@ -57,8 +58,17 @@ function slugify(string: string) {
 
 class PostService {
   static getAllPostsWithFilters = async (postQueryParams: PostQueryParams) => {
-    let { page, limit, search, sortBy, order, status, category, tags } =
-      postQueryParams;
+    let {
+      page,
+      limit,
+      search,
+      sortBy,
+      order,
+      status,
+      authorId,
+      category,
+      tags,
+    } = postQueryParams;
     page = page || 1;
     limit = limit || 10;
     sortBy = sortBy || "createdOn";
@@ -79,6 +89,10 @@ class PostService {
 
     if (status) {
       filter.status = status;
+    }
+
+    if (authorId) {
+      filter.authorId = authorId;
     }
 
     if (category) {

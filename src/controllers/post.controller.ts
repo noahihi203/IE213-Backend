@@ -41,6 +41,21 @@ class PostController {
     }).send(res);
   };
 
+  getMyPosts = async (req: Request, res: Response) => {
+    const userId = req.user?.userId;
+    if (!userId) {
+      throw new BadRequestError("Authentication !!");
+    }
+
+    new SuccessResponse({
+      message: "Get my posts success!",
+      metadata: await PostService.getAllPostsWithFilters({
+        ...req.query,
+        authorId: convertToObjectIdMongodb(userId),
+      }),
+    }).send(res);
+  };
+
   createPost = async (req: Request, res: Response) => {
     const authorId = req.user?.userId;
     if (!authorId) throw new BadRequestError("Authentication !!");
