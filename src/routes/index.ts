@@ -13,9 +13,9 @@ import { apiKey, permission } from "../auth/checkAuth.js";
 router.use("/v1/api", accessRouter);
 
 // check api key
-router.use(apiKey);
+// router.use(apiKey);
 // check permission
-router.use(permission("0000"));
+// router.use(permission("0000"));
 
 router.use("/v1/api/categories", categoryRouter);
 router.use("/v1/api/tags", tagRouter);

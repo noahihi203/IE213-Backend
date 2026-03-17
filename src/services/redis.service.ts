@@ -63,7 +63,15 @@ class RedisService {
   }
 
   async del(key: string | string[]): Promise<void> {
-    await this.client.del(key);
+    if (Array.isArray(key)) {
+      // Nếu mảng rỗng thì không làm gì cả (Redis sẽ lỗi nếu gọi DEL mà không có key nào)
+      if (key.length === 0) return;
+
+      // Trong node-redis v4, DEL nhận trực tiếp một string hoặc mảng string
+      await this.client.del(key);
+    } else {
+      await this.client.del(key);
+    }
   }
 
   async incr(key: string): Promise<number> {
