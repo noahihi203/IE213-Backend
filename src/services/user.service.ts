@@ -4,6 +4,7 @@ import { userModel } from "../models/user.model.js";
 import NotificationService from "./notification.service.js";
 import bcrypt from "bcrypt";
 import logger from "../config/logger.config.js";
+import { redisService } from "./redis.service.js";
 
 interface UserFindByEmail {
   email: string;
@@ -57,8 +58,17 @@ class UserService {
       tokenVersion: 1,
     },
   }: UserFindById) => {
+    const CACHE_KEY = `user:profile:${_id}`;
+    const TTL = 600; // 10 phút
+
+    const cachedProfile = await redisService.get(CACHE_KEY);
+    if (cachedProfile) return cachedProfile;
+
     logger.debug("userid", _id);
-    return await userModel.findOne({ _id }).select(select).lean();
+    const profile = await userModel.findOne({ _id }).select(select).lean();
+
+    if (profile) await redisService.setWithTTL(CACHE_KEY, profile, TTL);
+    return profile;
   };
 
   static updateProfile = async (updateInput: UpdateInput, userId: string) => {

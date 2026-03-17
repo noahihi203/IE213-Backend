@@ -8,7 +8,7 @@ import { userModel } from "../models/user.model.js";
 import NotificationService from "./notification.service.js";
 import { convertToObjectIdMongodb } from "../utils/index.js";
 import TagService from "./tag.service.js";
-import { tagModel } from "../models/tag.model.js";
+import { redisService } from "./redis.service.js";
 
 interface PostQueryParams {
   page?: number;
@@ -179,7 +179,10 @@ class PostService {
     const createPost = await postModel.create(postBody);
     if (!createPost) throw new BadRequestError("Create post success!");
 
-    const updatePostCount = await TagService.updateTagCounts(tags, 1);
+    const updatePostCount = await TagService.updateTagCounts({
+      tagIds: tags,
+      inc: 1,
+    });
     if (!updatePostCount)
       throw new BadRequestError("Update post count for tag failed!");
 
@@ -206,14 +209,17 @@ class PostService {
 
     const tagsToAdd = newTags?.filter((id) => !oldTags?.includes(id)) || [];
 
-    const updatePostCountToAdd = await TagService.updateTagCounts(tagsToAdd, 1);
+    const updatePostCountToAdd = await TagService.updateTagCounts({
+      tagIds: tagsToAdd,
+      inc: 1,
+    });
     if (!updatePostCountToAdd)
       throw new BadRequestError("Update post count for tag failed!");
 
-    const updatePostCountToRemove = await TagService.updateTagCounts(
-      tagsToRemove,
-      -1,
-    );
+    const updatePostCountToRemove = await TagService.updateTagCounts({
+      tagIds: tagsToRemove,
+      inc: -1,
+    });
     if (!updatePostCountToRemove)
       throw new BadRequestError("Update post count for tag failed!");
 
@@ -235,7 +241,10 @@ class PostService {
       const tagsToRemove = deletePost?.tags;
 
       if (tagsToRemove) {
-        const removeTag = await TagService.updateTagCounts(tagsToRemove, -1);
+        const removeTag = await TagService.updateTagCounts({
+          tagIds: tagsToRemove,
+          inc: -1,
+        });
         if (!removeTag) {
           throw new BadRequestError("Remove tag failed!");
         }
@@ -280,12 +289,22 @@ class PostService {
     }
   };
   static getTrendingPosts = async (limit: number = 10) => {
-    return await postModel
+    const CACHE_KEY = "posts:trending";
+    const TTL = 300; // 5 phút
+
+    const cachedPosts = await redisService.get<any[]>(CACHE_KEY);
+    if (cachedPosts) return cachedPosts;
+
+    const posts = await postModel
       .find({ status: "published" })
       .sort({ trendingScore: -1 })
       .limit(limit)
       .populate("authorId", "fullName avatar")
       .populate("category", "icon name");
+
+    await redisService.setWithTTL(CACHE_KEY, posts, TTL);
+
+    return posts;
   };
   static getPostWithEngagement = async (postId: Schema.Types.ObjectId) => {
     const postWithEngagemment = await postModel
