@@ -4,7 +4,6 @@ import PostService from "../services/post.service.js";
 import { BadRequestError } from "../core/error.response.js";
 import LikeService from "../services/like.service.js";
 import { convertToObjectIdMongodb } from "../utils/index.js";
-import { Schema } from "mongoose";
 import ShareService from "../services/share.service.js";
 import CommentService from "../services/comment.service.js";
 import logger from "../config/logger.config.js";
@@ -149,7 +148,7 @@ class PostController {
     }).send(res);
   };
 
-  getTrendingPosts = async (req: Request, res: Response) => {
+  getTrendingPosts = async (_req: Request, res: Response) => {
     new SuccessResponse({
       message: "Get trending post success!",
       metadata: await PostService.getTrendingPosts(),

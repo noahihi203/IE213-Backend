@@ -30,15 +30,54 @@ export function slugify(string: string) {
 }
 
 class CategoryService {
+  private static async safeRedisGet<T>(key: string): Promise<T | null> {
+    try {
+      return await redisService.get<T>(key);
+    } catch {
+      return null;
+    }
+  }
+
+  private static async safeRedisSetWithTTL(
+    key: string,
+    value: any,
+    ttlSeconds: number,
+  ): Promise<void> {
+    try {
+      await redisService.setWithTTL(key, value, ttlSeconds);
+    } catch {
+      // ignore cache errors
+    }
+  }
+
+  private static async safeRedisDel(key: string | string[]): Promise<void> {
+    try {
+      await redisService.del(key);
+    } catch {
+      // ignore cache errors
+    }
+  }
+
+  private static async safeRedisPublish(
+    channel: string,
+    message: any,
+  ): Promise<void> {
+    try {
+      await redisService.publish(channel, message);
+    } catch {
+      // ignore cache errors
+    }
+  }
+
   static getAllCategories = async () => {
     let categories: category[] = [];
-    const cached = await redisService.get<any[]>(CACHE_KEY);
+    const cached = await CategoryService.safeRedisGet<any[]>(CACHE_KEY);
     if (cached) return cached;
     categories = await categoryModel.find();
     if (!categories) {
       throw new BadRequestError("category not exist!");
     }
-    await redisService.setWithTTL(CACHE_KEY, categories, 3600); // 1 giờ
+    await CategoryService.safeRedisSetWithTTL(CACHE_KEY, categories, 3600); // 1 giờ
     return categories;
   };
 
@@ -101,10 +140,10 @@ class CategoryService {
       icon: icon?.trim() || "",
     });
     // 1. Xóa cache trên Redis
-    await redisService.del(CACHE_KEY);
+    await CategoryService.safeRedisDel(CACHE_KEY);
 
     // 2. Publish sự kiện để các instances khác biết (Nếu bạn có dùng Memory Cache cục bộ)
-    await redisService.publish("CACHE_INVALIDATION", CACHE_KEY);
+    await CategoryService.safeRedisPublish("CACHE_INVALIDATION", CACHE_KEY);
 
     return newCategory;
   };
@@ -158,10 +197,10 @@ class CategoryService {
     );
 
     // 1. Xóa cache trên Redis
-    await redisService.del(CACHE_KEY);
+    await CategoryService.safeRedisDel(CACHE_KEY);
 
     // 2. Publish sự kiện để các instances khác biết (Nếu bạn có dùng Memory Cache cục bộ)
-    await redisService.publish("CACHE_INVALIDATION", CACHE_KEY);
+    await CategoryService.safeRedisPublish("CACHE_INVALIDATION", CACHE_KEY);
 
     if (!updateCategory) {
       throw new BadRequestError("User not found!");
@@ -193,10 +232,10 @@ class CategoryService {
     const deletedCategory = await categoryModel.findByIdAndDelete(categoryId);
 
     // 1. Xóa cache trên Redis
-    await redisService.del(CACHE_KEY);
+    await CategoryService.safeRedisDel(CACHE_KEY);
 
     // 2. Publish sự kiện để các instances khác biết (Nếu bạn có dùng Memory Cache cục bộ)
-    await redisService.publish("CACHE_INVALIDATION", CACHE_KEY);
+    await CategoryService.safeRedisPublish("CACHE_INVALIDATION", CACHE_KEY);
 
     return deletedCategory;
   };
