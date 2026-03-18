@@ -71,6 +71,17 @@ class UserController {
     }).send(res);
   };
 
+  restoreUserById = async (req: Request, res: Response): Promise<void> => {
+    const userId = Array.isArray(req.params.userId)
+      ? req.params.userId[0]
+      : req.params.userId;
+
+    new SuccessResponse({
+      message: "Restore user success!",
+      metadata: await UserService.restoreUserById(userId),
+    }).send(res);
+  };
+
   changeUserRole = async (req: Request, res: Response): Promise<void> => {
     const userId = Array.isArray(req.params.userId)
       ? req.params.userId[0]

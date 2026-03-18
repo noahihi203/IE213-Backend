@@ -37,6 +37,13 @@ class TagService {
     return createTag;
   };
 
+  static getAllTag = async () => {
+    const tags = await tagModel.find({}, "name slug description postCount status");
+    if (!tags) throw new BadRequestError("tags not found");
+
+    return tags;
+  };
+
   static getTagById = async (tagId: Types.ObjectId) => {
     if (!tagId) throw new BadRequestError("Missing parameter");
 
@@ -107,7 +114,7 @@ class TagService {
 
   static deleteTag = async (tagId: Types.ObjectId) => {
     if (!tagId) throw new BadRequestError("Missing parameter");
-
+    
     const tagDelete = await tagModel.findByIdAndDelete(tagId);
     if (!tagDelete) throw new BadRequestError("tag not found");
 

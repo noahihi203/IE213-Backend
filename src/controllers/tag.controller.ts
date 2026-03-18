@@ -22,6 +22,13 @@ class TagController {
     }).send(res);
   };
 
+  getAllTag = async (req: Request, res: Response) => {
+    return new SuccessResponse({
+      message: "Get all tags success!",
+      metadata: await TagService.getAllTag(),
+    }).send(res);
+  };
+
   updateTag = async (req: Request, res: Response) => {
     return new SuccessResponse({
       message: "Update tag success!",

@@ -54,7 +54,7 @@ const UpdateUsernameInput = z.object({
 });
 
 const PostInput = z.object({
-  authorId: z.string().nonempty(),
+  authorId: z.string().optional(),
   title: z
     .string()
     .nonempty()
@@ -219,13 +219,15 @@ export const validatePostInput = async (
 
     const result = await PostInput.safeParse(postInput);
 
-    if (!result.success) logger.error(result.error);
-    else {
+    if (!result.success) {
+      logger.error(result.error);
+      return next(new ValidationError("Error in validation"));
+    } else {
       logger.debug(result.data);
       return next();
     }
-  } catch {
-    throw new ValidationError("Error in validation");
+  } catch (error) {
+    return next(new ValidationError("Error in validation"));
   }
 };
 
