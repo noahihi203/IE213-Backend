@@ -1,12 +1,9 @@
 "use strict";
 
 import mongoose from "mongoose";
-import configMongodb from "../config/config.mongodb.js";
 import logger from "../config/logger.config.js";
 
-const { host, name, port } = configMongodb.db;
-const connectString = `mongodb://${host}:${port}/${name}`;
-
+const connectString = process.env.MONGODB_URI as string;
 //dev
 class Database {
   private static instance: Database;
