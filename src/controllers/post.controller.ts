@@ -15,6 +15,16 @@ class PostController {
       metadata: await PostService.getAllPostsWithFilters(req.query),
     }).send(res);
   };
+  
+  getPostsByCategorySlug = async (req: Request, res: Response) => {
+    const catSlug = req.params.catSlug;
+    if (typeof catSlug !== "string")
+      throw new BadRequestError("Invalid cat slug format!");
+    new SuccessResponse({
+      message: "Get all Post by slug success!",
+      metadata: await PostService.getPostsByCategorySlug(catSlug),
+    }).send(res);
+  };
 
   getSinglePost = async (req: Request, res: Response) => {
     const postId = req.params.postId;
@@ -34,9 +44,32 @@ class PostController {
       throw new BadRequestError("Invalid slug format");
     }
 
+    const post = await PostService.getPostBySlug(slug);
+
+    const forwardedFor = req.headers["x-forwarded-for"];
+    const forwardedIp = Array.isArray(forwardedFor)
+      ? forwardedFor[0]
+      : forwardedFor?.split(",")[0]?.trim();
+    const clientIp = forwardedIp || req.ip || "unknown";
+
+    const rawUserAgent = req.headers["user-agent"];
+    const userAgent = Array.isArray(rawUserAgent)
+      ? rawUserAgent[0]
+      : rawUserAgent || "unknown";
+
+    const userId = req.user?.userId;
+    const viewerKey = userId
+      ? `user:${userId}`
+      : `guest:${clientIp}:${userAgent.slice(0, 120)}`;
+
+    PostService.incrementViewCountOncePerViewer(
+      String((post as any)._id),
+      viewerKey,
+    ).catch((error) => console.error("Failed to increment view count", error));
+
     new SuccessResponse({
       message: "Get single post success!",
-      metadata: await PostService.getPostBySlug(slug),
+      metadata: post,
     }).send(res);
   };
 
@@ -87,6 +120,36 @@ class PostController {
     }).send(res);
   };
 
+  publishPost = async (req: Request, res: Response) => {
+    const postId = req.params.postId;
+    if (typeof postId !== "string")
+      throw new BadRequestError("Invalid post id format!");
+
+    new SuccessResponse({
+      message: "Publish post success!",
+      metadata: await PostService.changeStatusPostToPublished(
+        convertToObjectIdMongodb(postId),
+      ),
+    }).send(res);
+  };
+
+  changePostStatus = async (req: Request, res: Response) => {
+    const postId = req.params.postId;
+    const status = req.body.status;
+
+    if (typeof postId !== "string")
+      throw new BadRequestError("Invalid post id format!");
+
+    if (!status || !["draft", "published", "archived"].includes(status)) {
+      throw new BadRequestError("Invalid status!");
+    }
+
+    new SuccessResponse({
+      message: "Change post status success!",
+      metadata: await PostService.changePostStatus(postId, status),
+    }).send(res);
+  };
+
   likePost = async (req: Request, res: Response) => {
     const postId = req.params.postId;
     if (Array.isArray(postId))
@@ -127,6 +190,25 @@ class PostController {
     }).send(res);
   };
 
+  isPostLikedByUser = async (req: Request, res: Response) => {
+    const postId = req.params.postId;
+    if (Array.isArray(postId))
+      throw new BadRequestError("Invalid postId format!");
+
+    const userId = req.user?.userId;
+    if (!userId) throw new BadRequestError("Invalid userId");
+
+    const likeParams = {
+      targetId: convertToObjectIdMongodb(postId),
+      userId: convertToObjectIdMongodb(userId),
+    };
+
+    new SuccessResponse({
+      message: "Get post like status success!",
+      metadata: await LikeService.isPostLikeByUser(likeParams),
+    }).send(res);
+  };
+
   sharePost = async (req: Request, res: Response) => {
     const postId = req.params.postId;
     if (Array.isArray(postId))
@@ -161,22 +243,38 @@ class PostController {
     if (typeof postId !== "string")
       throw new BadRequestError("Invalid postId format");
 
+    const parentCommentIdRaw = req.query.parentCommentId;
+    const parentCommentId =
+      typeof parentCommentIdRaw === "string" && parentCommentIdRaw.trim()
+        ? convertToObjectIdMongodb(parentCommentIdRaw)
+        : undefined;
+
     new SuccessResponse({
       message: "Get post comments success!",
       metadata: await CommentService.getCommentByParentId(
         convertToObjectIdMongodb(postId),
-        req.body.parentCommentId,
+        parentCommentId,
       ),
     }).send(res);
   };
 
   // get số comment của post
   getCommentCount = async (req: Request, res: Response) => {
+    const postId = req.params.postId;
+    if (typeof postId !== "string")
+      throw new BadRequestError("Invalid postId format");
+
+    const parentCommentIdRaw = req.query.parentCommentId;
+    const parentCommentId =
+      typeof parentCommentIdRaw === "string" && parentCommentIdRaw.trim()
+        ? convertToObjectIdMongodb(parentCommentIdRaw)
+        : undefined;
+
     new SuccessResponse({
       message: "Get comment count success!",
       metadata: await CommentService.getCommentCount(
-        convertToObjectIdMongodb(req.body.postId),
-        convertToObjectIdMongodb(req.body.parentCommentId),
+        convertToObjectIdMongodb(postId),
+        parentCommentId,
       ),
     }).send(res);
   };

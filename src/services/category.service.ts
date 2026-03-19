@@ -73,7 +73,7 @@ class CategoryService {
     let categories: category[] = [];
     const cached = await CategoryService.safeRedisGet<any[]>(CACHE_KEY);
     if (cached) return cached;
-    categories = await categoryModel.find();
+    categories = await categoryModel.find({}, "_id slug description icon name");
     if (!categories) {
       throw new BadRequestError("category not exist!");
     }

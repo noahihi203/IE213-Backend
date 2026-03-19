@@ -21,6 +21,15 @@ const router = express.Router();
 
 // Apply authentication to all routes
 
+// Admin-only routes
+// MUST be defined BEFORE /:userId to prevent "all" being parsed as userId
+router.get(
+  "/all",
+  authentication,
+  checkAdmin,
+  asyncHandler(userController.getAllUsers),
+);
+
 // Public authenticated routes
 router.get(
   "/:userId",
@@ -53,19 +62,20 @@ router.put(
   asyncHandler(userController.updateUserUsername),
 );
 
-// Admin-only routes
-router.get(
-  "/all",
-  authentication,
-  checkAdmin,
-  asyncHandler(userController.getAllUsers),
-);
 router.delete(
   "/:userId",
   authentication,
   checkAdmin,
   asyncHandler(userController.deleteUser),
 );
+
+router.put(
+  "/restore/:userId",
+  authentication,
+  checkAdmin,
+  asyncHandler(userController.restoreUserById),
+);
+
 router.put(
   "/:userId/role",
   authentication,

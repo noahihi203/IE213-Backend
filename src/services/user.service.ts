@@ -33,6 +33,45 @@ interface ChangeEmailInput {
 }
 
 class UserService {
+  private static async safeRedisGet<T>(key: string): Promise<T | null> {
+    try {
+      return await redisService.get<T>(key);
+    } catch {
+      return null;
+    }
+  }
+
+  private static async safeRedisSetWithTTL(
+    key: string,
+    value: any,
+    ttlSeconds: number,
+  ): Promise<void> {
+    try {
+      await redisService.setWithTTL(key, value, ttlSeconds);
+    } catch {
+      // ignore cache errors
+    }
+  }
+
+  private static async safeRedisDel(key: string | string[]): Promise<void> {
+    try {
+      await redisService.del(key);
+    } catch {
+      // ignore cache errors
+    }
+  }
+
+  private static async safeRedisPublish(
+    channel: string,
+    message: any,
+  ): Promise<void> {
+    try {
+      await redisService.publish(channel, message);
+    } catch {
+      // ignore cache errors
+    }
+  }
+
   static findUserByEmail = async ({
     email,
     select = {
@@ -61,13 +100,13 @@ class UserService {
     const CACHE_KEY = `user:profile:${_id}`;
     const TTL = 600; // 10 phút
 
-    const cachedProfile = await redisService.get(CACHE_KEY);
+    const cachedProfile = await UserService.safeRedisGet(CACHE_KEY);
     if (cachedProfile) return cachedProfile;
 
     logger.debug("userid", _id);
     const profile = await userModel.findOne({ _id }).select(select).lean();
 
-    if (profile) await redisService.setWithTTL(CACHE_KEY, profile, TTL);
+    if (profile) await UserService.safeRedisSetWithTTL(CACHE_KEY, profile, TTL);
     return profile;
   };
 
@@ -83,6 +122,8 @@ class UserService {
     if (!updatedUser) {
       throw new BadRequestError("User not found");
     }
+
+    await UserService.safeRedisDel(`user:profile:${userId}`);
 
     return updatedUser;
   };
@@ -117,6 +158,8 @@ class UserService {
     if (!updateEmail)
       throw new BadRequestError("User not found, update failed!");
 
+    await UserService.safeRedisDel(`user:profile:${userId}`);
+
     return updateEmail;
   };
 
@@ -134,6 +177,8 @@ class UserService {
 
     if (!updateUsername)
       throw new BadRequestError("User not found, update username failed");
+
+    await UserService.safeRedisDel(`user:profile:${userId}`);
 
     return updateUsername;
   };
@@ -227,7 +272,24 @@ class UserService {
       throw new BadRequestError("User not found");
     }
 
+    await UserService.safeRedisDel(`user:profile:${userId}`);
+
     return deletedUser;
+  };
+
+  static restoreUserById = async (userId: string) => {
+    // Restore user - change status back to active
+    const restoredUser = await userModel
+      .findByIdAndUpdate(userId, { $set: { isActive: true } }, { new: true })
+      .select("-password");
+
+    if (!restoredUser) {
+      throw new BadRequestError("User not found");
+    }
+
+    await UserService.safeRedisDel(`user:profile:${userId}`);
+
+    return restoredUser;
   };
 
   static updateUserRole = async ({
@@ -260,6 +322,8 @@ class UserService {
     if (!updatedUser) {
       throw new BadRequestError("User not found");
     }
+
+    await UserService.safeRedisDel(`user:profile:${userId}`);
 
     return updatedUser;
   };

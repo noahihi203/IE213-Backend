@@ -16,6 +16,8 @@ router.post(
 
 router.get("/:tagId", asyncHandler(TagController.getTagById));
 
+router.get("/", asyncHandler(TagController.getAllTag));
+
 router.put("/", authentication, asyncHandler(TagController.updateTag));
 
 router.put(

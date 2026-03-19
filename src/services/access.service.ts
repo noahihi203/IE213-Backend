@@ -33,6 +33,7 @@ interface TokenPair {
 
 interface UserResponse {
   _id: string;
+  role: "admin" | "author" | "user";
   username?: string;
   email: string;
   fullName?: string;
@@ -212,7 +213,7 @@ class AccessService {
     });
     return {
       user: getInfoData({
-        fields: ["_id", "username", "email", "fullName"],
+        fields: ["_id", "username", "email", "fullName", "role"],
         object: foundUser,
       }) as UserResponse,
       tokens,

@@ -287,8 +287,12 @@ export const checkPostOwnership = async (
   }
   const postId = req.params.postId;
   const foundPost = await postModel.findById(postId);
-  if (convertToObjectIdMongodb(user.userId) !== foundPost?.authorId)
-    throw new ForBiddenError("Not owner ship");
+  const authorId = foundPost?.authorId.toString();
+  if (typeof authorId !== "string") {
+    console.log("Invalid authorId format!");
+  }
+  const userId = user.userId;
+  if (userId !== authorId) throw new ForBiddenError("Not owner ship");
   next();
 };
 

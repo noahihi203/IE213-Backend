@@ -25,6 +25,12 @@ router.get(
   asyncHandler(PostController.getMyPosts),
 );
 
+router.get(
+  "/:postId/is-liked",
+  authentication,
+  asyncHandler(PostController.isPostLikedByUser),
+);
+
 // PUBLIC ROUTES WITH PATH PARAMS
 router.get("/:postId", asyncHandler(PostController.getSinglePost));
 
@@ -54,6 +60,22 @@ router.delete(
   asyncHandler(PostController.deletePost),
 );
 
+router.patch(
+  "/:postId/publish",
+  authentication,
+  checkAuthorOrAdmin,
+  checkPostOwnership,
+  asyncHandler(PostController.publishPost),
+);
+
+router.patch(
+  "/:postId/status",
+  authentication,
+  checkAuthorOrAdmin,
+  checkPostOwnership,
+  asyncHandler(PostController.changePostStatus),
+);
+
 router.post(
   "/:postId/like",
   authentication,
@@ -72,15 +94,10 @@ router.post(
   asyncHandler(PostController.sharePost),
 );
 
-router.get(
-  "/comments",
-  authentication,
-  asyncHandler(PostController.getPostComments),
-);
+router.get("/:postId/comments", asyncHandler(PostController.getPostComments));
 
 router.get(
-  "/comment-count",
-  authentication,
+  "/:postId/comment-count",
   asyncHandler(PostController.getCommentCount),
 );
 
