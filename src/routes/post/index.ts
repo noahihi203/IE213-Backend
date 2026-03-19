@@ -54,6 +54,22 @@ router.delete(
   asyncHandler(PostController.deletePost),
 );
 
+router.patch(
+  "/:postId/publish",
+  authentication,
+  checkAuthorOrAdmin,
+  checkPostOwnership,
+  asyncHandler(PostController.publishPost),
+);
+
+router.patch(
+  "/:postId/status",
+  authentication,
+  checkAuthorOrAdmin,
+  checkPostOwnership,
+  asyncHandler(PostController.changePostStatus),
+);
+
 router.post(
   "/:postId/like",
   authentication,

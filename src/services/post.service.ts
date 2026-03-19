@@ -22,15 +22,25 @@ interface PostQueryParams {
   tags?: Types.ObjectId[];
 }
 
-interface updateData {
-  titleUpdate: string;
-  contentUpdate: string;
-  excerptUpdate: string;
-  coverImageUpdate: string;
-  slugUpdate: string;
-  statusUpdate: string;
-  tagsUpdate: Types.ObjectId[];
-  categoryUpdate: Types.ObjectId; //{Công Nghệ, }
+type PostStatus = "draft" | "published" | "archived";
+
+interface UpdatePostData {
+  title?: string;
+  content?: string;
+  excerpt?: string;
+  coverImage?: string;
+  slug?: string;
+  status?: PostStatus;
+  tags?: Array<Types.ObjectId | string>;
+  category?: Types.ObjectId | string;
+  titleUpdate?: string;
+  contentUpdate?: string;
+  excerptUpdate?: string;
+  coverImageUpdate?: string;
+  slugUpdate?: string;
+  statusUpdate?: PostStatus;
+  tagsUpdate?: Array<Types.ObjectId | string> | string;
+  categoryUpdate?: Types.ObjectId | string;
 }
 
 interface notifyOnUserPayload {
@@ -196,40 +206,118 @@ class PostService {
     return createPost;
   };
 
-  static updatePost = async (postId: string, updateData: updateData) => {
+  static updatePost = async (postId: string, updateData: UpdatePostData) => {
     if (!postId) throw new BadRequestError("Missing parameter!");
     if (!updateData) throw new BadRequestError("Missing parameter!");
 
     const beforePost = await postModel.findById(postId);
-    const oldTags = beforePost?.tags;
+    if (!beforePost) throw new BadRequestError("Post not found!");
+
+    const normalizedUpdateData: Record<string, any> = {};
+
+    const title = updateData.title ?? updateData.titleUpdate;
+    const content = updateData.content ?? updateData.contentUpdate;
+    const excerpt = updateData.excerpt ?? updateData.excerptUpdate;
+    const coverImage = updateData.coverImage ?? updateData.coverImageUpdate;
+    const slug = updateData.slug ?? updateData.slugUpdate;
+    const status = updateData.status ?? updateData.statusUpdate;
+    const category = updateData.category ?? updateData.categoryUpdate;
+    const tags = updateData.tags ?? updateData.tagsUpdate;
+
+    if (typeof title === "string" && title.trim()) {
+      normalizedUpdateData.title = title.trim();
+      normalizedUpdateData.slug = slugify(title);
+    }
+
+    if (typeof content === "string") {
+      normalizedUpdateData.content = content;
+    }
+
+    if (typeof excerpt === "string") {
+      normalizedUpdateData.excerpt = excerpt;
+    }
+
+    if (typeof coverImage === "string") {
+      normalizedUpdateData.coverImage = coverImage;
+    }
+
+    if (typeof slug === "string" && slug.trim()) {
+      normalizedUpdateData.slug = slugify(slug);
+    }
+
+    if (status) {
+      normalizedUpdateData.status = status;
+    }
+
+    if (category) {
+      normalizedUpdateData.category =
+        typeof category === "string"
+          ? convertToObjectIdMongodb(category)
+          : category;
+    }
+
+    if (tags !== undefined) {
+      const rawTags = Array.isArray(tags)
+        ? tags
+        : typeof tags === "string"
+          ? tags
+              .split(",")
+              .map((tag) => tag.trim())
+              .filter(Boolean)
+          : [];
+
+      normalizedUpdateData.tags = rawTags.map((tagId) =>
+        typeof tagId === "string" ? convertToObjectIdMongodb(tagId) : tagId,
+      );
+    }
+
+    if (Object.keys(normalizedUpdateData).length === 0) {
+      throw new BadRequestError("No valid fields to update!");
+    }
+
+    if (normalizedUpdateData.slug) {
+      const existingPost = await postModel.findOne({
+        slug: normalizedUpdateData.slug,
+        _id: { $ne: postId },
+      });
+
+      if (existingPost) {
+        throw new BadRequestError("Slug already exists!");
+      }
+    }
 
     const updatePost = await postModel.findByIdAndUpdate(
       postId,
-      { $set: updateData },
+      { $set: normalizedUpdateData },
       { new: true, runValidators: true },
     );
 
     if (!updatePost) throw new BadRequestError("Update post failed!");
 
-    const newTags = updateData.tagsUpdate || [];
+    if (Array.isArray(normalizedUpdateData.tags)) {
+      const oldTags = beforePost.tags || [];
+      const newTags = normalizedUpdateData.tags as Types.ObjectId[];
 
-    const tagsToRemove = oldTags?.filter((id) => !newTags.includes(id)) || [];
+      const oldTagIds = new Set(oldTags.map((id) => String(id)));
+      const newTagIds = new Set(newTags.map((id) => String(id)));
 
-    const tagsToAdd = newTags?.filter((id) => !oldTags?.includes(id)) || [];
+      const tagsToRemove = oldTags.filter((id) => !newTagIds.has(String(id)));
+      const tagsToAdd = newTags.filter((id) => !oldTagIds.has(String(id)));
 
-    const updatePostCountToAdd = await TagService.updateTagCounts({
-      tagIds: tagsToAdd,
-      inc: 1,
-    });
-    if (!updatePostCountToAdd)
-      throw new BadRequestError("Update post count for tag failed!");
+      if (tagsToAdd.length > 0) {
+        await TagService.updateTagCounts({
+          tagIds: tagsToAdd,
+          inc: 1,
+        });
+      }
 
-    const updatePostCountToRemove = await TagService.updateTagCounts({
-      tagIds: tagsToRemove,
-      inc: -1,
-    });
-    if (!updatePostCountToRemove)
-      throw new BadRequestError("Update post count for tag failed!");
+      if (tagsToRemove.length > 0) {
+        await TagService.updateTagCounts({
+          tagIds: tagsToRemove,
+          inc: -1,
+        });
+      }
+    }
 
     return updatePost;
   };
@@ -237,34 +325,38 @@ class PostService {
   static deletePost = async (postId: string) => {
     if (!postId) throw new BadRequestError("Missing parameter!");
 
-    const session = postModel.startSession();
-    (await session).startTransaction;
     try {
+      // 1. Chuyển trạng thái bài viết thành "archived" (Xóa mềm)
       const deletePost = await postModel.findByIdAndUpdate(
         postId,
         { status: "archived" },
-        { new: true },
+        { new: true }, // Cần new: true để lấy ra danh sách tags mới nhất
       );
-      if (!deletePost) throw new BadRequestError("Delete post failed!");
 
-      const tagsToRemove = deletePost?.tags;
+      if (!deletePost) {
+        throw new BadRequestError("Delete post failed! Post not found.");
+      }
 
-      if (tagsToRemove) {
+      const tagsToRemove = deletePost.tags;
+
+      // 2. Giảm số lượng đếm (count) của các tags tương ứng
+      if (tagsToRemove && tagsToRemove.length > 0) {
         const removeTag = await TagService.updateTagCounts({
           tagIds: tagsToRemove,
           inc: -1,
         });
+
         if (!removeTag) {
           throw new BadRequestError("Remove tag failed!");
         }
       }
 
-      (await session).commitTransaction();
+      // Trả về kết quả cho Controller
+      return deletePost;
     } catch (error) {
-      (await session).abortTransaction();
-      return;
-    } finally {
-      (await session).endSession();
+      // Bắt và ném lỗi ra ngoài để Controller xử lý trả về HTTP Error
+      console.error("Lỗi khi xóa (archive) bài viết:", error);
+      throw error;
     }
   };
 
@@ -356,28 +448,69 @@ class PostService {
 
     return { postWithEngagemment, users, comments, shares };
   };
-  static changeStatusPostToPublished = async (postId: Types.ObjectId) => {
-    const session = await postModel.startSession();
-    session.startTransaction();
 
+  static changePostStatus = async (postId: string, status: PostStatus) => {
+    if (!postId) throw new BadRequestError("Missing parameter!");
+    if (!status) throw new BadRequestError("Status is required!");
+
+    if (status === "published") {
+      return await PostService.changeStatusPostToPublished(
+        convertToObjectIdMongodb(postId),
+      );
+    }
+
+    if (status === "archived") {
+      return await PostService.deletePost(postId);
+    }
+
+    const updatedPost = await postModel.findByIdAndUpdate(
+      postId,
+      { status: "draft", publishedAt: null },
+      { new: true },
+    );
+
+    if (!updatedPost) throw new BadRequestError("Change status failed!");
+
+    return updatedPost;
+  };
+
+  static changeStatusPostToPublished = async (postId: Types.ObjectId) => {
     try {
+      // 1. Cập nhật trạng thái bài viết (Bỏ session)
       const changeStatus = await postModel.findByIdAndUpdate(
         postId,
-        {
-          status: "published",
-        },
-        { session },
+        { status: "published" },
+        { new: true }, // Trả về document mới sau khi update
       );
-      if (!changeStatus) throw new BadRequestError("Change status failed!");
 
+      if (!changeStatus) {
+        throw new BadRequestError("Change status failed! Post not found.");
+      }
+
+      const tagsToAdd = changeStatus.tags;
+
+      // 2. Giảm số lượng đếm (count) của các tags tương ứng
+      if (tagsToAdd && tagsToAdd.length > 0) {
+        const removeTag = await TagService.updateTagCounts({
+          tagIds: tagsToAdd,
+          inc: 1,
+        });
+
+        if (!removeTag) {
+          throw new BadRequestError("Remove tag failed!");
+        }
+      }
+
+      // 2. Lấy danh sách follower của tác giả (Bỏ session)
       const user = await userModel
-        .findOne({ _id: changeStatus.authorId }, { session })
+        .findOne({ _id: changeStatus.authorId })
         .select("followers");
-      if (typeof changeStatus.authorId !== "string")
-        throw new ForBiddenError("Invalid authorId format");
-      const userId = convertToObjectIdMongodb(changeStatus.authorId);
+
+      // Chuyển đổi ID an toàn
+      const userId = convertToObjectIdMongodb(String(changeStatus.authorId));
+
+      // 3. Gửi thông báo cho từng follower
       if (user && user.followers && user.followers.length > 0) {
-        // Xử lý tuần tự thay vì song song ồ ạt
         for (const followerId of user.followers) {
           try {
             await NotificationService.notifyOnUser({
@@ -387,16 +520,17 @@ class PostService {
               message: "published a new post",
             });
           } catch (err) {
+            // Lỗi ở 1 follower sẽ không làm chết toàn bộ tiến trình
             console.error(`Failed to notify follower ${followerId}`, err);
           }
         }
       }
-      session.commitTransaction();
+
+      return changeStatus;
     } catch (error) {
-      await session.abortTransaction();
-      return;
-    } finally {
-      session.endSession();
+      // Bắt mọi lỗi xảy ra và ném lên trên để Controller xử lý (trả về HTTP 500/400)
+      console.error("Lỗi khi chuyển status bài viết:", error);
+      throw error;
     }
   };
 }

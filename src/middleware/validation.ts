@@ -65,16 +65,28 @@ const PostInput = z.object({
   category: z.string(),
 });
 
-const UpdatePostInput = z.object({
-  titleUpdate: z.string(),
-  contentUpdate: z.string(),
-  excerptUpdate: z.string(),
-  coverImageUpdate: z.string(),
-  slugUpdate: z.string(),
-  statusUpdate: z.string(),
-  tagsUpdate: z.string(), // #chinhtri #lichsu
-  categoryUpdate: z.string(), //{Công Nghệ, }
-});
+const UpdatePostInput = z
+  .object({
+    title: z.string().min(5).max(200).optional(),
+    content: z.string().optional(),
+    excerpt: z.string().optional(),
+    coverImage: z.string().optional(),
+    slug: z.string().optional(),
+    status: z.enum(["draft", "published", "archived"]).optional(),
+    tags: z.array(z.string()).optional(),
+    category: z.string().optional(),
+    titleUpdate: z.string().optional(),
+    contentUpdate: z.string().optional(),
+    excerptUpdate: z.string().optional(),
+    coverImageUpdate: z.string().optional(),
+    slugUpdate: z.string().optional(),
+    statusUpdate: z.enum(["draft", "published", "archived"]).optional(),
+    tagsUpdate: z.union([z.string(), z.array(z.string())]).optional(),
+    categoryUpdate: z.string().optional(),
+  })
+  .refine((data) => Object.keys(data).length > 0, {
+    message: "At least one field is required",
+  });
 
 const CommentInput = z.object({
   postId: z.instanceof(ObjectId),
@@ -241,13 +253,15 @@ export const validateUpdatePostInput = async (
 
     const result = await UpdatePostInput.safeParse(updatePostInput);
 
-    if (!result.success) logger.error(result.error);
-    else {
-      logger.debug(result.data);
-      return next();
+    if (!result.success) {
+      logger.error(result.error);
+      return next(new ValidationError("Error in validation"));
     }
-  } catch {
-    throw new ValidationError("Error in validation");
+
+    logger.debug(result.data);
+    return next();
+  } catch (error) {
+    return next(new ValidationError("Error in validation"));
   }
 };
 

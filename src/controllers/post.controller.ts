@@ -88,6 +88,36 @@ class PostController {
     }).send(res);
   };
 
+  publishPost = async (req: Request, res: Response) => {
+    const postId = req.params.postId;
+    if (typeof postId !== "string")
+      throw new BadRequestError("Invalid post id format!");
+
+    new SuccessResponse({
+      message: "Publish post success!",
+      metadata: await PostService.changeStatusPostToPublished(
+        convertToObjectIdMongodb(postId),
+      ),
+    }).send(res);
+  };
+
+  changePostStatus = async (req: Request, res: Response) => {
+    const postId = req.params.postId;
+    const status = req.body.status;
+
+    if (typeof postId !== "string")
+      throw new BadRequestError("Invalid post id format!");
+
+    if (!status || !["draft", "published", "archived"].includes(status)) {
+      throw new BadRequestError("Invalid status!");
+    }
+
+    new SuccessResponse({
+      message: "Change post status success!",
+      metadata: await PostService.changePostStatus(postId, status),
+    }).send(res);
+  };
+
   likePost = async (req: Request, res: Response) => {
     const postId = req.params.postId;
     if (Array.isArray(postId))
