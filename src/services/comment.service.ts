@@ -8,6 +8,7 @@ import {
 import { postModel } from "../models/post.model.js";
 import { likeCommentModel } from "../models/likeComment.model.js";
 import NotificationService from "./notification.service.js";
+import PostService from "./post.service.js";
 
 interface createCommentParams {
   postId: Types.ObjectId;
@@ -42,13 +43,15 @@ class CommentService {
       parentId: createCommentParams.parentCommentId,
     });
 
-    let rightValue: number = 0;
+    let rightValue = 0;
     if (createCommentParams.parentCommentId) {
       //reply comment
       const parentComment = await commentModel.findById(
         createCommentParams.parentCommentId,
       );
       if (!parentComment) throw new NotFoundError(`Parent comment not found!`);
+
+      rightValue = parentComment.commentRight;
 
       await commentModel.updateMany(
         {
@@ -71,7 +74,7 @@ class CommentService {
       );
 
       await NotificationService.notifyOnUser({
-        userId: comment.parentId,
+        userId: parentComment.userId,
         actorId: comment.userId,
         type: "mention",
         message: "reply you in comment",
@@ -79,7 +82,7 @@ class CommentService {
     } else {
       const maxRightValue = await commentModel.findOne(
         {
-          userId: createCommentParams.userId,
+          postId: createCommentParams.postId,
         },
         "commentRight",
         { sort: { commentRight: -1 } },
@@ -101,6 +104,12 @@ class CommentService {
       type: "comment",
       message: "comment your post",
     });
+
+    const totalComments = await commentModel.countDocuments({
+      postId: comment.postId,
+    });
+    await PostService.updatePostCommentCount(comment.postId, totalComments);
+
     return comment;
   };
 
@@ -120,10 +129,16 @@ class CommentService {
           commentRight: { $lte: parent.commentRight },
         })
         .select({
+          postId: 1,
+          userId: 1,
           commentLeft: 1,
           commentRight: 1,
           content: 1,
           parentId: 1,
+          likesCount: 1,
+          isEdited: 1,
+          createdOn: 1,
+          modifiedOn: 1,
         })
         .sort({
           commentLeft: 1,
@@ -134,13 +149,18 @@ class CommentService {
     const comments = await commentModel
       .find({
         postId: postId,
-        parentId: parentCommentId,
       })
       .select({
+        postId: 1,
+        userId: 1,
         commentLeft: 1,
         commentRight: 1,
         content: 1,
         parentId: 1,
+        likesCount: 1,
+        isEdited: 1,
+        createdOn: 1,
+        modifiedOn: 1,
       })
       .sort({
         commentLeft: 1,
@@ -189,7 +209,8 @@ class CommentService {
         $inc: { commentLeft: -width },
       },
     );
-
+const totalComments = await commentModel.countDocuments({ postId: postId });
+await PostService.updatePostCommentCount(postId, totalComments);
     return true;
   }
 
@@ -200,13 +221,13 @@ class CommentService {
     const comment = await commentModel.findById(commentId);
     if (!comment) throw new NotFoundError("Comment not found");
 
-    if (comment.userId !== userIdEdit)
+    if (comment.userId.toString() !== userIdEdit.toString())
       throw new ForBiddenError("You can only edit your own comments");
     else {
       comment.content = content;
       comment.isEdited = true;
     }
-    comment.save();
+    await comment.save();
 
     return comment;
   }
@@ -259,11 +280,11 @@ class CommentService {
       if (!newLike) throw new BadRequestError("Create like record error");
       else {
         comment.likesCount = comment.likesCount + 1;
-        comment.save();
+        await comment.save();
       }
       await NotificationService.notifyOnComment({
         commentId: comment._id,
-        actorId: comment.userId,
+        actorId: userId,
         type: "like",
         message: "like your comment",
       });
@@ -276,15 +297,15 @@ class CommentService {
         userId: userId,
         targetId: commentId,
       });
-      if (!deleteLikeRecord)
+      if (!deleteLikeRecord.deletedCount)
         throw new BadRequestError("Delete like record failed!");
       else {
-        comment.likesCount = comment.likesCount - 1;
-        comment.save();
+        comment.likesCount = Math.max(0, comment.likesCount - 1);
+        await comment.save();
       }
       await NotificationService.notifyOnComment({
         commentId: comment._id,
-        actorId: comment.userId,
+        actorId: userId,
         type: "like",
         message: "unlike your comment",
       });
@@ -329,7 +350,7 @@ class CommentService {
     const comments = await commentModel
       .find({ userId: userId })
       .populate("postId", "title")
-      .sort({ createdAt: -1 })
+      .sort({ createdOn: -1 })
       .skip(skip)
       .limit(limit);
     if (!comments) throw new NotFoundError("Comment by user not found!");

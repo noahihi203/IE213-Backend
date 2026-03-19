@@ -1,5 +1,5 @@
 import { Schema, Types } from "mongoose";
-import { BadRequestError, ForBiddenError } from "../core/error.response.js";
+import { BadRequestError, NotFoundError } from "../core/error.response.js";
 import { IPost, postModel } from "../models/post.model.js";
 import { likePostModel } from "../models/likePost.model.js";
 import { commentModel } from "../models/comment.model.js";
@@ -9,6 +9,7 @@ import NotificationService from "./notification.service.js";
 import { convertToObjectIdMongodb } from "../utils/index.js";
 import TagService from "./tag.service.js";
 import { redisService } from "./redis.service.js";
+import { categoryModel } from "../models/category.model.js";
 
 interface PostQueryParams {
   page?: number;
@@ -50,6 +51,48 @@ interface notifyOnUserPayload {
   message: string;
 }
 
+const VIEW_COUNT_COOLDOWN_SECONDS = 30;
+const VIEW_COUNT_COOLDOWN_MS = VIEW_COUNT_COOLDOWN_SECONDS * 1000;
+
+function slugify(string: string) {
+  if (!string || string.trim() === "") {
+    throw new BadRequestError("Cannot slugify empty string");
+  } else {
+    return string
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .split("")
+      .map((character) => (/[a-z0-9]/.test(character) ? character : "-"))
+      .join("")
+      .replace(/-+/g, "-")
+      .replace(/^-|-$/g, "");
+  }
+}
+
+interface PostQueryParams {
+  page?: number;
+  limit?: number;
+  search?: string;
+  sortBy?: string;
+  order?: "asc" | "desc";
+  status?: "draft" | "published" | "archived";
+  authorId?: Types.ObjectId;
+  category?: Types.ObjectId;
+  tags?: Types.ObjectId[];
+}
+
+interface updateData {
+  titleUpdate?: string;
+  contentUpdate?: string;
+  excerptUpdate?: string;
+  coverImageUpdate?: string;
+  slugUpdate?: string;
+  statusUpdate?: string;
+  tagsUpdate?: Types.ObjectId[];
+  categoryUpdate?: Types.ObjectId;
+}
+
 function slugify(string: string) {
   if (!string || string.trim() === "") {
     throw new BadRequestError("Cannot slugify empty string");
@@ -67,6 +110,30 @@ function slugify(string: string) {
 }
 
 class PostService {
+  private static recentViewTracker = new Map<string, number>();
+
+  private static hasRecentView = (dedupeKey: string) => {
+    const now = Date.now();
+    const expireAt = PostService.recentViewTracker.get(dedupeKey) || 0;
+
+    if (expireAt > now) {
+      return true;
+    }
+
+    PostService.recentViewTracker.set(dedupeKey, now + VIEW_COUNT_COOLDOWN_MS);
+
+    // Keep memory footprint stable when server runs for a long time.
+    if (PostService.recentViewTracker.size > 5000) {
+      for (const [key, value] of PostService.recentViewTracker.entries()) {
+        if (value <= now) {
+          PostService.recentViewTracker.delete(key);
+        }
+      }
+    }
+
+    return false;
+  };
+
   static getAllPostsWithFilters = async (postQueryParams: PostQueryParams) => {
     let {
       page,
@@ -94,6 +161,7 @@ class PostService {
         { title: { $regex: search, $options: "i" } },
         { content: { $regex: search, $options: "i" } },
         { excerpt: { $regex: search, $options: "i" } },
+        { tags: { $regex: search, $options: "i" } },
       ];
     }
 
@@ -151,9 +219,6 @@ class PostService {
       .lean();
 
     if (!post) throw new BadRequestError("Post not found!");
-
-    const postId = String(post._id);
-    PostService.incrementViewCount(postId).catch(console.error);
 
     return {
       ...post,
@@ -372,6 +437,36 @@ class PostService {
     );
   };
 
+  static incrementViewCountOncePerViewer = async (
+    postId: string,
+    viewerKey: string,
+  ) => {
+    if (!postId) throw new BadRequestError("Missing parameter!");
+
+    const safeViewerKey = viewerKey || "anonymous";
+    const dedupeKey = `post:view:${postId}:${safeViewerKey}`;
+
+    if (PostService.hasRecentView(dedupeKey)) {
+      return null;
+    }
+
+    try {
+      const cached = await redisService.get<string>(dedupeKey);
+      if (cached) {
+        return null;
+      }
+      await redisService.setWithTTL(
+        dedupeKey,
+        "1",
+        VIEW_COUNT_COOLDOWN_SECONDS,
+      );
+    } catch (error) {
+      console.warn("Skip Redis view dedupe, falling back to memory", error);
+    }
+
+    return await PostService.incrementViewCount(postId);
+  };
+
   static updateTrendingScores = async () => {
     const recentPosts = await postModel.find({
       status: "published",
@@ -532,6 +627,90 @@ class PostService {
       console.error("Lỗi khi chuyển status bài viết:", error);
       throw error;
     }
+  };
+
+  static updatePostCommentCount = async (
+    postId: string | Types.ObjectId,
+    commentCount: number,
+  ) => {
+    if (!postId) throw new BadRequestError("Missing parameter: postId!");
+
+    // Kiểm tra để đảm bảo commentCount hợp lệ (không bị undefined và không âm)
+    if (commentCount === undefined || commentCount < 0) {
+      throw new BadRequestError("Invalid comment count!");
+    }
+
+    try {
+      // Sử dụng toán tử $set để gán thẳng giá trị mới vào commentsCount
+      const updatedPost = await postModel.findByIdAndUpdate(
+        postId,
+        { $set: { commentsCount: commentCount } },
+        { new: true },
+      );
+
+      if (!updatedPost) {
+        throw new BadRequestError(
+          "Update comment count failed! Post not found.",
+        );
+      }
+
+      return updatedPost;
+    } catch (error) {
+      console.error("Lỗi khi cập nhật số lượng comment của bài viết:", error);
+      throw error;
+    }
+  };
+
+  static getPostsByCategorySlug = async (
+    categorySlug: string,
+    page: number = 1,
+    limit: number = 10,
+  ) => {
+    if (!categorySlug) throw new BadRequestError("Missing category slug!");
+
+    // Bước 1: Tìm Category bằng slug
+    const categoryFound = await categoryModel
+      .findOne({ slug: categorySlug })
+      .lean();
+    if (!categoryFound) {
+      throw new NotFoundError("Category not found!");
+    }
+
+    const skip = (page - 1) * limit;
+
+    // Bước 2: Tìm tất cả Posts có category._id vừa tìm được
+    const filter = {
+      category: categoryFound._id,
+      status: "published", // Thường thì người xem chỉ thấy bài đã publish
+    };
+
+    const posts = await postModel
+      .find(filter)
+      .sort({ publishedAt: -1, createdOn: -1 }) // Sắp xếp bài mới nhất lên đầu
+      .skip(skip)
+      .limit(limit)
+      .populate("authorId", "fullName avatar username") // Lấy thông tin tác giả
+      .populate("category", "icon name slug") // Lấy thông tin category
+      .lean();
+
+    // Lấy tổng số bài viết để frontend làm phân trang
+    const totalCount = await postModel.countDocuments(filter);
+    const totalPages = Math.ceil(totalCount / limit);
+
+    return {
+      category: categoryFound, // Trả về luôn thông tin category để frontend hiển thị tiêu đề
+      posts: posts.map((post: any) => ({
+        ...post,
+        author: post.authorId, // Map lại tên biến cho chuẩn UI (nếu cần)
+      })),
+      pagination: {
+        totalCount,
+        totalPages,
+        currentPage: page,
+        hasNextPage: page < totalPages,
+        hasPrevPage: page > 1,
+      },
+    };
   };
 }
 

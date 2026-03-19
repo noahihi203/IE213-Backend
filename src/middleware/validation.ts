@@ -1,7 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import { z } from "zod";
 import { ValidationError } from "../core/error.response.js";
-import { ObjectId } from "mongodb";
 import logger from "../config/logger.config.js";
 
 const RegisterInput = z.object({
