@@ -6,7 +6,7 @@ import { redisService } from "./src/services/redis.service.js";
 import { rabbitMQProducer } from "./src/services/rabbitmq/rabbitmq.producer.js";
 import { RabbitMQConsumer } from "./src/services/rabbitmq/rabbitmq.consumer.js";
 
-const PORT = process.env.PORT || 5000;
+const PORT = 5001;
 
 async function bootstrap() {
   try {
