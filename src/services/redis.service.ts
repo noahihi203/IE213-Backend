@@ -27,68 +27,114 @@ class RedisService {
   }
 
   async connect(): Promise<void> {
-    await this.client.connect();
-    await this.subscriber.connect();
+    try {
+      await this.client.connect();
+    } catch (error) {
+      console.error(
+        "⚠️ Redis client connection failed. Cache will be skipped:",
+        error,
+      );
+    }
+
+    try {
+      await this.subscriber.connect();
+    } catch (error) {
+      console.error("⚠️ Redis subscriber connection failed:", error);
+    }
   }
 
   // --- BASIC CACHE ---
 
   async set(key: string, value: any): Promise<void> {
-    const val = typeof value === "string" ? value : JSON.stringify(value);
-    await this.client.set(key, val);
+    if (!this.client?.isReady) return;
+    try {
+      const val = typeof value === "string" ? value : JSON.stringify(value);
+      await this.client.set(key, val);
+    } catch (error) {
+      console.error("❌ Redis set error:", error);
+    }
   }
 
-  async setWithTTL(
-    key: string,
-    value: any,
-    ttlSeconds: number,
-  ): Promise<void> {
-    const val = typeof value === "string" ? value : JSON.stringify(value);
-    await this.client.setEx(key, ttlSeconds, val);
+  async setWithTTL(key: string, value: any, ttlSeconds: number): Promise<void> {
+    if (!this.client?.isReady) return;
+    try {
+      const val = typeof value === "string" ? value : JSON.stringify(value);
+      await this.client.setEx(key, ttlSeconds, val);
+    } catch (error) {
+      console.error("❌ Redis setWithTTL error:", error);
+    }
   }
 
   async get<T>(key: string): Promise<T | null> {
-    const data = await this.client.get(key);
-    if (!data) return null;
-
+    if (!this.client?.isReady) return null;
     try {
-      return JSON.parse(data) as T;
-    } catch {
-      return data as unknown as T;
+      const data = await this.client.get(key);
+      if (!data) return null;
+
+      try {
+        return JSON.parse(data) as T;
+      } catch {
+        return data as unknown as T;
+      }
+    } catch (error) {
+      console.error("❌ Redis get error:", error);
+      return null;
     }
   }
 
   async del(key: string | string[]): Promise<void> {
-    if (Array.isArray(key)) {
-      if (key.length === 0) return;
-      await this.client.del(key);
-    } else {
-      await this.client.del(key);
+    if (!this.client?.isReady) return;
+    try {
+      if (Array.isArray(key)) {
+        if (key.length === 0) return;
+        await this.client.del(key);
+      } else {
+        await this.client.del(key);
+      }
+    } catch (error) {
+      console.error("❌ Redis del error:", error);
     }
   }
 
   async incr(key: string): Promise<number> {
-    return await this.client.incr(key);
+    if (!this.client?.isReady) return 0;
+    try {
+      return await this.client.incr(key);
+    } catch (error) {
+      console.error("❌ Redis incr error:", error);
+      return 0;
+    }
   }
 
   // --- PUB/SUB ---
 
   async publish(channel: string, message: any): Promise<void> {
-    const msg = typeof message === "string" ? message : JSON.stringify(message);
-    await this.client.publish(channel, msg);
+    if (!this.client?.isReady) return;
+    try {
+      const msg =
+        typeof message === "string" ? message : JSON.stringify(message);
+      await this.client.publish(channel, msg);
+    } catch (error) {
+      console.error("❌ Redis publish error:", error);
+    }
   }
 
   async subscribe(
     channel: string,
     callback: (message: any) => void,
   ): Promise<void> {
-    await this.subscriber.subscribe(channel, (message) => {
-      try {
-        callback(JSON.parse(message));
-      } catch {
-        callback(message);
-      }
-    });
+    if (!this.subscriber?.isReady) return;
+    try {
+      await this.subscriber.subscribe(channel, (message) => {
+        try {
+          callback(JSON.parse(message));
+        } catch {
+          callback(message);
+        }
+      });
+    } catch (error) {
+      console.error("❌ Redis subscribe error:", error);
+    }
   }
 }
 
