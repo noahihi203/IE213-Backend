@@ -21,11 +21,10 @@ interface followPayload {
   followerId: Types.ObjectId;
 }
 
-// Updated to make fields optional for partial updates
 interface UpdateInput {
-  fullName?: string;
-  bio?: string;
-  avatar?: string;
+  fullName: string;
+  bio: string;
+  avatar: string;
 }
 
 interface ChangeEmailInput {
@@ -94,8 +93,6 @@ class UserService {
       password: 1,
       fullName: 1,
       username: 1,
-      bio: 1,
-      avatar: 1,
       role: 1,
       tokenVersion: 1,
     },
@@ -120,7 +117,7 @@ class UserService {
         { $set: updateInput },
         { new: true, runValidators: true },
       )
-      .select("email fullName username bio avatar role");
+      .select("bio avatar fullName");
 
     if (!updatedUser) {
       throw new BadRequestError("User not found");
@@ -155,8 +152,8 @@ class UserService {
     ///
 
     const updateEmail = await userModel
-      .findByIdAndUpdate(userId, { $set: { email: changeEmailInput.newEmail } }, { new: true })
-      .select("email fullName username bio avatar role");
+      .findByIdAndUpdate(userId, { $set: changeEmailInput }, { new: true })
+      .select("email");
 
     if (!updateEmail)
       throw new BadRequestError("User not found, update failed!");
@@ -167,9 +164,8 @@ class UserService {
   };
 
   static changeUserName = async (userId: string, newUsername: string) => {
-    // FIX: Changed from find() to findOne()
     const foundUser = await userModel
-      .findOne({ username: newUsername })
+      .find({ username: newUsername })
       .select("_id");
     if (foundUser) throw new BadRequestError("username is existed");
 
@@ -177,7 +173,7 @@ class UserService {
       .findByIdAndUpdate(userId, {
         $set: { username: newUsername },
       })
-      .select("email fullName username bio avatar role");
+      .select("username");
 
     if (!updateUsername)
       throw new BadRequestError("User not found, update username failed");
@@ -185,37 +181,6 @@ class UserService {
     await UserService.safeRedisDel(`user:profile:${userId}`);
 
     return updateUsername;
-  };
-
-  // NEW: Password update method
-  static updatePassword = async (
-    userId: string,
-    currentPass: string,
-    newPass: string,
-  ) => {
-    const foundUser = await userModel.findById(userId);
-    if (!foundUser) throw new BadRequestError("User not found!");
-
-    const match = await bcrypt.compare(currentPass, foundUser.password);
-    if (!match) throw new AuthFailureError("Current password is incorrect");
-
-    const saltRounds = 10;
-    const hashedNewPassword = await bcrypt.hash(newPass, saltRounds);
-
-    const updatedUser = await userModel.findByIdAndUpdate(
-      userId,
-      { 
-        $set: { password: hashedNewPassword },
-        $inc: { tokenVersion: 1 } 
-      },
-      { new: true }
-    );
-
-    if (!updatedUser) throw new BadRequestError("Failed to update password");
-
-    await UserService.safeRedisDel(`user:profile:${userId}`);
-
-    return true; 
   };
 
   static getAllUsersWithPagination = async ({
@@ -231,6 +196,7 @@ class UserService {
     role?: string;
     isActive?: boolean;
   }) => {
+    // Validate pagination parameters
     if (page < 1) {
       throw new BadRequestError("Page must be greater than 0");
     }
@@ -238,8 +204,10 @@ class UserService {
       throw new BadRequestError("Limit must be between 1 and 100");
     }
 
+    // Build filter query
     const filter: any = {};
 
+    // Search by username, email, or fullName
     if (search) {
       filter.$or = [
         { username: { $regex: search, $options: "i" } },
@@ -248,6 +216,7 @@ class UserService {
       ];
     }
 
+    // Filter by role
     if (role) {
       if (!["admin", "user", "author"].includes(role)) {
         throw new BadRequestError("Invalid role filter");
@@ -255,12 +224,15 @@ class UserService {
       filter.role = role;
     }
 
+    // Filter by active status
     if (isActive !== undefined) {
       filter.isActive = isActive;
     }
 
+    // Calculate skip value
     const skip = (page - 1) * limit;
 
+    // Execute query with pagination
     const [users, totalUsers] = await Promise.all([
       userModel
         .find(filter)
@@ -272,6 +244,7 @@ class UserService {
       userModel.countDocuments(filter),
     ]);
 
+    // Calculate pagination metadata
     const totalPages = Math.ceil(totalUsers / limit);
     const hasNextPage = page < totalPages;
     const hasPrevPage = page > 1;
@@ -290,6 +263,7 @@ class UserService {
   };
 
   static deleteUserById = async (userId: string) => {
+    // Soft delete - change status to inactive
     const deletedUser = await userModel
       .findByIdAndUpdate(userId, { $set: { isActive: false } }, { new: true })
       .select("-password");
@@ -304,6 +278,7 @@ class UserService {
   };
 
   static restoreUserById = async (userId: string) => {
+    // Restore user - change status back to active
     const restoredUser = await userModel
       .findByIdAndUpdate(userId, { $set: { isActive: true } }, { new: true })
       .select("-password");
@@ -324,6 +299,7 @@ class UserService {
     userId: string;
     newRole: string;
   }) => {
+    // Validate role
     const validRoles = ["admin", "user", "author"];
     if (!validRoles.includes(newRole)) {
       throw new BadRequestError(
@@ -331,12 +307,13 @@ class UserService {
       );
     }
 
+    // Update user role AND increment tokenVersion to invalidate old tokens
     const updatedUser = await userModel
       .findByIdAndUpdate(
         userId,
         {
           $set: { role: newRole },
-          $inc: { tokenVersion: 1 }, 
+          $inc: { tokenVersion: 1 }, // Increment version to invalidate all existing tokens
         },
         { new: true, runValidators: true },
       )
