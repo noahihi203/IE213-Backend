@@ -94,15 +94,10 @@ router.post(
   asyncHandler(PostController.sharePost),
 );
 
-router.get(
-  "/comments",
-  authentication,
-  asyncHandler(PostController.getPostComments),
-);
+router.get("/:postId/comments", asyncHandler(PostController.getPostComments));
 
 router.get(
-  "/comment-count",
-  authentication,
+  "/:postId/comment-count",
   asyncHandler(PostController.getCommentCount),
 );
 

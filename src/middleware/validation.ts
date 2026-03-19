@@ -1,7 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import { z } from "zod";
 import { ValidationError } from "../core/error.response.js";
-import { ObjectId } from "mongodb";
 import logger from "../config/logger.config.js";
 
 const RegisterInput = z.object({
@@ -89,14 +88,13 @@ const UpdatePostInput = z
   });
 
 const CommentInput = z.object({
-  postId: z.instanceof(ObjectId),
-  userId: z.instanceof(ObjectId),
+  postId: z.string().nonempty("postId là bắt buộc"),
   content: z
     .string()
     .nonempty()
     .min(1, "Content không được ít hơn 1 ký tự")
     .max(2000, "Content không được quá 2000 ký tự"),
-  parentCommentId: z.instanceof(ObjectId),
+  parentCommentId: z.string().optional(),
 });
 
 const CategoryInput = z.object({
@@ -275,13 +273,15 @@ export const validateCommentInput = async (
 
     const result = await CommentInput.safeParse(commentInput);
 
-    if (!result.success) logger.error(result.error);
-    else {
-      logger.debug(result.data);
-      return next();
+    if (!result.success) {
+      logger.error(result.error);
+      return next(new ValidationError("Error in validation"));
     }
-  } catch {
-    throw new ValidationError("Error in validation");
+
+    logger.debug(result.data);
+    return next();
+  } catch (_error) {
+    return next(new ValidationError("Error in validation"));
   }
 };
 

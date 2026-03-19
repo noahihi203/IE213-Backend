@@ -587,6 +587,38 @@ class PostService {
       throw error;
     }
   };
+
+  static updatePostCommentCount = async (
+    postId: string | Types.ObjectId,
+    commentCount: number,
+  ) => {
+    if (!postId) throw new BadRequestError("Missing parameter: postId!");
+
+    // Kiểm tra để đảm bảo commentCount hợp lệ (không bị undefined và không âm)
+    if (commentCount === undefined || commentCount < 0) {
+      throw new BadRequestError("Invalid comment count!");
+    }
+
+    try {
+      // Sử dụng toán tử $set để gán thẳng giá trị mới vào commentsCount
+      const updatedPost = await postModel.findByIdAndUpdate(
+        postId,
+        { $set: { commentsCount: commentCount } },
+        { new: true },
+      );
+
+      if (!updatedPost) {
+        throw new BadRequestError(
+          "Update comment count failed! Post not found.",
+        );
+      }
+
+      return updatedPost;
+    } catch (error) {
+      console.error("Lỗi khi cập nhật số lượng comment của bài viết:", error);
+      throw error;
+    }
+  };
 }
 
 export default PostService;
