@@ -37,6 +37,8 @@ interface UserResponse {
   username?: string;
   email: string;
   fullName?: string;
+  bio?: string | null;
+  avatar?: string | null;
 }
 
 interface KeyStoreDocument {
@@ -163,7 +165,7 @@ class AccessService {
         code: 201,
         metadata: {
           user: getInfoData({
-            fields: ["_id", "username", "email", "fullName"],
+            fields: ["_id", "username", "email", "fullName", "bio", "avatar", "role"],
             object: newUser,
           }),
           tokens,
@@ -213,7 +215,7 @@ class AccessService {
     });
     return {
       user: getInfoData({
-        fields: ["_id", "username", "email", "fullName", "role"],
+        fields: ["_id", "username", "email", "fullName", "bio", "avatar", "role"],
         object: foundUser,
       }) as UserResponse,
       tokens,

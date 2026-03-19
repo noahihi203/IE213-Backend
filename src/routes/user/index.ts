@@ -8,7 +8,6 @@ import {
   checkMaximumAdmins,
   checkMinimumAdmins,
   checkNotSelfDemotion,
-  checkOwnership,
   checkSuperAdminProtection,
 } from "../../middleware/authorization.js";
 import {
@@ -37,12 +36,14 @@ router.get(
   asyncHandler(userController.getUserProfile),
 );
 
-// User can update their own profile, or admin can update any
+// --- SELF-SERVICE USER UPDATE ROUTES ---
+// We do not need checkOwnership here because the controller 
+// forces the update to strictly use req.user.userId from the token.
+
 router.put(
   "/",
   validateUpdateUserInput,
   authentication,
-  checkOwnership,
   asyncHandler(userController.updateUserProfile),
 );
 
@@ -50,7 +51,6 @@ router.put(
   "/update-email",
   validateUpdateUserEmailInput,
   authentication,
-  checkOwnership,
   asyncHandler(userController.updateUserEmail),
 );
 
@@ -58,9 +58,17 @@ router.put(
   "/update-username",
   validateUpdateUsernameInput,
   authentication,
-  checkOwnership,
   asyncHandler(userController.updateUserUsername),
 );
+
+// NEW: Added the password update route we created earlier!
+router.put(
+  "/update-password",
+  authentication,
+  asyncHandler(userController.updateUserPassword),
+);
+
+// --- ADMIN ROUTES ---
 
 router.delete(
   "/:userId",
@@ -87,6 +95,7 @@ router.put(
   checkMinimumAdmins,
   asyncHandler(userController.changeUserRole),
 );
+
 router.get(
   "/comments",
   authentication,
