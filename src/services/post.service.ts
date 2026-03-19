@@ -70,6 +70,45 @@ function slugify(string: string) {
   }
 }
 
+interface PostQueryParams {
+  page?: number;
+  limit?: number;
+  search?: string;
+  sortBy?: string;
+  order?: "asc" | "desc";
+  status?: "draft" | "published" | "archived";
+  authorId?: Types.ObjectId;
+  category?: Types.ObjectId;
+  tags?: Types.ObjectId[];
+}
+
+interface updateData {
+  titleUpdate?: string;
+  contentUpdate?: string;
+  excerptUpdate?: string;
+  coverImageUpdate?: string;
+  slugUpdate?: string;
+  statusUpdate?: string;
+  tagsUpdate?: Types.ObjectId[];
+  categoryUpdate?: Types.ObjectId;
+}
+
+function slugify(string: string) {
+  if (!string || string.trim() === "") {
+    throw new BadRequestError("Cannot slugify empty string");
+  } else {
+    return string
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .split("")
+      .map((character) => (/[a-z0-9]/.test(character) ? character : "-"))
+      .join("")
+      .replace(/-+/g, "-")
+      .replace(/^-|-$/g, "");
+  }
+}
+
 class PostService {
   private static recentViewTracker = new Map<string, number>();
 
@@ -122,6 +161,7 @@ class PostService {
         { title: { $regex: search, $options: "i" } },
         { content: { $regex: search, $options: "i" } },
         { excerpt: { $regex: search, $options: "i" } },
+        { tags: { $regex: search, $options: "i" } },
       ];
     }
 
