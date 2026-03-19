@@ -137,6 +137,7 @@ class PostService {
       .findOne({ slug })
       .populate("category", "icon name")
       .populate("authorId", "fullName avatar username")
+      .populate("tags", "name slug")
       .lean();
 
     if (!post) throw new BadRequestError("Post not found!");
@@ -302,8 +303,13 @@ class PostService {
   static getTrendingPosts = async (limit: number = 10) => {
     const CACHE_KEY = "posts:trending";
 
-    const cached = await redisService.get<any[]>(CACHE_KEY);
-    if (cached) return cached;
+    // Dùng hàm có try/catch tương tự CategoryService
+    try {
+      const cached = await redisService.get<any[]>(CACHE_KEY);
+      if (cached) return cached;
+    } catch (err) {
+      console.warn("Redis get failed, falling back to DB", err);
+    }
 
     const posts = await postModel
       .find({ status: "published" })
@@ -318,7 +324,11 @@ class PostService {
       author: post.authorId,
     }));
 
-    await redisService.setWithTTL(CACHE_KEY, result, 300);
+    try {
+      await redisService.setWithTTL(CACHE_KEY, result, 300);
+    } catch (err) {
+      console.warn("Redis set failed", err);
+    }
 
     return result;
   };
@@ -366,15 +376,20 @@ class PostService {
       if (typeof changeStatus.authorId !== "string")
         throw new ForBiddenError("Invalid authorId format");
       const userId = convertToObjectIdMongodb(changeStatus.authorId);
-      if (user && user.followers) {
-        user?.followers?.map(async (followerId) => {
-          await NotificationService.notifyOnUser({
-            userId,
-            actorId: followerId,
-            type: "newPost",
-            message: "published a new post",
-          });
-        });
+      if (user && user.followers && user.followers.length > 0) {
+        // Xử lý tuần tự thay vì song song ồ ạt
+        for (const followerId of user.followers) {
+          try {
+            await NotificationService.notifyOnUser({
+              userId,
+              actorId: followerId,
+              type: "newPost",
+              message: "published a new post",
+            });
+          } catch (err) {
+            console.error(`Failed to notify follower ${followerId}`, err);
+          }
+        }
       }
       session.commitTransaction();
     } catch (error) {
