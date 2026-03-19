@@ -1,5 +1,5 @@
 import { Schema, Types } from "mongoose";
-import { BadRequestError } from "../core/error.response.js";
+import { BadRequestError, NotFoundError } from "../core/error.response.js";
 import { IPost, postModel } from "../models/post.model.js";
 import { likePostModel } from "../models/likePost.model.js";
 import { commentModel } from "../models/comment.model.js";
@@ -9,6 +9,7 @@ import NotificationService from "./notification.service.js";
 import { convertToObjectIdMongodb } from "../utils/index.js";
 import TagService from "./tag.service.js";
 import { redisService } from "./redis.service.js";
+import { categoryModel } from "../models/category.model.js";
 
 interface PostQueryParams {
   page?: number;
@@ -618,6 +619,58 @@ class PostService {
       console.error("Lỗi khi cập nhật số lượng comment của bài viết:", error);
       throw error;
     }
+  };
+
+  static getPostsByCategorySlug = async (
+    categorySlug: string,
+    page: number = 1,
+    limit: number = 10,
+  ) => {
+    if (!categorySlug) throw new BadRequestError("Missing category slug!");
+
+    // Bước 1: Tìm Category bằng slug
+    const categoryFound = await categoryModel
+      .findOne({ slug: categorySlug })
+      .lean();
+    if (!categoryFound) {
+      throw new NotFoundError("Category not found!");
+    }
+
+    const skip = (page - 1) * limit;
+
+    // Bước 2: Tìm tất cả Posts có category._id vừa tìm được
+    const filter = {
+      category: categoryFound._id,
+      status: "published", // Thường thì người xem chỉ thấy bài đã publish
+    };
+
+    const posts = await postModel
+      .find(filter)
+      .sort({ publishedAt: -1, createdOn: -1 }) // Sắp xếp bài mới nhất lên đầu
+      .skip(skip)
+      .limit(limit)
+      .populate("authorId", "fullName avatar username") // Lấy thông tin tác giả
+      .populate("category", "icon name slug") // Lấy thông tin category
+      .lean();
+
+    // Lấy tổng số bài viết để frontend làm phân trang
+    const totalCount = await postModel.countDocuments(filter);
+    const totalPages = Math.ceil(totalCount / limit);
+
+    return {
+      category: categoryFound, // Trả về luôn thông tin category để frontend hiển thị tiêu đề
+      posts: posts.map((post: any) => ({
+        ...post,
+        author: post.authorId, // Map lại tên biến cho chuẩn UI (nếu cần)
+      })),
+      pagination: {
+        totalCount,
+        totalPages,
+        currentPage: page,
+        hasNextPage: page < totalPages,
+        hasPrevPage: page > 1,
+      },
+    };
   };
 }
 

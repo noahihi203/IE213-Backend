@@ -6,6 +6,7 @@ import {
   checkAdmin,
   checkCommentOwnership,
 } from "../../middleware/authorization.js";
+import postController from "../../controllers/post.controller.js";
 
 const router = express.Router();
 
@@ -13,7 +14,7 @@ const router = express.Router();
 router.get("/", asyncHandler(CategoryController.getAllCategories));
 router.get("/slug/:slug", asyncHandler(CategoryController.getCategoryBySlug));
 router.get("/:categoryId", asyncHandler(CategoryController.getSingleCategory));
-
+router.get("/posts/:catSlug", asyncHandler(postController.getPostsByCategorySlug));
 // PROTECTED ROUTES - Require authentication
 router.post(
   "/",

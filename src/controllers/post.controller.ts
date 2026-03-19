@@ -15,6 +15,16 @@ class PostController {
       metadata: await PostService.getAllPostsWithFilters(req.query),
     }).send(res);
   };
+  
+  getPostsByCategorySlug = async (req: Request, res: Response) => {
+    const catSlug = req.params.catSlug;
+    if (typeof catSlug !== "string")
+      throw new BadRequestError("Invalid cat slug format!");
+    new SuccessResponse({
+      message: "Get all Post by slug success!",
+      metadata: await PostService.getPostsByCategorySlug(catSlug),
+    }).send(res);
+  };
 
   getSinglePost = async (req: Request, res: Response) => {
     const postId = req.params.postId;
