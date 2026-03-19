@@ -25,6 +25,12 @@ router.get(
   asyncHandler(PostController.getMyPosts),
 );
 
+router.get(
+  "/:postId/is-liked",
+  authentication,
+  asyncHandler(PostController.isPostLikedByUser),
+);
+
 // PUBLIC ROUTES WITH PATH PARAMS
 router.get("/:postId", asyncHandler(PostController.getSinglePost));
 

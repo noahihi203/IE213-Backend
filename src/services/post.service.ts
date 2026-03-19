@@ -1,5 +1,5 @@
 import { Schema, Types } from "mongoose";
-import { BadRequestError, ForBiddenError } from "../core/error.response.js";
+import { BadRequestError } from "../core/error.response.js";
 import { IPost, postModel } from "../models/post.model.js";
 import { likePostModel } from "../models/likePost.model.js";
 import { commentModel } from "../models/comment.model.js";
@@ -50,6 +50,9 @@ interface notifyOnUserPayload {
   message: string;
 }
 
+const VIEW_COUNT_COOLDOWN_SECONDS = 30;
+const VIEW_COUNT_COOLDOWN_MS = VIEW_COUNT_COOLDOWN_SECONDS * 1000;
+
 function slugify(string: string) {
   if (!string || string.trim() === "") {
     throw new BadRequestError("Cannot slugify empty string");
@@ -67,6 +70,30 @@ function slugify(string: string) {
 }
 
 class PostService {
+  private static recentViewTracker = new Map<string, number>();
+
+  private static hasRecentView = (dedupeKey: string) => {
+    const now = Date.now();
+    const expireAt = PostService.recentViewTracker.get(dedupeKey) || 0;
+
+    if (expireAt > now) {
+      return true;
+    }
+
+    PostService.recentViewTracker.set(dedupeKey, now + VIEW_COUNT_COOLDOWN_MS);
+
+    // Keep memory footprint stable when server runs for a long time.
+    if (PostService.recentViewTracker.size > 5000) {
+      for (const [key, value] of PostService.recentViewTracker.entries()) {
+        if (value <= now) {
+          PostService.recentViewTracker.delete(key);
+        }
+      }
+    }
+
+    return false;
+  };
+
   static getAllPostsWithFilters = async (postQueryParams: PostQueryParams) => {
     let {
       page,
@@ -151,9 +178,6 @@ class PostService {
       .lean();
 
     if (!post) throw new BadRequestError("Post not found!");
-
-    const postId = String(post._id);
-    PostService.incrementViewCount(postId).catch(console.error);
 
     return {
       ...post,
@@ -370,6 +394,36 @@ class PostService {
       { $inc: { viewCount: 1 } }, // Tăng viewCount lên 1
       { new: true },
     );
+  };
+
+  static incrementViewCountOncePerViewer = async (
+    postId: string,
+    viewerKey: string,
+  ) => {
+    if (!postId) throw new BadRequestError("Missing parameter!");
+
+    const safeViewerKey = viewerKey || "anonymous";
+    const dedupeKey = `post:view:${postId}:${safeViewerKey}`;
+
+    if (PostService.hasRecentView(dedupeKey)) {
+      return null;
+    }
+
+    try {
+      const cached = await redisService.get<string>(dedupeKey);
+      if (cached) {
+        return null;
+      }
+      await redisService.setWithTTL(
+        dedupeKey,
+        "1",
+        VIEW_COUNT_COOLDOWN_SECONDS,
+      );
+    } catch (error) {
+      console.warn("Skip Redis view dedupe, falling back to memory", error);
+    }
+
+    return await PostService.incrementViewCount(postId);
   };
 
   static updateTrendingScores = async () => {
