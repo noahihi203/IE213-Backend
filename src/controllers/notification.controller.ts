@@ -81,13 +81,15 @@ class NotificationController {
 
   // DELETE /v1/api/notifications/read
   deleteAllRead = async (req: Request, res: Response) => {
-    if (typeof req.user?.userId !== "string")
+    const userId = req.user?.userId;
+    console.log("userId:::", userId);
+    if (typeof userId !== "string")
       throw new BadRequestError("Invalid userId format!");
 
     new SuccessResponse({
       message: "Delete all read notifications success!",
       metadata: await NotificationService.deleteAllRead(
-        convertToObjectIdMongodb(req.user.userId),
+        convertToObjectIdMongodb(userId),
       ),
     }).send(res);
   };

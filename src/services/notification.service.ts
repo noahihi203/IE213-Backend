@@ -9,8 +9,8 @@ import {
 import { postModel } from "../models/post.model.js";
 import { commentModel } from "../models/comment.model.js";
 import { convertToObjectIdMongodb } from "../utils/index.js";
-
 import { rabbitMQProducer } from "./rabbitmq/rabbitmq.producer.js";
+import logger from "../config/logger.config.js";
 
 interface notificationPayload {
   userId: Types.ObjectId;
@@ -56,6 +56,8 @@ interface notifyOnUserPayload {
 }
 
 class NotificationService {
+  // Chỉ validate rồi đẩy lên queue — KHÔNG lưu DB ở đây
+  // Việc lưu DB do NotificationConsumer xử lý
   static createNotification = async (
     notificationPayload: notificationPayload,
   ) => {
@@ -78,10 +80,14 @@ class NotificationService {
       if (!targetUser) throw new NotFoundError("User not found");
     }
 
-    await rabbitMQProducer.send("notification-queue", {
+    const sent = await rabbitMQProducer.send("notification-queue", {
       notificationPayload,
       createdAt: new Date(),
     });
+
+    if (!sent) {
+      logger.warn(`Failed to enqueue notification for user ${userId}`);
+    }
 
     return { success: true, message: "Notification is being processed" };
   };
@@ -92,11 +98,9 @@ class NotificationService {
 
     const query: Record<string, unknown> = { userId };
 
-    // Chỉ thêm vào query nếu giá trị được truyền vào
     if (isRead !== undefined) query.isRead = isRead;
     if (type && type !== "") query.type = type;
 
-    // FIX: thêm await để notifications là array thật, không phải query object
     const notifications = await notificationModel
       .find(query)
       .populate("actorId", "_id username fullName")
@@ -126,7 +130,6 @@ class NotificationService {
     const user = await userModel.findById(userId);
     if (!user) throw new NotFoundError("User not found");
 
-    // Hardening: chỉ cho phép đánh dấu notification của chính user
     const notification = await notificationModel.findById(notiId).lean();
     if (!notification) throw new NotFoundError("Notification not found!");
     if (notification.userId.toString() !== userId.toString())
@@ -161,7 +164,6 @@ class NotificationService {
     notiId: Types.ObjectId,
     userId: Types.ObjectId,
   ) => {
-    // Hardening: chỉ cho phép xóa notification của chính user
     const notification = await notificationModel.findById(notiId).lean();
     if (!notification) throw new NotFoundError("Notification not found!");
     if (notification.userId.toString() !== userId.toString())
