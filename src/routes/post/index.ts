@@ -96,6 +96,8 @@ router.post(
 
 router.get("/:postId/comments", asyncHandler(PostController.getPostComments));
 
+router.get("/:postId/next-comments", asyncHandler(PostController.getNextLevelPostComments));
+
 router.get(
   "/:postId/comment-count",
   asyncHandler(PostController.getCommentCount),

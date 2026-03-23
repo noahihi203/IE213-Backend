@@ -129,7 +129,6 @@ class CommentService {
           commentRight: { $lte: parent.commentRight },
         })
         .select({
-          postId: 1,
           userId: 1,
           commentLeft: 1,
           commentRight: 1,
@@ -138,7 +137,6 @@ class CommentService {
           likesCount: 1,
           isEdited: 1,
           createdOn: 1,
-          modifiedOn: 1,
         })
         .sort({
           commentLeft: 1,
@@ -151,7 +149,6 @@ class CommentService {
         postId: postId,
       })
       .select({
-        postId: 1,
         userId: 1,
         commentLeft: 1,
         commentRight: 1,
@@ -160,12 +157,86 @@ class CommentService {
         likesCount: 1,
         isEdited: 1,
         createdOn: 1,
-        modifiedOn: 1,
       })
       .sort({
         commentLeft: 1,
       });
     return comments;
+  };
+
+  static getTopLevelComments = async (
+    postId: Types.ObjectId,
+    { limit = 5, skip = 0 }: { limit?: number; skip?: number },
+  ) => {
+    // Comment gốc = không có parentId
+    const comments = await commentModel
+      .find({
+        postId,
+        parentId: null,
+      })
+      .select({
+        userId: 1,
+        commentLeft: 1,
+        commentRight: 1,
+        content: 1,
+        parentId: 1,
+        likesCount: 1,
+        isEdited: 1,
+        createdOn: 1,
+      })
+      .sort({ commentLeft: 1 })
+      .skip(skip)
+      .limit(limit)
+      .lean();
+
+    // Đếm số reply của mỗi comment để hiện "Xem 3 phản hồi"
+    const withReplyCount = await Promise.all(
+      comments.map(async (c) => {
+        const replyCount = await commentModel.countDocuments({
+          postId,
+          commentLeft: { $gt: c.commentLeft },
+          commentRight: { $lt: c.commentRight },
+        });
+        return { ...c, replyCount };
+      }),
+    );
+
+    const total = await commentModel.countDocuments({ postId, parentId: null });
+
+    return {
+      comments: withReplyCount,
+      total,
+      hasMore: skip + limit < total,
+    };
+  };
+
+  static getRepliesByCommentId = async (
+    postId: Types.ObjectId,
+    parentCommentId: Types.ObjectId,
+  ) => {
+    const parent = await commentModel.findById(parentCommentId).lean();
+    if (!parent) throw new NotFoundError("Comment not found!");
+
+    // Chỉ lấy direct children (level 2), không lấy sâu hơn
+    const replies = await commentModel
+      .find({
+        postId,
+        parentId: parentCommentId,
+      })
+      .select({
+        userId: 1,
+        commentLeft: 1,
+        commentRight: 1,
+        content: 1,
+        parentId: 1,
+        likesCount: 1,
+        isEdited: 1,
+        createdOn: 1,
+      })
+      .sort({ commentLeft: 1 })
+      .lean();
+
+    return replies;
   };
 
   static async deleteComments(deleteParams: deleteParams) {
@@ -209,8 +280,8 @@ class CommentService {
         $inc: { commentLeft: -width },
       },
     );
-const totalComments = await commentModel.countDocuments({ postId: postId });
-await PostService.updatePostCommentCount(postId, totalComments);
+    const totalComments = await commentModel.countDocuments({ postId: postId });
+    await PostService.updatePostCommentCount(postId, totalComments);
     return true;
   }
 

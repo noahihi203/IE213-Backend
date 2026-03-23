@@ -15,7 +15,7 @@ class PostController {
       metadata: await PostService.getAllPostsWithFilters(req.query),
     }).send(res);
   };
-  
+
   getPostsByCategorySlug = async (req: Request, res: Response) => {
     const catSlug = req.params.catSlug;
     if (typeof catSlug !== "string")
@@ -244,16 +244,38 @@ class PostController {
       throw new BadRequestError("Invalid postId format");
 
     const parentCommentIdRaw = req.query.parentCommentId;
-    const parentCommentId =
-      typeof parentCommentIdRaw === "string" && parentCommentIdRaw.trim()
-        ? convertToObjectIdMongodb(parentCommentIdRaw)
-        : undefined;
+    // const parentCommentId =
+    //   typeof parentCommentIdRaw === "string" && parentCommentIdRaw.trim()
+    //     ? convertToObjectIdMongodb(parentCommentIdRaw)
+    //     : undefined;
+
+    const { limit, skip } = req.query;
+    const parsedLimit = limit ? parseInt(limit as string, 10) : 5;
+    const parsedSkip = skip ? parseInt(skip as string, 10) : 0;
 
     new SuccessResponse({
       message: "Get post comments success!",
-      metadata: await CommentService.getCommentByParentId(
+      metadata: await CommentService.getTopLevelComments(
         convertToObjectIdMongodb(postId),
-        parentCommentId,
+        { limit: parsedLimit, skip: parsedSkip },
+      ),
+    }).send(res);
+  };
+
+  getNextLevelPostComments = async (req: Request, res: Response) => {
+    const postId = req.params.postId;
+    if (typeof postId !== "string")
+      throw new BadRequestError("Invalid postId format");
+
+    const parentCommentId = req.body._id;
+    if (typeof parentCommentId !== "string")
+      throw new BadRequestError("Invalid parentCommentId format");
+
+    new SuccessResponse({
+      message: "Get post comment next level success!",
+      metadata: await CommentService.getRepliesByCommentId(
+        convertToObjectIdMongodb(postId),
+        convertToObjectIdMongodb(parentCommentId),
       ),
     }).send(res);
   };
