@@ -11,11 +11,12 @@ router.get(
   authentication,
   asyncHandler(NotificationController.getUserNotifications),
 );
-router.put(
-  "/:notificationId/read",
+router.delete(
+  "/read",
   authentication,
-  asyncHandler(NotificationController.markAsRead),
+  asyncHandler(NotificationController.deleteAllRead),
 );
+
 router.put(
   "/read-all",
   authentication,
@@ -26,10 +27,11 @@ router.delete(
   authentication,
   asyncHandler(NotificationController.deleteNotification),
 );
-router.delete(
-  "/read",
+
+router.put(
+  "/:notificationId/read",
   authentication,
-  asyncHandler(NotificationController.deleteAllRead),
+  asyncHandler(NotificationController.markAsRead),
 );
 
 export default router;

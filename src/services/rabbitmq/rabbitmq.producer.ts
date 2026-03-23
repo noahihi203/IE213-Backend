@@ -28,15 +28,24 @@ class RabbitMQProducer {
     if (this.connection) await this.connection.close();
   }
 
-  async send(queue: string, message: any) {
+  async send(queue: string, message: any): Promise<boolean> {
     try {
       await this.channel.assertQueue(queue, { durable: true });
-      
-      this.channel.sendToQueue(queue, Buffer.from(JSON.stringify(message)), {
-        persistent: true,
-      });
+
+      const success = this.channel.sendToQueue(
+        queue,
+        Buffer.from(JSON.stringify(message)),
+        { persistent: true },
+      );
+
+      if (!success) {
+        logger.warn(`RabbitMQ send buffered (backpressure) [${queue}]`);
+      }
+
+      return success;
     } catch (error) {
       logger.error(`RabbitMQ send error [${queue}]`, error);
+      return false;
     }
   }
 }

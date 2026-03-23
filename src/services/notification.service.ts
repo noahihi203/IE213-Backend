@@ -9,8 +9,8 @@ import {
 import { postModel } from "../models/post.model.js";
 import { commentModel } from "../models/comment.model.js";
 import { convertToObjectIdMongodb } from "../utils/index.js";
-
 import { rabbitMQProducer } from "./rabbitmq/rabbitmq.producer.js";
+import logger from "../config/logger.config.js";
 
 interface notificationPayload {
   userId: Types.ObjectId;
@@ -24,8 +24,8 @@ interface notificationPayload {
 interface getUserNotisPayload {
   userId: Types.ObjectId;
   filter: {
-    isRead: boolean | false;
-    type: string | "";
+    isRead?: boolean;
+    type?: string;
   };
 }
 
@@ -44,18 +44,20 @@ interface notifyOnPostPayload {
 interface notifyOnCommentPayload {
   commentId: Types.ObjectId;
   actorId: Types.ObjectId;
-  type: "like";
+  type: "like" | "mention";
   message: string;
 }
 
 interface notifyOnUserPayload {
   userId: Types.ObjectId;
   actorId: Types.ObjectId;
-  type: "follow" | "newPost" | "mention";
+  type: "follow" | "newPost";
   message: string;
 }
 
 class NotificationService {
+  // Chỉ validate rồi đẩy lên queue — KHÔNG lưu DB ở đây
+  // Việc lưu DB do NotificationConsumer xử lý
   static createNotification = async (
     notificationPayload: notificationPayload,
   ) => {
@@ -68,23 +70,24 @@ class NotificationService {
     if (!actor) throw new NotFoundError("Actor not found");
 
     if (targetType === "post") {
-      // Ai đó thích bài viết của bản thân, người khác bình luận vào post của bản thân
       const targetPost = await postModel.findById(targetId);
       if (!targetPost) throw new NotFoundError("Post not found");
     } else if (targetType === "comment") {
-      // Người khác nhắc tới mình trong một comment, người khác like comment của bản thân
-      const targetPost = await commentModel.findById(targetId);
-      if (!targetPost) throw new NotFoundError("Post not found");
+      const targetComment = await commentModel.findById(targetId);
+      if (!targetComment) throw new NotFoundError("Comment not found");
     } else if (targetType === "user") {
-      // Có người theo dõi bạn, admin khóa tài khoản...
-      const targetPost = await userModel.findById(targetId);
-      if (!targetPost) throw new NotFoundError("Post not found");
+      const targetUser = await userModel.findById(targetId);
+      if (!targetUser) throw new NotFoundError("User not found");
     }
 
-    await rabbitMQProducer.send("notification-queue", {
+    const sent = await rabbitMQProducer.send("notification-queue", {
       notificationPayload,
       createdAt: new Date(),
     });
+
+    if (!sent) {
+      logger.warn(`Failed to enqueue notification for user ${userId}`);
+    }
 
     return { success: true, message: "Notification is being processed" };
   };
@@ -93,28 +96,25 @@ class NotificationService {
     const { userId, filter } = payload;
     const { isRead, type } = filter;
 
-    const query: any = { userId: userId };
+    const query: Record<string, unknown> = { userId };
 
-    // Fixed a small typo here (!isRead !== undefined -> isRead !== undefined)
     if (isRead !== undefined) query.isRead = isRead;
     if (type && type !== "") query.type = type;
-    
-    const notifications = notificationModel
+
+    const notifications = await notificationModel
       .find(query)
-      .populate("actorId", "_id username")
+      .populate("actorId", "_id username fullName")
       .sort({ createdOn: -1 })
       .limit(20)
       .lean();
-      
-    const total = await notificationModel.countDocuments({
-      userId: userId,
-    });
+
+    const total = await notificationModel.countDocuments({ userId });
 
     const unreadCount = await notificationModel.countDocuments({
-      userId: userId,
+      userId,
       isRead: false,
     });
-    
+
     return {
       notifications,
       total,
@@ -130,20 +130,18 @@ class NotificationService {
     const user = await userModel.findById(userId);
     if (!user) throw new NotFoundError("User not found");
 
-    const updateNoti = await notificationModel
-      .findByIdAndUpdate(notiId, {
-        isRead: true,
-      })
-      .lean();
+    const notification = await notificationModel.findById(notiId).lean();
+    if (!notification) throw new NotFoundError("Notification not found!");
+    if (notification.userId.toString() !== userId.toString())
+      throw new ForBiddenError("Không có quyền thao tác thông báo này!");
 
-    if (!updateNoti)
-      throw new NotFoundError(
-        "Notification not found, update notification failed!",
-      );
+    const updateNoti = await notificationModel
+      .findByIdAndUpdate(notiId, { isRead: true }, { new: true })
+      .lean();
 
     return {
       updated: true,
-      updateNoti: updateNoti,
+      updateNoti,
     };
   };
 
@@ -152,12 +150,8 @@ class NotificationService {
     if (!user) throw new NotFoundError("User not found!");
 
     const result = await notificationModel.updateMany(
-      { userId: userId, isRead: false },
-      {
-        $set: {
-          isRead: true,
-        },
-      },
+      { userId, isRead: false },
+      { $set: { isRead: true } },
     );
 
     return {
@@ -166,20 +160,28 @@ class NotificationService {
     };
   };
 
-  static deleteNotification = async (notiId: Types.ObjectId) => {
+  static deleteNotification = async (
+    notiId: Types.ObjectId,
+    userId: Types.ObjectId,
+  ) => {
+    const notification = await notificationModel.findById(notiId).lean();
+    if (!notification) throw new NotFoundError("Notification not found!");
+    if (notification.userId.toString() !== userId.toString())
+      throw new ForBiddenError("Không có quyền xóa thông báo này!");
+
     const deleteNoti = await notificationModel.findByIdAndDelete(notiId);
     if (!deleteNoti) throw new ForBiddenError("Delete noti failed!");
-    return {
-      deleted: true,
-    };
+
+    return { deleted: true };
   };
 
   static deleteAllRead = async (userId: Types.ObjectId) => {
     const deleteNotis = await notificationModel.deleteMany({
-      userId: userId,
+      userId,
       isRead: true,
     });
     if (!deleteNotis) throw new ForBiddenError("Delete notis failed!");
+
     return {
       deleted: true,
       deletedCount: deleteNotis.deletedCount,
@@ -198,7 +200,6 @@ class NotificationService {
     const userId = post.authorId;
     if (!userId) throw new ForBiddenError("Post has no author!");
 
-    // Compare as strings to avoid ObjectId comparison issues
     if (userId.toString() === actorId.toString()) return;
 
     const noti = await NotificationService.createNotification({
@@ -211,9 +212,7 @@ class NotificationService {
     });
 
     if (!noti) throw new BadRequestError("create noti post failed");
-    return {
-      createdNoti: true,
-    };
+    return { createdNoti: true };
   };
 
   static notifyOnComment = async (payload: notifyOnCommentPayload) => {
@@ -228,7 +227,6 @@ class NotificationService {
     const userId = comment.userId;
     if (!userId) throw new ForBiddenError("Comment has no user!");
 
-    // Compare as strings
     if (userId.toString() === actorId.toString()) return;
 
     const noti = await NotificationService.createNotification({
@@ -241,9 +239,7 @@ class NotificationService {
     });
 
     if (!noti) throw new BadRequestError("create noti comment failed");
-    return {
-      createdNoti: true,
-    };
+    return { createdNoti: true };
   };
 
   static notifyOnUser = async (payload: notifyOnUserPayload) => {
@@ -252,7 +248,6 @@ class NotificationService {
     if (!userId || !actorId || !type)
       throw new BadRequestError("Missing parameter");
 
-    // Compare as strings
     if (userId.toString() === actorId.toString()) return;
 
     const noti = await NotificationService.createNotification({
@@ -264,10 +259,8 @@ class NotificationService {
       targetId: actorId,
     });
 
-    if (!noti) throw new BadRequestError("create noti post failed");
-    return {
-      createdNoti: true,
-    };
+    if (!noti) throw new BadRequestError("create noti user failed");
+    return { createdNoti: true };
   };
 }
 
