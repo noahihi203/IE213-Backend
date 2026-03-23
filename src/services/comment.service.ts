@@ -73,8 +73,8 @@ class CommentService {
         { $inc: { commentLeft: 2 } },
       );
 
-      await NotificationService.notifyOnUser({
-        userId: parentComment.userId,
+      await NotificationService.notifyOnComment({
+        commentId: parentComment._id,
         actorId: comment.userId,
         type: "mention",
         message: "reply you in comment",

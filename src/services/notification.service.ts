@@ -44,14 +44,14 @@ interface notifyOnPostPayload {
 interface notifyOnCommentPayload {
   commentId: Types.ObjectId;
   actorId: Types.ObjectId;
-  type: "like";
+  type: "like" | "mention";
   message: string;
 }
 
 interface notifyOnUserPayload {
   userId: Types.ObjectId;
   actorId: Types.ObjectId;
-  type: "follow" | "newPost" | "mention";
+  type: "follow" | "newPost";
   message: string;
 }
 
