@@ -16,11 +16,12 @@ interface PostQueryParams {
   limit?: number;
   search?: string;
   sortBy?: string; // ví dụ: 'createdOn', 'publishedAt', 'viewCount'
+  sort?: string;
   order?: "asc" | "desc";
   status?: "draft" | "published" | "archived";
-  authorId?: Types.ObjectId;
-  category?: Types.ObjectId;
-  tags?: Types.ObjectId[];
+  authorId?: Types.ObjectId | string;
+  category?: Types.ObjectId | string;
+  tags?: Types.ObjectId[] | string[];
 }
 
 type PostStatus = "draft" | "published" | "archived";
@@ -42,13 +43,6 @@ interface UpdatePostData {
   statusUpdate?: PostStatus;
   tagsUpdate?: Array<Types.ObjectId | string> | string;
   categoryUpdate?: Types.ObjectId | string;
-}
-
-interface notifyOnUserPayload {
-  userId: Types.ObjectId;
-  actorId: Types.ObjectId;
-  type: "follow";
-  message: string;
 }
 
 const VIEW_COUNT_COOLDOWN_SECONDS = 30;
@@ -96,11 +90,12 @@ class PostService {
   };
 
   static getAllPostsWithFilters = async (postQueryParams: PostQueryParams) => {
-    let {
+    const {
       page,
       limit,
       search,
       sortBy,
+      sort,
       order,
       status,
       authorId,
@@ -108,12 +103,12 @@ class PostService {
       tags,
     } = postQueryParams;
 
-    page = page || 1;
-    limit = limit || 10;
-    sortBy = sortBy || "createdOn";
-    order = order || "desc";
+    const parsedPage = Math.max(1, Number(page) || 1);
+    const parsedLimit = Math.min(50, Math.max(1, Number(limit) || 10));
+    const parsedSortBy = sortBy || sort || "createdOn";
+    const parsedOrder: "asc" | "desc" = order === "asc" ? "asc" : "desc";
 
-    const skip = (page - 1) * limit;
+    const skip = (parsedPage - 1) * parsedLimit;
 
     const filter: any = {};
 
@@ -131,24 +126,34 @@ class PostService {
     if (tags) filter.tags = { $in: tags };
 
     const sortObject: any = {};
-    sortObject[sortBy] = order === "asc" ? 1 : -1;
+    sortObject[parsedSortBy] = parsedOrder === "asc" ? 1 : -1;
 
     const posts = await postModel
       .find(filter)
       .sort(sortObject)
       .skip(skip)
-      .limit(limit)
+      .limit(parsedLimit)
       .populate("category", "icon name")
       .populate("authorId", "fullName avatar username")
       .lean();
 
-    const totalCount: any = postModel.countDocuments(filter);
+    const totalCount = await postModel.countDocuments(filter);
 
-    const totalPages = Math.ceil(totalCount / limit);
-    const hasNextPage = page < totalPages;
-    const hasPrevPage = page > 1;
+    const totalPages = Math.ceil(totalCount / parsedLimit);
+    const hasNextPage = parsedPage < totalPages;
+    const hasPrevPage = parsedPage > 1;
 
-    return posts;
+    return {
+      data: posts,
+      pagination: {
+        page: parsedPage,
+        limit: parsedLimit,
+        total: totalCount,
+        totalPages,
+        hasNextPage,
+        hasPrevPage,
+      },
+    };
   };
 
   static getPostById = async (postId: string) => {
