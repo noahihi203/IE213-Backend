@@ -33,7 +33,7 @@ const LoginInput = z.object({
 
 const UpdateProfileInput = z.object({
   fullName: z.string().nonempty().min(2, "Họ và tên phải có lớn hơn 2 ký tự"),
-  avatar: z.url({ message: "Đường dẫn avatar không hợp lệ" }),
+  avatar: z.string().url("Đường dẫn avatar không hợp lệ").or(z.literal("")),
   bio: z.string().max(500, "Bio không được dài quá 500 ký tự"),
 });
 
@@ -169,13 +169,15 @@ export const validateUpdateUserInput = async (
 
     const result = await UpdateProfileInput.safeParse(updateInput);
 
-    if (!result.success) logger.error(result.error);
-    else {
-      logger.debug(result.data);
-      return next();
+    if (!result.success) {
+      logger.error(result.error);
+      return next(new ValidationError("Error in validation"));
     }
+
+    logger.debug(result.data);
+    return next();
   } catch {
-    throw new ValidationError("Error in validation");
+    return next(new ValidationError("Error in validation"));
   }
 };
 
@@ -189,13 +191,15 @@ export const validateUpdateUserEmailInput = async (
 
     const result = await UpdateEmailInput.safeParse(updateInput);
 
-    if (!result.success) logger.error(result.error);
-    else {
-      logger.debug(result.data);
-      return next();
+    if (!result.success) {
+      logger.error(result.error);
+      return next(new ValidationError("Error in validation"));
     }
+
+    logger.debug(result.data);
+    return next();
   } catch {
-    throw new ValidationError("Error in validation");
+    return next(new ValidationError("Error in validation"));
   }
 };
 
@@ -209,13 +213,15 @@ export const validateUpdateUsernameInput = async (
 
     const result = await UpdateUsernameInput.safeParse(updateInput);
 
-    if (!result.success) logger.error(result.error);
-    else {
-      logger.debug(result.data);
-      return next();
+    if (!result.success) {
+      logger.error(result.error);
+      return next(new ValidationError("Error in validation"));
     }
+
+    logger.debug(result.data);
+    return next();
   } catch {
-    throw new ValidationError("Error in validation");
+    return next(new ValidationError("Error in validation"));
   }
 };
 

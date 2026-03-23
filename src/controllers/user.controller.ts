@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { SuccessResponse, CREATED } from "../core/success.response.js";
+import { SuccessResponse } from "../core/success.response.js";
 import UserService from "../services/user.service.js";
 import CommentService from "../services/comment.service.js";
 import { convertToObjectIdMongodb } from "../utils/index.js";
@@ -38,9 +38,15 @@ class UserController {
   updateUserUsername = async (req: Request, res: Response): Promise<void> => {
     if (typeof req.user?.userId !== "string")
       throw new BadRequestError("Invalid userId format");
+
+    const newUsername = req.body?.newUsername;
+    if (typeof newUsername !== "string") {
+      throw new BadRequestError("Invalid username format");
+    }
+
     new SuccessResponse({
       message: "Update user username success!",
-      metadata: await UserService.changeUserName(req.body, req.user?.userId),
+      metadata: await UserService.changeUserName(req.user.userId, newUsername),
     }).send(res);
   };
 

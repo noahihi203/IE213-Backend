@@ -243,12 +243,6 @@ class PostController {
     if (typeof postId !== "string")
       throw new BadRequestError("Invalid postId format");
 
-    const parentCommentIdRaw = req.query.parentCommentId;
-    // const parentCommentId =
-    //   typeof parentCommentIdRaw === "string" && parentCommentIdRaw.trim()
-    //     ? convertToObjectIdMongodb(parentCommentIdRaw)
-    //     : undefined;
-
     const { limit, skip } = req.query;
     const parsedLimit = limit ? parseInt(limit as string, 10) : 5;
     const parsedSkip = skip ? parseInt(skip as string, 10) : 0;
@@ -267,7 +261,7 @@ class PostController {
     if (typeof postId !== "string")
       throw new BadRequestError("Invalid postId format");
 
-    const parentCommentId = req.body._id;
+    const parentCommentId = req.query.parentCommentId;
     if (typeof parentCommentId !== "string")
       throw new BadRequestError("Invalid parentCommentId format");
 

@@ -35,6 +35,8 @@ interface IUserComments {
 }
 
 class CommentService {
+  private static readonly commentAuthorSelect = "username fullName avatar";
+
   static createComment = async (createCommentParams: createCommentParams) => {
     const comment = new commentModel({
       postId: createCommentParams.postId,
@@ -140,7 +142,9 @@ class CommentService {
         })
         .sort({
           commentLeft: 1,
-        });
+        })
+        .populate("userId", CommentService.commentAuthorSelect)
+        .lean();
       return comments;
     }
 
@@ -160,7 +164,9 @@ class CommentService {
       })
       .sort({
         commentLeft: 1,
-      });
+      })
+      .populate("userId", CommentService.commentAuthorSelect)
+      .lean();
     return comments;
   };
 
@@ -184,9 +190,10 @@ class CommentService {
         isEdited: 1,
         createdOn: 1,
       })
-      .sort({ commentLeft: 1 })
+      .sort({ createdOn: -1 })
       .skip(skip)
       .limit(limit)
+      .populate("userId", CommentService.commentAuthorSelect)
       .lean();
 
     // Đếm số reply của mỗi comment để hiện "Xem 3 phản hồi"
@@ -234,6 +241,7 @@ class CommentService {
         createdOn: 1,
       })
       .sort({ commentLeft: 1 })
+      .populate("userId", CommentService.commentAuthorSelect)
       .lean();
 
     return replies;

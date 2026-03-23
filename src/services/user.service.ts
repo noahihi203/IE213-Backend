@@ -24,7 +24,7 @@ interface followPayload {
 interface UpdateInput {
   fullName: string;
   bio: string;
-  avatar: string;
+  avatar: string | null;
 }
 
 interface ChangeEmailInput {
@@ -61,17 +61,6 @@ class UserService {
     }
   }
 
-  private static async safeRedisPublish(
-    channel: string,
-    message: any,
-  ): Promise<void> {
-    try {
-      await redisService.publish(channel, message);
-    } catch {
-      // ignore cache errors
-    }
-  }
-
   static findUserByEmail = async ({
     email,
     select = {
@@ -90,8 +79,9 @@ class UserService {
     _id,
     select = {
       email: 1,
-      password: 1,
       fullName: 1,
+      avatar: 1,
+      bio: 1,
       username: 1,
       role: 1,
       tokenVersion: 1,
@@ -111,10 +101,18 @@ class UserService {
   };
 
   static updateProfile = async (updateInput: UpdateInput, userId: string) => {
+    const normalizedUpdateInput = {
+      ...updateInput,
+      avatar:
+        updateInput.avatar && updateInput.avatar.trim()
+          ? updateInput.avatar
+          : null,
+    };
+
     const updatedUser = await userModel
       .findByIdAndUpdate(
         userId,
-        { $set: updateInput },
+        { $set: normalizedUpdateInput },
         { new: true, runValidators: true },
       )
       .select("bio avatar fullName");
@@ -132,8 +130,9 @@ class UserService {
     changeEmailInput: ChangeEmailInput,
     userId: string,
   ) => {
+    const nextEmail = changeEmailInput.newEmail.trim().toLowerCase();
     const newEmailExist = await userModel.findOne({
-      email: changeEmailInput.newEmail,
+      email: nextEmail,
     });
     if (newEmailExist) throw new BadRequestError("Email is existed");
 
@@ -152,7 +151,7 @@ class UserService {
     ///
 
     const updateEmail = await userModel
-      .findByIdAndUpdate(userId, { $set: changeEmailInput }, { new: true })
+      .findByIdAndUpdate(userId, { $set: { email: nextEmail } }, { new: true })
       .select("email");
 
     if (!updateEmail)
@@ -164,14 +163,20 @@ class UserService {
   };
 
   static changeUserName = async (userId: string, newUsername: string) => {
+    const nextUsername = newUsername.trim();
+    if (!nextUsername) {
+      throw new BadRequestError("username is required");
+    }
+
     const foundUser = await userModel
-      .find({ username: newUsername })
-      .select("_id");
-    if (foundUser) throw new BadRequestError("username is existed");
+      .findOne({ username: nextUsername })
+      .lean();
+    if (foundUser && foundUser._id.toString() !== userId)
+      throw new BadRequestError("username is existed");
 
     const updateUsername = await userModel
       .findByIdAndUpdate(userId, {
-        $set: { username: newUsername },
+        $set: { username: nextUsername },
       })
       .select("username");
 

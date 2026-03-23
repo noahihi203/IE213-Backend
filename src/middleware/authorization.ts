@@ -232,28 +232,26 @@ export const checkRoles = (...roles: string[]) => {
     next();
   };
 };
-export const checkOwnership = () => {
-  return (req: Request, res: Response, next: NextFunction) => {
-    const user = req.user;
-    const targetUser = req.body.userId;
+export const checkOwnership = (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  const user = req.user;
 
-    if (!user) {
-      throw new ForBiddenError("Authentication required");
-    }
+  if (!user) {
+    throw new ForBiddenError("Authentication required");
+  }
 
-    if (!targetUser) {
-      throw new ForBiddenError("Body required");
-    }
+  const targetUser =
+    req.body?.userId || req.params?.userId || req.query?.userId || user.userId;
 
-    // Allow if user is admin or owns the resource
-    if (user.userId === targetUser) {
-      next();
-    } else {
-      throw new ForBiddenError(
-        "You don't have permission to access this resource",
-      );
-    }
-  };
+  // Allow admin, or owner of the resource
+  if (user.role === "admin" || user.userId === targetUser) {
+    return next();
+  }
+
+  throw new ForBiddenError("You don't have permission to access this resource");
 };
 
 /**
