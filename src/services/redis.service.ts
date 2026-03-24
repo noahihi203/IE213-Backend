@@ -5,8 +5,29 @@ class RedisService {
   public client: RedisClientType;
   public subscriber: RedisClientType;
 
+  private static buildRedisConnectionUrl(): string {
+    const redisUrl = process.env.REDIS_URL;
+    if (redisUrl) return redisUrl;
+
+    const host = process.env.REDIS_HOST || "localhost";
+    const port = process.env.REDIS_PORT || "6379";
+    const username = process.env.REDIS_USERNAME;
+    const password = process.env.REDIS_PASSWORD;
+
+    let credentials = "";
+    if (password && username) {
+      credentials = `${encodeURIComponent(username)}:${encodeURIComponent(password)}@`;
+    } else if (password) {
+      credentials = `:${encodeURIComponent(password)}@`;
+    } else if (username) {
+      credentials = `${encodeURIComponent(username)}@`;
+    }
+
+    return `redis://${credentials}${host}:${port}`;
+  }
+
   private constructor() {
-    const redisUrl = process.env.REDIS_URL!;
+    const redisUrl = RedisService.buildRedisConnectionUrl();
 
     this.client = createClient({ url: redisUrl });
     this.subscriber = this.client.duplicate();
