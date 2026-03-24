@@ -1,5 +1,9 @@
 import { Types } from "mongoose";
-import { AuthFailureError, BadRequestError } from "../core/error.response.js";
+import {
+  AuthFailureError,
+  BadRequestError,
+  NotFoundError,
+} from "../core/error.response.js";
 import { userModel } from "../models/user.model.js";
 import NotificationService from "./notification.service.js";
 import bcrypt from "bcrypt";
@@ -30,6 +34,13 @@ interface UpdateInput {
 interface ChangeEmailInput {
   currentPassword: string;
   newEmail: string;
+}
+
+interface FollowListInput {
+  userId: string;
+  page?: number;
+  limit?: number;
+  search?: string;
 }
 
 class UserService {
@@ -334,27 +345,281 @@ class UserService {
   };
 
   static followUser = async (payload: followPayload) => {
-    const follow = await userModel.findByIdAndUpdate(
-      payload.userId,
-      {
-        $addToSet: { followers: payload.followerId },
-      },
-      { new: true },
-    );
+    const { userId, followerId } = payload;
 
-    if (!follow) throw new BadRequestError("Follow failed!");
-    else {
-      const noti = await NotificationService.notifyOnUser({
-        userId: payload.userId,
-        actorId: payload.followerId,
+    if (!userId || !followerId) {
+      throw new BadRequestError("Missing follow payload");
+    }
+
+    if (
+      !Types.ObjectId.isValid(userId) ||
+      !Types.ObjectId.isValid(followerId)
+    ) {
+      throw new BadRequestError("Invalid user id");
+    }
+
+    if (userId.toString() === followerId.toString()) {
+      throw new BadRequestError("You cannot follow yourself");
+    }
+
+    const [targetUser, actorUser] = await Promise.all([
+      userModel.findById(userId).select("_id isActive followers").lean(),
+      userModel.findById(followerId).select("_id isActive").lean(),
+    ]);
+
+    if (!targetUser) {
+      throw new NotFoundError("User to follow not found");
+    }
+
+    if (!actorUser) {
+      throw new NotFoundError("Follower user not found");
+    }
+
+    if (!targetUser.isActive) {
+      throw new BadRequestError("Cannot follow inactive user");
+    }
+
+    if (!actorUser.isActive) {
+      throw new BadRequestError("Inactive users cannot follow others");
+    }
+
+    const alreadyFollowing =
+      targetUser.followers?.some(
+        (item) => item.toString() === followerId.toString(),
+      ) ?? false;
+
+    if (alreadyFollowing) {
+      const follow = await userModel
+        .findById(userId)
+        .select("-password")
+        .lean();
+      return {
+        follow,
+        noti: null,
+        isFollowing: true,
+        isNewFollow: false,
+      };
+    }
+
+    await Promise.all([
+      userModel.updateOne(
+        { _id: userId },
+        { $addToSet: { followers: followerId } },
+      ),
+      userModel.updateOne(
+        { _id: followerId },
+        { $addToSet: { following: userId } },
+      ),
+      UserService.safeRedisDel([
+        `user:profile:${userId.toString()}`,
+        `user:profile:${followerId.toString()}`,
+      ]),
+    ]);
+
+    const follow = await userModel.findById(userId).select("-password").lean();
+
+    if (!follow) {
+      throw new BadRequestError("Follow failed!");
+    }
+
+    let noti: unknown = null;
+    try {
+      noti = await NotificationService.notifyOnUser({
+        userId,
+        actorId: followerId,
         type: "follow",
         message: "follow you",
       });
+    } catch (error) {
+      logger.warn("Failed to send follow notification", {
+        userId: userId.toString(),
+        followerId: followerId.toString(),
+        error: error instanceof Error ? error.message : error,
+      });
+    }
+
+    return {
+      follow,
+      noti,
+      isFollowing: true,
+      isNewFollow: true,
+    };
+  };
+
+  static getMyFollowers = async ({
+    userId,
+    page = 1,
+    limit = 10,
+    search = "",
+  }: FollowListInput) => {
+    if (!Types.ObjectId.isValid(userId)) {
+      throw new BadRequestError("Invalid user id");
+    }
+
+    if (page < 1) {
+      throw new BadRequestError("Page must be greater than 0");
+    }
+
+    if (limit < 1 || limit > 100) {
+      throw new BadRequestError("Limit must be between 1 and 100");
+    }
+
+    const me = await userModel.findById(userId).select("followers").lean();
+    if (!me) {
+      throw new NotFoundError("User not found");
+    }
+
+    const followerIds = (me.followers || []).map((id) => id.toString());
+
+    if (followerIds.length === 0) {
       return {
-        follow,
-        noti,
+        followers: [],
+        pagination: {
+          currentPage: page,
+          totalPages: 1,
+          totalUsers: 0,
+          limit,
+          hasNextPage: false,
+          hasPrevPage: false,
+        },
       };
     }
+
+    const filter: {
+      _id: { $in: string[] };
+      isActive: boolean;
+      $or?: Array<
+        | { username: { $regex: string; $options: string } }
+        | { fullName: { $regex: string; $options: string } }
+        | { email: { $regex: string; $options: string } }
+      >;
+    } = {
+      _id: { $in: followerIds },
+      isActive: true,
+    };
+
+    if (search.trim()) {
+      const normalizedSearch = search.trim();
+      filter.$or = [
+        { username: { $regex: normalizedSearch, $options: "i" } },
+        { fullName: { $regex: normalizedSearch, $options: "i" } },
+        { email: { $regex: normalizedSearch, $options: "i" } },
+      ];
+    }
+
+    const skip = (page - 1) * limit;
+    const [followers, totalUsers] = await Promise.all([
+      userModel
+        .find(filter)
+        .select("_id username fullName email avatar bio role isActive")
+        .sort({ createdOn: -1 })
+        .skip(skip)
+        .limit(limit)
+        .lean(),
+      userModel.countDocuments(filter),
+    ]);
+
+    const totalPages = Math.max(1, Math.ceil(totalUsers / limit));
+
+    return {
+      followers,
+      pagination: {
+        currentPage: page,
+        totalPages,
+        totalUsers,
+        limit,
+        hasNextPage: page < totalPages,
+        hasPrevPage: page > 1,
+      },
+    };
+  };
+
+  static getMyFollowing = async ({
+    userId,
+    page = 1,
+    limit = 10,
+    search = "",
+  }: FollowListInput) => {
+    if (!Types.ObjectId.isValid(userId)) {
+      throw new BadRequestError("Invalid user id");
+    }
+
+    if (page < 1) {
+      throw new BadRequestError("Page must be greater than 0");
+    }
+
+    if (limit < 1 || limit > 100) {
+      throw new BadRequestError("Limit must be between 1 and 100");
+    }
+
+    const me = await userModel.findById(userId).select("following").lean();
+    if (!me) {
+      throw new NotFoundError("User not found");
+    }
+
+    const followingIds = (me.following || []).map((id) => id.toString());
+
+    if (followingIds.length === 0) {
+      return {
+        following: [],
+        pagination: {
+          currentPage: page,
+          totalPages: 1,
+          totalUsers: 0,
+          limit,
+          hasNextPage: false,
+          hasPrevPage: false,
+        },
+      };
+    }
+
+    const filter: {
+      _id: { $in: string[] };
+      isActive: boolean;
+      $or?: Array<
+        | { username: { $regex: string; $options: string } }
+        | { fullName: { $regex: string; $options: string } }
+        | { email: { $regex: string; $options: string } }
+      >;
+    } = {
+      _id: { $in: followingIds },
+      isActive: true,
+    };
+
+    if (search.trim()) {
+      const normalizedSearch = search.trim();
+      filter.$or = [
+        { username: { $regex: normalizedSearch, $options: "i" } },
+        { fullName: { $regex: normalizedSearch, $options: "i" } },
+        { email: { $regex: normalizedSearch, $options: "i" } },
+      ];
+    }
+
+    const skip = (page - 1) * limit;
+    const [following, totalUsers] = await Promise.all([
+      userModel
+        .find(filter)
+        .select("_id username fullName email avatar bio role isActive")
+        .sort({ createdOn: -1 })
+        .skip(skip)
+        .limit(limit)
+        .lean(),
+      userModel.countDocuments(filter),
+    ]);
+
+    const totalPages = Math.max(1, Math.ceil(totalUsers / limit));
+
+    return {
+      following,
+      pagination: {
+        currentPage: page,
+        totalPages,
+        totalUsers,
+        limit,
+        hasNextPage: page < totalPages,
+        hasPrevPage: page > 1,
+      },
+    };
   };
 }
 
