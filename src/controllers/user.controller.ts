@@ -115,6 +115,60 @@ class UserController {
       }),
     }).send(res);
   };
+
+  followUser = async (req: Request, res: Response): Promise<void> => {
+    if (typeof req.user?.userId !== "string") {
+      throw new BadRequestError("Invalid userId format");
+    }
+
+    const targetUserId = Array.isArray(req.params.userId)
+      ? req.params.userId[0]
+      : req.params.userId;
+
+    new SuccessResponse({
+      message: "Follow user success!",
+      metadata: await UserService.followUser({
+        userId: convertToObjectIdMongodb(targetUserId),
+        followerId: convertToObjectIdMongodb(req.user.userId),
+      }),
+    }).send(res);
+  };
+
+  getMyFollowers = async (req: Request, res: Response): Promise<void> => {
+    if (typeof req.user?.userId !== "string") {
+      throw new BadRequestError("Invalid userId format");
+    }
+
+    const { page, limit, search } = req.query;
+
+    new SuccessResponse({
+      message: "Get followers success!",
+      metadata: await UserService.getMyFollowers({
+        userId: req.user.userId,
+        page: page ? parseInt(page as string) : undefined,
+        limit: limit ? parseInt(limit as string) : undefined,
+        search: (search as string) || "",
+      }),
+    }).send(res);
+  };
+
+  getMyFollowing = async (req: Request, res: Response): Promise<void> => {
+    if (typeof req.user?.userId !== "string") {
+      throw new BadRequestError("Invalid userId format");
+    }
+
+    const { page, limit, search } = req.query;
+
+    new SuccessResponse({
+      message: "Get following success!",
+      metadata: await UserService.getMyFollowing({
+        userId: req.user.userId,
+        page: page ? parseInt(page as string) : undefined,
+        limit: limit ? parseInt(limit as string) : undefined,
+        search: (search as string) || "",
+      }),
+    }).send(res);
+  };
 }
 
 export default new UserController();
