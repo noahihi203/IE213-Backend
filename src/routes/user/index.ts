@@ -48,6 +48,24 @@ router.post(
   asyncHandler(userController.followUser),
 );
 
+router.post(
+  "/:userId/unfollow",
+  authentication,
+  asyncHandler(userController.unfollowUser),
+);
+
+router.get(
+  "/:userId/followers",
+  authentication,
+  asyncHandler(userController.getUserFollowers),
+);
+
+router.get(
+  "/:userId/following",
+  authentication,
+  asyncHandler(userController.getUserFollowing),
+);
+
 // Public authenticated routes
 router.get(
   "/:userId",

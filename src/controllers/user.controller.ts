@@ -134,6 +134,24 @@ class UserController {
     }).send(res);
   };
 
+  unfollowUser = async (req: Request, res: Response): Promise<void> => {
+    if (typeof req.user?.userId !== "string") {
+      throw new BadRequestError("Invalid userId format");
+    }
+
+    const targetUserId = Array.isArray(req.params.userId)
+      ? req.params.userId[0]
+      : req.params.userId;
+
+    new SuccessResponse({
+      message: "Unfollow user success!",
+      metadata: await UserService.unfollowUser({
+        userId: convertToObjectIdMongodb(targetUserId),
+        followerId: convertToObjectIdMongodb(req.user.userId),
+      }),
+    }).send(res);
+  };
+
   getMyFollowers = async (req: Request, res: Response): Promise<void> => {
     if (typeof req.user?.userId !== "string") {
       throw new BadRequestError("Invalid userId format");
@@ -163,6 +181,40 @@ class UserController {
       message: "Get following success!",
       metadata: await UserService.getMyFollowing({
         userId: req.user.userId,
+        page: page ? parseInt(page as string) : undefined,
+        limit: limit ? parseInt(limit as string) : undefined,
+        search: (search as string) || "",
+      }),
+    }).send(res);
+  };
+
+  getUserFollowers = async (req: Request, res: Response): Promise<void> => {
+    const targetUserId = Array.isArray(req.params.userId)
+      ? req.params.userId[0]
+      : req.params.userId;
+    const { page, limit, search } = req.query;
+
+    new SuccessResponse({
+      message: "Get user followers success!",
+      metadata: await UserService.getUserFollowers({
+        targetUserId,
+        page: page ? parseInt(page as string) : undefined,
+        limit: limit ? parseInt(limit as string) : undefined,
+        search: (search as string) || "",
+      }),
+    }).send(res);
+  };
+
+  getUserFollowing = async (req: Request, res: Response): Promise<void> => {
+    const targetUserId = Array.isArray(req.params.userId)
+      ? req.params.userId[0]
+      : req.params.userId;
+    const { page, limit, search } = req.query;
+
+    new SuccessResponse({
+      message: "Get user following success!",
+      metadata: await UserService.getUserFollowing({
+        targetUserId,
         page: page ? parseInt(page as string) : undefined,
         limit: limit ? parseInt(limit as string) : undefined,
         search: (search as string) || "",

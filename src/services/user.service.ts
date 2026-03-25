@@ -43,6 +43,13 @@ interface FollowListInput {
   search?: string;
 }
 
+interface UserFollowListInput {
+  targetUserId: string;
+  page?: number;
+  limit?: number;
+  search?: string;
+}
+
 class UserService {
   private static async safeRedisGet<T>(key: string): Promise<T | null> {
     try {
@@ -446,13 +453,84 @@ class UserService {
     };
   };
 
-  static getMyFollowers = async ({
-    userId,
+  static unfollowUser = async (payload: followPayload) => {
+    const { userId, followerId } = payload;
+
+    if (!userId || !followerId) {
+      throw new BadRequestError("Missing unfollow payload");
+    }
+
+    if (
+      !Types.ObjectId.isValid(userId) ||
+      !Types.ObjectId.isValid(followerId)
+    ) {
+      throw new BadRequestError("Invalid user id");
+    }
+
+    if (userId.toString() === followerId.toString()) {
+      throw new BadRequestError("You cannot unfollow yourself");
+    }
+
+    const targetUser = await userModel
+      .findById(userId)
+      .select("_id followers")
+      .lean();
+
+    if (!targetUser) {
+      throw new NotFoundError("User to unfollow not found");
+    }
+
+    const isFollowing =
+      targetUser.followers?.some(
+        (item) => item.toString() === followerId.toString(),
+      ) ?? false;
+
+    if (!isFollowing) {
+      const unfollow = await userModel
+        .findById(userId)
+        .select("-password")
+        .lean();
+      return {
+        unfollow,
+        isFollowing: false,
+        isRemoved: false,
+      };
+    }
+
+    await Promise.all([
+      userModel.updateOne(
+        { _id: userId },
+        { $pull: { followers: followerId } },
+      ),
+      userModel.updateOne(
+        { _id: followerId },
+        { $pull: { following: userId } },
+      ),
+      UserService.safeRedisDel([
+        `user:profile:${userId.toString()}`,
+        `user:profile:${followerId.toString()}`,
+      ]),
+    ]);
+
+    const unfollow = await userModel
+      .findById(userId)
+      .select("-password")
+      .lean();
+
+    return {
+      unfollow,
+      isFollowing: false,
+      isRemoved: true,
+    };
+  };
+
+  static getUserFollowers = async ({
+    targetUserId,
     page = 1,
     limit = 10,
     search = "",
-  }: FollowListInput) => {
-    if (!Types.ObjectId.isValid(userId)) {
+  }: UserFollowListInput) => {
+    if (!Types.ObjectId.isValid(targetUserId)) {
       throw new BadRequestError("Invalid user id");
     }
 
@@ -464,12 +542,15 @@ class UserService {
       throw new BadRequestError("Limit must be between 1 and 100");
     }
 
-    const me = await userModel.findById(userId).select("followers").lean();
-    if (!me) {
+    const targetUser = await userModel
+      .findById(targetUserId)
+      .select("followers")
+      .lean();
+    if (!targetUser) {
       throw new NotFoundError("User not found");
     }
 
-    const followerIds = (me.followers || []).map((id) => id.toString());
+    const followerIds = (targetUser.followers || []).map((id) => id.toString());
 
     if (followerIds.length === 0) {
       return {
@@ -534,13 +615,13 @@ class UserService {
     };
   };
 
-  static getMyFollowing = async ({
-    userId,
+  static getUserFollowing = async ({
+    targetUserId,
     page = 1,
     limit = 10,
     search = "",
-  }: FollowListInput) => {
-    if (!Types.ObjectId.isValid(userId)) {
+  }: UserFollowListInput) => {
+    if (!Types.ObjectId.isValid(targetUserId)) {
       throw new BadRequestError("Invalid user id");
     }
 
@@ -552,12 +633,17 @@ class UserService {
       throw new BadRequestError("Limit must be between 1 and 100");
     }
 
-    const me = await userModel.findById(userId).select("following").lean();
-    if (!me) {
+    const targetUser = await userModel
+      .findById(targetUserId)
+      .select("following")
+      .lean();
+    if (!targetUser) {
       throw new NotFoundError("User not found");
     }
 
-    const followingIds = (me.following || []).map((id) => id.toString());
+    const followingIds = (targetUser.following || []).map((id) =>
+      id.toString(),
+    );
 
     if (followingIds.length === 0) {
       return {
@@ -620,6 +706,34 @@ class UserService {
         hasPrevPage: page > 1,
       },
     };
+  };
+
+  static getMyFollowers = async ({
+    userId,
+    page = 1,
+    limit = 10,
+    search = "",
+  }: FollowListInput) => {
+    return await UserService.getUserFollowers({
+      targetUserId: userId,
+      page,
+      limit,
+      search,
+    });
+  };
+
+  static getMyFollowing = async ({
+    userId,
+    page = 1,
+    limit = 10,
+    search = "",
+  }: FollowListInput) => {
+    return await UserService.getUserFollowing({
+      targetUserId: userId,
+      page,
+      limit,
+      search,
+    });
   };
 }
 
