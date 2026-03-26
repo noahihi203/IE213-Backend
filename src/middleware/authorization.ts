@@ -51,7 +51,7 @@ export const checkNotSelfDemotion = (
 ) => {
   const userId = req.params.userId;
   const currentUser = req.user;
-  const newRole = req.body;
+  const newRole = req.body?.role;
 
   if (!userId || !currentUser || !newRole) {
     throw new ForBiddenError("Authentication required");
@@ -68,7 +68,7 @@ export const checkNotSelfDemotion = (
         AdminErrorCodes.SELF_DEMOTION_FORBIDDEN,
       );
   }
-  next();
+  return next();
 };
 
 export const checkSuperAdminProtection = async (
@@ -168,11 +168,11 @@ export const checkMinimumAdmins = async (
         403,
         AdminErrorCodes.MINIMUM_ADMINS_REQUIRED,
       );
-    } else {
-      next();
     }
+    return next();
   }
-  next();
+
+  return next();
 };
 // if target user role !== admin, newRole === admin => tang cap len admin
 export const checkMaximumAdmins = async (
@@ -209,11 +209,11 @@ export const checkMaximumAdmins = async (
         403,
         AdminErrorCodes.MAXIMUM_ADMINS_REACHED,
       );
-    } else {
-      next();
     }
+    return next();
   }
-  next();
+
+  return next();
 };
 export const checkRoles = (...roles: string[]) => {
   return (req: Request, res: Response, next: NextFunction) => {

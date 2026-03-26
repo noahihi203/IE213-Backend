@@ -566,18 +566,20 @@ class PostService {
         .findOne({ _id: changeStatus.authorId })
         .select("followers");
 
-      // Chuyển đổi ID an toàn
-      const userId = convertToObjectIdMongodb(String(changeStatus.authorId));
+      // Author là actor của hành động publish
+      const authorId = convertToObjectIdMongodb(String(changeStatus.authorId));
 
       // 3. Gửi thông báo cho từng follower
       if (user && user.followers && user.followers.length > 0) {
         for (const followerId of user.followers) {
           try {
             await NotificationService.notifyOnUser({
-              userId,
-              actorId: followerId,
+              userId: convertToObjectIdMongodb(String(followerId)),
+              actorId: authorId,
               type: "newPost",
               message: "published a new post",
+              targetType: "post",
+              targetId: postId,
             });
           } catch (err) {
             // Lỗi ở 1 follower sẽ không làm chết toàn bộ tiến trình

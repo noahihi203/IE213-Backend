@@ -53,6 +53,8 @@ interface notifyOnUserPayload {
   actorId: Types.ObjectId;
   type: "follow" | "newPost";
   message: string;
+  targetType?: "post" | "user";
+  targetId?: Types.ObjectId;
 }
 
 class NotificationService {
@@ -243,20 +245,23 @@ class NotificationService {
   };
 
   static notifyOnUser = async (payload: notifyOnUserPayload) => {
-    const { userId, actorId, type, message } = payload;
+    const { userId, actorId, type, message, targetType, targetId } = payload;
 
     if (!userId || !actorId || !type)
       throw new BadRequestError("Missing parameter");
 
     if (userId.toString() === actorId.toString()) return;
 
+    const resolvedTargetType = targetType || "user";
+    const resolvedTargetId = targetId || actorId;
+
     const noti = await NotificationService.createNotification({
       userId: convertToObjectIdMongodb(userId.toString()),
       actorId,
       message,
       type,
-      targetType: "user",
-      targetId: actorId,
+      targetType: resolvedTargetType,
+      targetId: resolvedTargetId,
     });
 
     if (!noti) throw new BadRequestError("create noti user failed");
