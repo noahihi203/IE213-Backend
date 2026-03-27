@@ -10,6 +10,8 @@ import { convertToObjectIdMongodb } from "../utils/index.js";
 import TagService from "./tag.service.js";
 import { redisService } from "./redis.service.js";
 import { categoryModel } from "../models/category.model.js";
+import SeoRenderService from "./seo-render.service.js";
+import UrlRedirectService from "./url-redirect.service.js";
 
 interface PostQueryParams {
   page?: number;
@@ -47,6 +49,16 @@ interface UpdatePostData {
 
 const VIEW_COUNT_COOLDOWN_SECONDS = 30;
 const VIEW_COUNT_COOLDOWN_MS = VIEW_COUNT_COOLDOWN_SECONDS * 1000;
+const POST_LIST_CACHE_PREFIX = "posts:list:";
+const POST_DETAIL_BY_ID_PREFIX = "posts:detail:id:";
+const POST_DETAIL_BY_SLUG_PREFIX = "posts:detail:slug:";
+const POST_CATEGORY_CACHE_PREFIX = "posts:category:";
+const POST_TRENDING_CACHE_KEY = "posts:trending";
+
+const POST_LIST_CACHE_TTL_SECONDS = 60;
+const POST_DETAIL_CACHE_TTL_SECONDS = 120;
+const POST_CATEGORY_CACHE_TTL_SECONDS = 90;
+const POST_TRENDING_CACHE_TTL_SECONDS = 300;
 
 function slugify(string: string) {
   if (!string || string.trim() === "") {
@@ -66,6 +78,67 @@ function slugify(string: string) {
 
 class PostService {
   private static recentViewTracker = new Map<string, number>();
+
+  private static normalizeTagsForKey(
+    tags?: Types.ObjectId[] | string[],
+  ): string {
+    if (!tags || tags.length === 0) return "";
+
+    return tags
+      .map((tag) => String(tag))
+      .sort((a, b) => a.localeCompare(b))
+      .join(",");
+  }
+
+  private static buildPostListCacheKey(params: {
+    page: number;
+    limit: number;
+    search?: string;
+    sortBy: string;
+    order: "asc" | "desc";
+    status?: string;
+    authorId?: Types.ObjectId | string;
+    category?: Types.ObjectId | string;
+    tags?: Types.ObjectId[] | string[];
+  }): string {
+    const cacheKeyPayload = [
+      `p=${params.page}`,
+      `l=${params.limit}`,
+      `q=${(params.search || "").trim().toLowerCase()}`,
+      `sb=${params.sortBy}`,
+      `o=${params.order}`,
+      `st=${params.status || ""}`,
+      `a=${params.authorId ? String(params.authorId) : ""}`,
+      `c=${params.category ? String(params.category) : ""}`,
+      `t=${PostService.normalizeTagsForKey(params.tags)}`,
+    ];
+
+    return `${POST_LIST_CACHE_PREFIX}${cacheKeyPayload.join("|")}`;
+  }
+
+  private static async invalidatePostCaches(options?: {
+    postId?: string;
+    slug?: string;
+    categorySlug?: string;
+  }) {
+    await redisService.delByPrefix(`${POST_TRENDING_CACHE_KEY}:`);
+    await redisService.delByPrefix(POST_LIST_CACHE_PREFIX);
+    await redisService.delByPrefix(POST_CATEGORY_CACHE_PREFIX);
+
+    if (options?.postId) {
+      await redisService.del(`${POST_DETAIL_BY_ID_PREFIX}${options.postId}`);
+    }
+
+    if (options?.slug) {
+      await redisService.del(`${POST_DETAIL_BY_SLUG_PREFIX}${options.slug}`);
+    }
+
+    if (options?.categorySlug) {
+      await redisService.del(
+        `${POST_CATEGORY_CACHE_PREFIX}${options.categorySlug}:`,
+      );
+    }
+  }
 
   private static hasRecentView = (dedupeKey: string) => {
     const now = Date.now();
@@ -128,22 +201,48 @@ class PostService {
     const sortObject: any = {};
     sortObject[parsedSortBy] = parsedOrder === "asc" ? 1 : -1;
 
-    const posts = await postModel
-      .find(filter)
-      .sort(sortObject)
-      .skip(skip)
-      .limit(parsedLimit)
-      .populate("category", "icon name")
-      .populate("authorId", "fullName avatar username")
-      .lean();
+    const cacheKey = PostService.buildPostListCacheKey({
+      page: parsedPage,
+      limit: parsedLimit,
+      search,
+      sortBy: parsedSortBy,
+      order: parsedOrder,
+      status,
+      authorId,
+      category,
+      tags,
+    });
 
-    const totalCount = await postModel.countDocuments(filter);
+    const cachedResult = await redisService.get<{
+      data: any[];
+      pagination: {
+        page: number;
+        limit: number;
+        total: number;
+        totalPages: number;
+        hasNextPage: boolean;
+        hasPrevPage: boolean;
+      };
+    }>(cacheKey);
+    if (cachedResult) return cachedResult;
+
+    const [posts, totalCount] = await Promise.all([
+      postModel
+        .find(filter)
+        .sort(sortObject)
+        .skip(skip)
+        .limit(parsedLimit)
+        .populate("category", "icon name")
+        .populate("authorId", "fullName avatar username")
+        .lean(),
+      postModel.countDocuments(filter),
+    ]);
 
     const totalPages = Math.ceil(totalCount / parsedLimit);
     const hasNextPage = parsedPage < totalPages;
     const hasPrevPage = parsedPage > 1;
 
-    return {
+    const result = {
       data: posts,
       pagination: {
         page: parsedPage,
@@ -154,10 +253,22 @@ class PostService {
         hasPrevPage,
       },
     };
+
+    await redisService.setWithTTL(
+      cacheKey,
+      result,
+      POST_LIST_CACHE_TTL_SECONDS,
+    );
+
+    return result;
   };
 
   static getPostById = async (postId: string) => {
     if (!postId) throw new BadRequestError("Missing parameter!");
+
+    const cacheKey = `${POST_DETAIL_BY_ID_PREFIX}${postId}`;
+    const cachedPost = await redisService.get<any>(cacheKey);
+    if (cachedPost) return cachedPost;
 
     const post = await postModel
       .findOne({ _id: postId })
@@ -167,14 +278,26 @@ class PostService {
 
     if (!post) throw new BadRequestError("Post not found!");
 
-    return {
+    const result = {
       ...post,
       author: post.authorId,
     };
+
+    await redisService.setWithTTL(
+      cacheKey,
+      result,
+      POST_DETAIL_CACHE_TTL_SECONDS,
+    );
+
+    return result;
   };
 
   static getPostBySlug = async (slug: string) => {
     if (!slug) throw new BadRequestError("Missing parameter!");
+
+    const cacheKey = `${POST_DETAIL_BY_SLUG_PREFIX}${slug}`;
+    const cachedPost = await redisService.get<any>(cacheKey);
+    if (cachedPost) return cachedPost;
 
     const post = await postModel
       .findOne({ slug })
@@ -185,10 +308,29 @@ class PostService {
 
     if (!post) throw new BadRequestError("Post not found!");
 
-    return {
+    const result = {
       ...post,
       author: post.authorId,
     };
+
+    await redisService.setWithTTL(
+      cacheKey,
+      result,
+      POST_DETAIL_CACHE_TTL_SECONDS,
+    );
+
+    return result;
+  };
+
+  static getPostBySlugForSeo = async (slug: string) => {
+    if (!slug) throw new BadRequestError("Missing parameter!");
+
+    return await postModel
+      .findOne({ slug })
+      .populate("category", "icon name")
+      .populate("authorId", "fullName avatar username")
+      .populate("tags", "name slug")
+      .lean();
   };
 
   static createPost = async (postBody: IPost) => {
@@ -205,7 +347,7 @@ class PostService {
     const finalSlug = postBody.slug || slugify(postBody.title);
 
     const existingPost = await postModel.findOne({
-      $or: [{ title }, { finalSlug }],
+      $or: [{ title }, { slug: finalSlug }],
     });
 
     if (existingPost) {
@@ -225,6 +367,11 @@ class PostService {
 
     const createPost = await postModel.create(postBody);
     if (!createPost) throw new BadRequestError("Create post success!");
+
+    await PostService.invalidatePostCaches({
+      postId: String(createPost._id),
+      slug: createPost.slug,
+    });
 
     const updatePostCount = await TagService.updateTagCounts({
       tagIds: tags,
@@ -349,6 +496,30 @@ class PostService {
       }
     }
 
+    const oldSlug = String(beforePost.slug || "");
+    const newSlug = String(updatePost.slug || "");
+    if (oldSlug && newSlug && oldSlug !== newSlug) {
+      const nextFrontendUrl = SeoRenderService.buildFrontendPostUrl(newSlug);
+
+      await Promise.all([
+        UrlRedirectService.upsertRedirect(
+          `/posts/${oldSlug}`,
+          nextFrontendUrl,
+          301,
+        ),
+        UrlRedirectService.upsertRedirect(
+          `/blog/${oldSlug}`,
+          nextFrontendUrl,
+          301,
+        ),
+      ]);
+    }
+
+    await PostService.invalidatePostCaches({
+      postId,
+      slug: updatePost.slug || beforePost.slug,
+    });
+
     return updatePost;
   };
 
@@ -382,6 +553,11 @@ class PostService {
       }
 
       // Trả về kết quả cho Controller
+      await PostService.invalidatePostCaches({
+        postId,
+        slug: deletePost.slug,
+      });
+
       return deletePost;
     } catch (error) {
       // Bắt và ném lỗi ra ngoài để Controller xử lý trả về HTTP Error
@@ -453,11 +629,11 @@ class PostService {
   };
 
   static getTrendingPosts = async (limit: number = 10) => {
-    const CACHE_KEY = "posts:trending";
+    const cacheKey = `${POST_TRENDING_CACHE_KEY}:${limit}`;
 
     // Dùng hàm có try/catch tương tự CategoryService
     try {
-      const cached = await redisService.get<any[]>(CACHE_KEY);
+      const cached = await redisService.get<any[]>(cacheKey);
       if (cached) return cached;
     } catch (err) {
       console.warn("Redis get failed, falling back to DB", err);
@@ -477,7 +653,11 @@ class PostService {
     }));
 
     try {
-      await redisService.setWithTTL(CACHE_KEY, result, 300);
+      await redisService.setWithTTL(
+        cacheKey,
+        result,
+        POST_TRENDING_CACHE_TTL_SECONDS,
+      );
     } catch (err) {
       console.warn("Redis set failed", err);
     }
@@ -486,25 +666,22 @@ class PostService {
   };
 
   static getPostWithEngagement = async (postId: Schema.Types.ObjectId) => {
-    const postWithEngagemment = await postModel
-      .findOne({ _id: postId })
-      .select("viewCount likesCount sharesCount commentsCount");
-
-    // Lấy 10 users LIKE GẦN NHẤT (mới nhất)
-    const users = await likePostModel
-      .find({ targetId: postId })
-      .populate("userId", "fullName avatar")
-      .limit(10)
-      .sort({ createdAt: -1 });
-
-    // Lấy 5 comment gần đây nhất
-    const comments = await commentModel
-      .find({ postId: postId })
-      .populate("authorId", "fullName avatar")
-      .limit(5)
-      .sort({ createdAt: -1 });
-
-    const shares = await shareModel.find({ postId: postId });
+    const [postWithEngagemment, users, comments, shares] = await Promise.all([
+      postModel
+        .findOne({ _id: postId })
+        .select("viewCount likesCount sharesCount commentsCount"),
+      likePostModel
+        .find({ targetId: postId })
+        .populate("userId", "fullName avatar")
+        .limit(10)
+        .sort({ createdAt: -1 }),
+      commentModel
+        .find({ postId: postId })
+        .populate("authorId", "fullName avatar")
+        .limit(5)
+        .sort({ createdAt: -1 }),
+      shareModel.find({ postId: postId }),
+    ]);
 
     return { postWithEngagemment, users, comments, shares };
   };
@@ -530,6 +707,11 @@ class PostService {
     );
 
     if (!updatedPost) throw new BadRequestError("Change status failed!");
+
+    await PostService.invalidatePostCaches({
+      postId,
+      slug: updatedPost.slug,
+    });
 
     return updatedPost;
   };
@@ -588,6 +770,11 @@ class PostService {
         }
       }
 
+      await PostService.invalidatePostCaches({
+        postId: String(postId),
+        slug: changeStatus.slug,
+      });
+
       return changeStatus;
     } catch (error) {
       // Bắt mọi lỗi xảy ra và ném lên trên để Controller xử lý (trả về HTTP 500/400)
@@ -635,6 +822,10 @@ class PostService {
   ) => {
     if (!categorySlug) throw new BadRequestError("Missing category slug!");
 
+    const cacheKey = `${POST_CATEGORY_CACHE_PREFIX}${categorySlug}:${page}:${limit}`;
+    const cached = await redisService.get<any>(cacheKey);
+    if (cached) return cached;
+
     // Bước 1: Tìm Category bằng slug
     const categoryFound = await categoryModel
       .findOne({ slug: categorySlug })
@@ -651,20 +842,20 @@ class PostService {
       status: "published", // Thường thì người xem chỉ thấy bài đã publish
     };
 
-    const posts = await postModel
-      .find(filter)
-      .sort({ publishedAt: -1, createdOn: -1 }) // Sắp xếp bài mới nhất lên đầu
-      .skip(skip)
-      .limit(limit)
-      .populate("authorId", "fullName avatar username") // Lấy thông tin tác giả
-      .populate("category", "icon name slug") // Lấy thông tin category
-      .lean();
-
-    // Lấy tổng số bài viết để frontend làm phân trang
-    const totalCount = await postModel.countDocuments(filter);
+    const [posts, totalCount] = await Promise.all([
+      postModel
+        .find(filter)
+        .sort({ publishedAt: -1, createdOn: -1 }) // Sắp xếp bài mới nhất lên đầu
+        .skip(skip)
+        .limit(limit)
+        .populate("authorId", "fullName avatar username") // Lấy thông tin tác giả
+        .populate("category", "icon name slug") // Lấy thông tin category
+        .lean(),
+      postModel.countDocuments(filter),
+    ]);
     const totalPages = Math.ceil(totalCount / limit);
 
-    return {
+    const result = {
       category: categoryFound, // Trả về luôn thông tin category để frontend hiển thị tiêu đề
       posts: posts.map((post: any) => ({
         ...post,
@@ -678,6 +869,14 @@ class PostService {
         hasPrevPage: page > 1,
       },
     };
+
+    await redisService.setWithTTL(
+      cacheKey,
+      result,
+      POST_CATEGORY_CACHE_TTL_SECONDS,
+    );
+
+    return result;
   };
 }
 
