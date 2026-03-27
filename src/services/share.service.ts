@@ -6,47 +6,27 @@ import NotificationService from "./notification.service.js";
 
 class ShareService {
   static createShare = async (shareContent: IShare) => {
-    if (!shareContent) throw new BadRequestError("share content is invalid"); // Sửa thành invalid
-
-    // 1. Await ngay lúc khởi tạo để tái sử dụng biến session
-    const session = await shareModel.startSession();
-
-    // 2. Thêm () để THỰC THI hàm
-    session.startTransaction();
+    if (!shareContent) throw new BadRequestError("share content is invalid");
 
     try {
-      // create với mảng truyền vào sẽ trả về một mảng các document
-      const share = await shareModel.create([shareContent], {
-        session: session,
-      });
+      // 1. Dùng .create() truyền thẳng object vào, không cần mảng [] và session nữa
+      const share = await shareModel.create(shareContent);
 
-      if (!share || share.length === 0)
+      if (!share) {
         throw new BadRequestError("Create share failed!");
-
-      if (typeof shareContent.postId !== "string")
-        throw new BadRequestError("Invalid postId format!");
+      }
 
       await NotificationService.notifyOnPost({
-        postId: convertToObjectIdMongodb(shareContent.postId),
+        postId: shareContent.postId,
         actorId: shareContent.userId,
         type: "share",
         message: "share your post",
       });
-
-      // 3. Commit transaction
-      await session.commitTransaction();
-
-      // Nên return lại data sau khi tạo thành công thay vì không return gì
-      return share[0];
+      // 3. Trả về trực tiếp document vừa tạo (vì không dùng mảng nên không cần return share[0])
+      return share;
     } catch (error) {
-      // 4. Nếu có lỗi xảy ra, hủy transaction
-      await session.abortTransaction();
-
-      // 5. NÉM LỖI RA NGOÀI để Controller bắt được và trả về HTTP 400/500
+      // Bắt lỗi và ném ra ngoài cho Controller xử lý
       throw error;
-    } finally {
-      // 6. Luôn luôn kết thúc session
-      await session.endSession();
     }
   };
 
