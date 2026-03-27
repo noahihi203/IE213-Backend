@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import PostService from "../services/post.service.js";
 import SeoRenderService from "../services/seo-render.service.js";
 import UrlRedirectService from "../services/url-redirect.service.js";
+import SeoCrawlService from "../services/seo-crawl.service.js";
 
 class RenderController {
   private getUserAgent(req: Request): string {
@@ -15,6 +16,10 @@ class RenderController {
       "Cache-Control",
       "public, max-age=120, s-maxage=120, stale-while-revalidate=300",
     );
+  }
+
+  private applyCanonicalHeader(res: Response, canonicalUrl: string) {
+    res.setHeader("Link", `<${canonicalUrl}>; rel=\"canonical\"`);
   }
 
   private async renderPostHtmlBySlug(slug: string): Promise<string> {
@@ -54,9 +59,20 @@ class RenderController {
 
     try {
       const html = await this.renderPostHtmlBySlug(slug);
+      this.applyCanonicalHeader(
+        res,
+        SeoRenderService.buildFrontendPostUrl(slug),
+      );
       this.applySeoCacheHeader(res);
       return res.status(200).type("text/html").send(html);
-    } catch {
+    } catch (error) {
+      if ((error as Error).message === "POST_GONE") {
+        return res
+          .status(410)
+          .type("text/html")
+          .send(SeoRenderService.renderPostGone(slug));
+      }
+
       return res
         .status(404)
         .type("text/html")
@@ -90,6 +106,10 @@ class RenderController {
 
     try {
       const html = await this.renderPostHtmlBySlug(slug);
+      this.applyCanonicalHeader(
+        res,
+        SeoRenderService.buildFrontendPostUrl(slug),
+      );
       this.applySeoCacheHeader(res);
       return res.status(200).type("text/html").send(html);
     } catch (error) {
@@ -108,6 +128,24 @@ class RenderController {
         .type("text/html")
         .send(SeoRenderService.renderPostNotFound(slug));
     }
+  };
+
+  getSitemapXml = async (_req: Request, res: Response) => {
+    const xml = await SeoCrawlService.buildSitemapXml();
+    this.applySeoCacheHeader(res);
+    return res.status(200).type("application/xml").send(xml);
+  };
+
+  getSitemapIndexXml = async (_req: Request, res: Response) => {
+    const xml = await SeoCrawlService.buildSitemapIndexXml();
+    this.applySeoCacheHeader(res);
+    return res.status(200).type("application/xml").send(xml);
+  };
+
+  getRobotsTxt = async (_req: Request, res: Response) => {
+    const content = await SeoCrawlService.getRobotsTxt();
+    this.applySeoCacheHeader(res);
+    return res.status(200).type("text/plain").send(content);
   };
 }
 
