@@ -16,6 +16,10 @@ export interface IUser {
   isActive: boolean;
   followers?: Array<Types.ObjectId>;
   following?: Array<Types.ObjectId>;
+  isEmailVerified: boolean;
+  emailVerificationToken?: string | null;
+  passwordResetToken?: string | null;
+  passwordResetExpires?: Date | null;
 }
 
 const userSchema = new Schema<IUser>(
@@ -37,6 +41,10 @@ const userSchema = new Schema<IUser>(
     isActive: { type: Boolean, default: true },
     followers: { type: [Schema.Types.ObjectId], ref: "User" },
     following: { type: [Schema.Types.ObjectId], ref: "User" },
+    isEmailVerified: { type: Boolean, default: false },
+    emailVerificationToken: { type: String, default: null },
+    passwordResetToken: { type: String, default: null },
+    passwordResetExpires: { type: Date, default: null },
   },
   {
     collection: COLLECTION_NAME,
