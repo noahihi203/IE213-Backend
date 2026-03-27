@@ -61,7 +61,7 @@ class RenderController {
       const html = await this.renderPostHtmlBySlug(slug);
       this.applyCanonicalHeader(
         res,
-        SeoRenderService.buildFrontendPostUrl(slug),
+        SeoRenderService.buildCanonicalPostUrl(slug),
       );
       this.applySeoCacheHeader(res);
       return res.status(200).type("text/html").send(html);
@@ -108,7 +108,7 @@ class RenderController {
       const html = await this.renderPostHtmlBySlug(slug);
       this.applyCanonicalHeader(
         res,
-        SeoRenderService.buildFrontendPostUrl(slug),
+        SeoRenderService.buildCanonicalPostUrl(slug),
       );
       this.applySeoCacheHeader(res);
       return res.status(200).type("text/html").send(html);
