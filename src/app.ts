@@ -7,6 +7,7 @@ import cors from "cors";
 import { constants } from "zlib";
 import path from "path";
 import { enforceCanonicalTrailingSlash } from "./middleware/canonical-url.js";
+import { enforceHttps } from "./middleware/https-enforcement.js";
 
 interface HttpError extends Error {
   status?: number;
@@ -14,6 +15,8 @@ interface HttpError extends Error {
 }
 
 const app = express();
+
+app.set("trust proxy", 1);
 
 const shouldCompress: compression.CompressionFilter = (req, res) => {
   if (req.headers["x-no-compression"]) {
@@ -35,7 +38,23 @@ app.use(
   }),
 );
 app.use(morgan("dev"));
-app.use(helmet());
+app.use(
+  helmet({
+    hsts: {
+      maxAge: 31536000,
+      includeSubDomains: true,
+      preload: true,
+    },
+  }),
+);
+app.use((_req: Request, res: Response, next: NextFunction) => {
+  const altSvc = process.env.ALT_SVC;
+  if (altSvc) {
+    res.setHeader("Alt-Svc", altSvc);
+  }
+  next();
+});
+app.use(enforceHttps);
 app.use(enforceCanonicalTrailingSlash);
 app.use(
   compression({
