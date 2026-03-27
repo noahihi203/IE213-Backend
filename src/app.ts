@@ -4,6 +4,8 @@ import morgan from "morgan";
 import helmet from "helmet";
 import compression from "compression";
 import cors from "cors";
+import { constants } from "zlib";
+import path from "path";
 
 interface HttpError extends Error {
   status?: number;
@@ -11,6 +13,16 @@ interface HttpError extends Error {
 }
 
 const app = express();
+
+const shouldCompress: compression.CompressionFilter = (req, res) => {
+  if (req.headers["x-no-compression"]) {
+    return false;
+  }
+
+  return compression.filter(req, res);
+};
+
+app.set("etag", "strong");
 
 // init middleware
 app.use(
@@ -23,9 +35,26 @@ app.use(
 );
 app.use(morgan("dev"));
 app.use(helmet());
-app.use(compression());
+app.use(
+  compression({
+    threshold: 1024,
+    filter: shouldCompress,
+    level: 6,
+    brotli: {
+      params: {
+        [constants.BROTLI_PARAM_QUALITY]: 5,
+      },
+    },
+  }),
+);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(
+  "/ssg",
+  express.static(path.resolve(process.cwd(), "static-prerender"), {
+    maxAge: "1h",
+  }),
+);
 
 // init db
 import "./dbs/init.mongodb";
@@ -35,7 +64,7 @@ import routes from "./routes/index.js";
 app.use("/", routes);
 
 // handling errors
-app.use((req: Request, res: Response, next: NextFunction) => {
+app.use((_req: Request, _res: Response, next: NextFunction) => {
   const error: HttpError = new Error("Not Found");
   error.status = 404;
   next(error);
