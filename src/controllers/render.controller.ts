@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import PostService from "../services/post.service.js";
 import SeoRenderService from "../services/seo-render.service.js";
+import UrlRedirectService from "../services/url-redirect.service.js";
 
 class RenderController {
   private getUserAgent(req: Request): string {
@@ -17,8 +18,28 @@ class RenderController {
   }
 
   private async renderPostHtmlBySlug(slug: string): Promise<string> {
-    const post = await PostService.getPostBySlug(slug);
+    const post = await PostService.getPostBySlugForSeo(slug);
+
+    if (!post) {
+      throw new Error("POST_NOT_FOUND");
+    }
+
+    if (post.status === "archived") {
+      throw new Error("POST_GONE");
+    }
+
+    if (post.status !== "published") {
+      throw new Error("POST_NOT_FOUND");
+    }
+
     return SeoRenderService.renderPostDocument(post as any);
+  }
+
+  private async tryHistoricalRedirect(req: Request, res: Response) {
+    const redirect = await UrlRedirectService.resolveRedirect(req.path);
+    if (!redirect) return null;
+
+    return res.redirect(redirect.statusCode, redirect.toUrl);
   }
 
   renderPostSSR = async (req: Request, res: Response) => {
@@ -64,14 +85,24 @@ class RenderController {
     const isBot = SeoRenderService.isBotUserAgent(userAgent);
 
     if (!forceSSR && !isBot) {
-      return res.redirect(302, SeoRenderService.buildFrontendPostUrl(slug));
+      return res.redirect(301, SeoRenderService.buildFrontendPostUrl(slug));
     }
 
     try {
       const html = await this.renderPostHtmlBySlug(slug);
       this.applySeoCacheHeader(res);
       return res.status(200).type("text/html").send(html);
-    } catch {
+    } catch (error) {
+      if ((error as Error).message === "POST_GONE") {
+        return res
+          .status(410)
+          .type("text/html")
+          .send(SeoRenderService.renderPostGone(slug));
+      }
+
+      const redirectResponse = await this.tryHistoricalRedirect(req, res);
+      if (redirectResponse) return redirectResponse;
+
       return res
         .status(404)
         .type("text/html")

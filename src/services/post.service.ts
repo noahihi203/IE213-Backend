@@ -10,6 +10,8 @@ import { convertToObjectIdMongodb } from "../utils/index.js";
 import TagService from "./tag.service.js";
 import { redisService } from "./redis.service.js";
 import { categoryModel } from "../models/category.model.js";
+import SeoRenderService from "./seo-render.service.js";
+import UrlRedirectService from "./url-redirect.service.js";
 
 interface PostQueryParams {
   page?: number;
@@ -320,6 +322,17 @@ class PostService {
     return result;
   };
 
+  static getPostBySlugForSeo = async (slug: string) => {
+    if (!slug) throw new BadRequestError("Missing parameter!");
+
+    return await postModel
+      .findOne({ slug })
+      .populate("category", "icon name")
+      .populate("authorId", "fullName avatar username")
+      .populate("tags", "name slug")
+      .lean();
+  };
+
   static createPost = async (postBody: IPost) => {
     const { authorId, title, content, excerpt, category, tags } = postBody;
 
@@ -481,6 +494,25 @@ class PostService {
           inc: -1,
         });
       }
+    }
+
+    const oldSlug = String(beforePost.slug || "");
+    const newSlug = String(updatePost.slug || "");
+    if (oldSlug && newSlug && oldSlug !== newSlug) {
+      const nextFrontendUrl = SeoRenderService.buildFrontendPostUrl(newSlug);
+
+      await Promise.all([
+        UrlRedirectService.upsertRedirect(
+          `/posts/${oldSlug}`,
+          nextFrontendUrl,
+          301,
+        ),
+        UrlRedirectService.upsertRedirect(
+          `/blog/${oldSlug}`,
+          nextFrontendUrl,
+          301,
+        ),
+      ]);
     }
 
     await PostService.invalidatePostCaches({

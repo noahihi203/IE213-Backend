@@ -169,6 +169,27 @@ class SeoRenderService {
   </body>
 </html>`;
   }
+
+  static renderPostGone(slug: string): string {
+    const escapedSlug = this.escapeHtml(slug);
+
+    return `<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Post Removed</title>
+    <meta name="robots" content="noindex, nofollow" />
+  </head>
+  <body>
+    <main>
+      <h1>Post was removed</h1>
+      <p>This content is no longer available (410 Gone).</p>
+      <p>Slug: ${escapedSlug}</p>
+    </main>
+  </body>
+</html>`;
+  }
 }
 
 export type { RenderablePost };

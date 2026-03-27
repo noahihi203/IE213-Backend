@@ -6,6 +6,7 @@ import compression from "compression";
 import cors from "cors";
 import { constants } from "zlib";
 import path from "path";
+import { enforceCanonicalTrailingSlash } from "./middleware/canonical-url.js";
 
 interface HttpError extends Error {
   status?: number;
@@ -35,6 +36,7 @@ app.use(
 );
 app.use(morgan("dev"));
 app.use(helmet());
+app.use(enforceCanonicalTrailingSlash);
 app.use(
   compression({
     threshold: 1024,
