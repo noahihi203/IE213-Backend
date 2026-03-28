@@ -53,4 +53,9 @@ const postSchema = new Schema<IPost>(
   },
 );
 
+postSchema.index({ status: 1, publishedAt: -1, createdOn: -1 });
+postSchema.index({ category: 1, status: 1, publishedAt: -1, createdOn: -1 });
+postSchema.index({ authorId: 1, status: 1, createdOn: -1 });
+postSchema.index({ status: 1, trendingScore: -1 });
+
 export const postModel = model<IPost>(DOCUMENT_NAME, postSchema);

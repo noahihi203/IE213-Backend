@@ -117,6 +117,43 @@ class RedisService {
     }
   }
 
+  async delByPrefix(prefix: string, batchSize: number = 200): Promise<number> {
+    if (!this.client?.isReady) return 0;
+
+    let deletedCount = 0;
+    let pendingKeys: string[] = [];
+
+    try {
+      const iterator = this.client.scanIterator({
+        MATCH: `${prefix}*`,
+        COUNT: batchSize,
+      }) as AsyncIterable<string | string[]>;
+
+      for await (const item of iterator) {
+        const keys = Array.isArray(item) ? item : [item];
+
+        for (const key of keys) {
+          if (typeof key === "string" && key.length > 0) {
+            pendingKeys.push(key);
+          }
+        }
+
+        if (pendingKeys.length >= batchSize) {
+          deletedCount += await this.client.del(pendingKeys);
+          pendingKeys = [];
+        }
+      }
+
+      if (pendingKeys.length > 0) {
+        deletedCount += await this.client.del(pendingKeys);
+      }
+    } catch (error) {
+      console.error("❌ Redis delByPrefix error:", error);
+    }
+
+    return deletedCount;
+  }
+
   async incr(key: string): Promise<number> {
     if (!this.client?.isReady) return 0;
     try {
