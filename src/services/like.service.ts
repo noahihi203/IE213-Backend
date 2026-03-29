@@ -4,6 +4,7 @@ import { commentModel } from "../models/comment.model.js";
 import { likeCommentModel } from "../models/likeComment.model.js";
 import { likePostModel } from "../models/likePost.model.js";
 import { postModel } from "../models/post.model.js";
+import NotificationService from "./notification.service.js";
 
 interface likeParams {
   userId: Types.ObjectId;
@@ -33,7 +34,15 @@ class LikeService {
         const result = await postModel.findByIdAndUpdate(likeParams.targetId, {
           $inc: { likesCount: 1 },
         });
-        if (!result) throw new BadRequestError("Like failed!");
+        if (!result) throw new BadRequestError("Like failed!")
+        else {
+          await NotificationService.notifyOnPost({
+            postId: result._id,
+            actorId: likeParams.userId,
+            type: "like",
+            message: "like your post",
+          });
+        }
       }
     }
   };
