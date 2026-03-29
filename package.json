@@ -16,6 +16,7 @@
     "test:quick": "tsx scripts/quick-test.ts",
     "test:performance": "tsx scripts/performance-test.ts",
     "kafka:monitor": "tsx scripts/kafka-monitor.ts",
+    "seo:ssg": "tsx src/scripts/generate-static-post-pages.ts",
     "seed:categories": "tsx src/scripts/seed-categories.ts",
     "seed:posts": "tsx src/scripts/seed-post.ts"
   },
@@ -30,6 +31,7 @@
   "license": "ISC",
   "dependencies": {
     "@azure/communication-email": "^1.1.0",
+    "@types/multer": "^2.1.0",
     "amqplib": "^0.10.9",
     "bcrypt": "^6.0.0",
     "compression": "^1.8.1",
@@ -41,6 +43,8 @@
     "lodash": "^4.17.23",
     "mongoose": "^9.1.5",
     "morgan": "^1.10.0",
+    "multer": "^2.1.1",
+    "sharp": "^0.34.5",
     "swagger-jsdoc": "^6.2.8",
     "winston": "^3.19.0",
     "winston-daily-rotate-file": "^5.0.0",

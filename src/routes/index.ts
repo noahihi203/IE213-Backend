@@ -7,10 +7,12 @@ import tagRouter from "./tag/index.js";
 import notificationRouter from "./notification/index.js";
 import postRouter from "./post/index.js";
 import adminRouter from "./admin/index.js";
+import renderRouter from "./render/index.js";
 const router = express.Router();
 import { apiKey, permission } from "../auth/checkAuth.js";
 
 router.use("/v1/api", accessRouter);
+router.use("/", renderRouter);
 
 // check api key
 // router.use(apiKey);
