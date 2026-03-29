@@ -47,6 +47,12 @@ router.get(
 );
 
 router.get(
+  "/my-liked-posts",
+  authentication,
+  asyncHandler(PostController.getLikedMyPosts),
+);
+
+router.get(
   "/:postId/is-liked",
   authentication,
   asyncHandler(PostController.isPostLikedByUser),

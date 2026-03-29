@@ -263,6 +263,96 @@ class PostService {
     return result;
   };
 
+  static getLikedPostsWithFilters = async (
+    userId: Types.ObjectId | string,
+    postQueryParams: PostQueryParams,
+  ) => {
+    if (!userId) throw new BadRequestError("Missing userId!");
+
+    const { page, limit, search, sortBy, sort, order, status, category, tags } =
+      postQueryParams;
+
+    const parsedPage = Math.max(1, Number(page) || 1);
+    const parsedLimit = Math.min(50, Math.max(1, Number(limit) || 10));
+    const parsedSortBy = sortBy || sort || "createdOn";
+    const parsedOrder: "asc" | "desc" = order === "asc" ? "asc" : "desc";
+
+    const skip = (parsedPage - 1) * parsedLimit;
+
+    const likedRecords = await likePostModel
+      .find({
+        userId:
+          typeof userId === "string"
+            ? convertToObjectIdMongodb(userId)
+            : userId,
+      })
+      .select("targetId")
+      .lean();
+
+    const likedPostIds = likedRecords.map((record) => record.targetId);
+
+    if (likedPostIds.length === 0) {
+      return {
+        data: [],
+        pagination: {
+          page: parsedPage,
+          limit: parsedLimit,
+          total: 0,
+          totalPages: 0,
+          hasNextPage: false,
+          hasPrevPage: parsedPage > 1,
+        },
+      };
+    }
+
+    const filter: any = {
+      _id: { $in: likedPostIds },
+    };
+
+    if (search) {
+      filter.$or = [
+        { title: { $regex: search, $options: "i" } },
+        { content: { $regex: search, $options: "i" } },
+        { excerpt: { $regex: search, $options: "i" } },
+      ];
+    }
+
+    if (status) filter.status = status;
+    if (category) filter.category = category;
+    if (tags) filter.tags = { $in: tags };
+
+    const sortObject: any = {};
+    sortObject[parsedSortBy] = parsedOrder === "asc" ? 1 : -1;
+
+    const [posts, totalCount] = await Promise.all([
+      postModel
+        .find(filter)
+        .sort(sortObject)
+        .skip(skip)
+        .limit(parsedLimit)
+        .populate("category", "icon name")
+        .populate("authorId", "fullName avatar username")
+        .lean(),
+      postModel.countDocuments(filter),
+    ]);
+
+    const totalPages = Math.ceil(totalCount / parsedLimit);
+    const hasNextPage = parsedPage < totalPages;
+    const hasPrevPage = parsedPage > 1;
+
+    return {
+      data: posts,
+      pagination: {
+        page: parsedPage,
+        limit: parsedLimit,
+        total: totalCount,
+        totalPages,
+        hasNextPage,
+        hasPrevPage,
+      },
+    };
+  };
+
   static getPostById = async (postId: string) => {
     if (!postId) throw new BadRequestError("Missing parameter!");
 

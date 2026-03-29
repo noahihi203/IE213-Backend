@@ -124,6 +124,21 @@ class PostController {
     }).send(res);
   };
 
+  getLikedMyPosts = async (req: Request, res: Response) => {
+    const userId = req.user?.userId;
+    if (!userId) {
+      throw new BadRequestError("Authentication !!");
+    }
+
+    new SuccessResponse({
+      message: "Get liked posts success!",
+      metadata: await PostService.getLikedPostsWithFilters(
+        convertToObjectIdMongodb(userId),
+        req.query,
+      ),
+    }).send(res);
+  };
+
   createPost = async (req: Request, res: Response) => {
     const authorId = req.user?.userId;
     if (!authorId) throw new BadRequestError("Authentication !!");
