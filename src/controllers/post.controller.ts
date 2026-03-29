@@ -7,8 +7,44 @@ import { convertToObjectIdMongodb } from "../utils/index.js";
 import ShareService from "../services/share.service.js";
 import CommentService from "../services/comment.service.js";
 import logger from "../config/logger.config.js";
+import ImageOptimizerService from "../services/image-optimizer.service.js";
 
 class PostController {
+  optimizeCoverImage = async (req: Request, res: Response) => {
+    if (!req.file) {
+      throw new BadRequestError("Missing image file");
+    }
+
+    const parseNumber = (value: unknown): number | undefined => {
+      if (typeof value !== "string" || value.trim() === "") return undefined;
+      const parsedValue = Number(value);
+      return Number.isFinite(parsedValue) ? parsedValue : undefined;
+    };
+
+    const rawFormat = req.query.format;
+    const requestedFormat =
+      rawFormat === "avif" || rawFormat === "webp" ? rawFormat : "webp";
+
+    const optimizedImage = await ImageOptimizerService.optimize(
+      req.file.buffer,
+      {
+        width: parseNumber(req.query.width),
+        height: parseNumber(req.query.height),
+        quality: parseNumber(req.query.quality),
+        format: requestedFormat,
+      },
+    );
+
+    res.setHeader("Content-Type", optimizedImage.contentType);
+    res.setHeader("Content-Length", String(optimizedImage.size));
+    res.setHeader(
+      "Content-Disposition",
+      `inline; filename=optimized.${optimizedImage.format}`,
+    );
+
+    return res.status(200).send(optimizedImage.buffer);
+  };
+
   getAllPosts = async (req: Request, res: Response) => {
     new SuccessResponse({
       message: "Get all Post success!",

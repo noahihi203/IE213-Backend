@@ -10,13 +10,34 @@ import {
   validatePostInput,
   validateUpdatePostInput,
 } from "../../middleware/validation.js";
+import { withPublicCache } from "../../middleware/cache-control.js";
+import { uploadSingleImage } from "../../middleware/upload-image.js";
 
 const router = express.Router();
 
 // PUBLIC ROUTES - No authentication
-router.get("/trending", asyncHandler(PostController.getTrendingPosts));
-router.get("/slug/:slug", asyncHandler(PostController.getPostBySlug));
-router.get("/", asyncHandler(PostController.getAllPosts));
+router.get(
+  "/trending",
+  withPublicCache(60, 120),
+  asyncHandler(PostController.getTrendingPosts),
+);
+router.get(
+  "/slug/:slug",
+  withPublicCache(60, 120),
+  asyncHandler(PostController.getPostBySlug),
+);
+router.get(
+  "/",
+  withPublicCache(30, 60),
+  asyncHandler(PostController.getAllPosts),
+);
+
+router.post(
+  "/images/optimize",
+  authentication,
+  uploadSingleImage,
+  asyncHandler(PostController.optimizeCoverImage),
+);
 
 // PROTECTED READ ROUTES
 router.get(
@@ -32,7 +53,11 @@ router.get(
 );
 
 // PUBLIC ROUTES WITH PATH PARAMS
-router.get("/:postId", asyncHandler(PostController.getSinglePost));
+router.get(
+  "/:postId",
+  withPublicCache(60, 120),
+  asyncHandler(PostController.getSinglePost),
+);
 
 // PROTECTED ROUTES - Require authentication
 router.post(
@@ -94,12 +119,21 @@ router.post(
   asyncHandler(PostController.sharePost),
 );
 
-router.get("/:postId/comments", asyncHandler(PostController.getPostComments));
+router.get(
+  "/:postId/comments",
+  withPublicCache(20, 40),
+  asyncHandler(PostController.getPostComments),
+);
 
-router.get("/:postId/next-comments", asyncHandler(PostController.getNextLevelPostComments));
+router.get(
+  "/:postId/next-comments",
+  withPublicCache(20, 40),
+  asyncHandler(PostController.getNextLevelPostComments),
+);
 
 router.get(
   "/:postId/comment-count",
+  withPublicCache(20, 40),
   asyncHandler(PostController.getCommentCount),
 );
 
