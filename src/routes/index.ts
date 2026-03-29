@@ -10,6 +10,7 @@ import adminRouter from "./admin/index.js";
 import renderRouter from "./render/index.js";
 const router = express.Router();
 import { apiKey, permission } from "../auth/checkAuth.js";
+import uploadRouter from "./upload/index.js";
 
 router.use("/v1/api", accessRouter);
 router.use("/", renderRouter);
@@ -26,4 +27,5 @@ router.use("/v1/api/notifications", notificationRouter);
 router.use("/v1/api/posts", postRouter);
 router.use("/v1/api/user", userRouter);
 router.use("/v1/api/admin", adminRouter);
+router.use("/v1/api/upload", uploadRouter);
 export default router;
