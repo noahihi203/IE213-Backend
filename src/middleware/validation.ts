@@ -21,8 +21,21 @@ const RegisterInput = z.object({
 });
 
 const LoginInput = z.object({
+  email: z.string().email("Email hoặc mật khẩu không chính xác").nonempty(),
+  password: z.string().min(1, "Email hoặc mật khẩu không chính xác"),
+});
+
+const VerifyEmailInput = z.object({
+  token: z.string().nonempty("Token là bắt buộc"),
+});
+
+const ForgotPasswordInput = z.object({
   email: z.email("Email không đúng format!").nonempty(),
-  password: z
+});
+
+const ResetPasswordInput = z.object({
+  token: z.string().nonempty("Token là bắt buộc"),
+  newPassword: z
     .string()
     .min(8, "Mật khẩu phải ít nhất 8 ký tự")
     .regex(/[A-Z]/, "Phải có ít nhất 1 chữ cái viết hoa")
@@ -124,18 +137,19 @@ export const validateRegisterInput = async (
 ) => {
   try {
     const registerInput = req.body;
-
     const result = await RegisterInput.safeParse(registerInput);
 
     if (!result.success) {
-      logger.error(result.error);
-      throw new ValidationError("Error in validation");
+      // Changed .errors to .issues here
+      const errorMessage = result.error.issues[0]?.message || "Dữ liệu không hợp lệ";
+      logger.error(errorMessage);
+      return next(new ValidationError(errorMessage));
     } else {
       logger.debug(result.data);
       return next();
     }
   } catch {
-    throw new ValidationError("Error in validation");
+    return next(new ValidationError("Lỗi xác thực dữ liệu"));
   }
 };
 
@@ -146,18 +160,87 @@ export const validateLoginInput = async (
 ) => {
   try {
     const loginInput = req.body;
-
     const result = await LoginInput.safeParse(loginInput);
 
-    if (!result.success) logger.error(result.error);
-    else {
+    if (!result.success) {
+      const errorMessage = "Email hoặc mật khẩu không chính xác";
+      logger.error(`Login validation failed: ${result.error.issues[0]?.message}`);
+      return next(new ValidationError(errorMessage));
+    } else {
       logger.debug(result.data);
       return next();
     }
   } catch {
-    throw new ValidationError("Error in validation");
+    return next(new ValidationError("Email hoặc mật khẩu không chính xác"));
   }
 };
+export const validateVerifyEmailInput = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const verifyInput = req.body;
+    const result = await VerifyEmailInput.safeParse(verifyInput);
+
+    if (!result.success) {
+      const errorMessage = result.error.issues[0]?.message || "Dữ liệu không hợp lệ";
+      logger.error(errorMessage);
+      return next(new ValidationError(errorMessage));
+    }
+
+    logger.debug(result.data);
+    return next();
+  } catch {
+    return next(new ValidationError("Lỗi xác thực dữ liệu"));
+  }
+};
+
+export const validateForgotPasswordInput = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const forgotInput = req.body;
+    const result = await ForgotPasswordInput.safeParse(forgotInput);
+
+    if (!result.success) {
+      const errorMessage = result.error.issues[0]?.message || "Dữ liệu không hợp lệ";
+      logger.error(errorMessage);
+      return next(new ValidationError(errorMessage));
+    }
+
+    logger.debug(result.data);
+    return next();
+  } catch {
+    return next(new ValidationError("Lỗi xác thực dữ liệu"));
+  }
+};
+
+export const validateResetPasswordInput = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const resetInput = req.body;
+    const result = await ResetPasswordInput.safeParse(resetInput);
+
+    if (!result.success) {
+      const errorMessage = result.error.issues[0]?.message || "Dữ liệu không hợp lệ";
+      logger.error(errorMessage);
+      return next(new ValidationError(errorMessage));
+    }
+
+    logger.debug(result.data);
+    return next();
+  } catch {
+    return next(new ValidationError("Lỗi xác thực dữ liệu"));
+  }
+};
+
+// ===================================================================
 
 export const validateUpdateUserInput = async (
   req: Request,
@@ -166,18 +249,18 @@ export const validateUpdateUserInput = async (
 ) => {
   try {
     const updateInput = req.body;
-
     const result = await UpdateProfileInput.safeParse(updateInput);
 
     if (!result.success) {
-      logger.error(result.error);
-      return next(new ValidationError("Error in validation"));
+      const errorMessage = result.error.issues[0]?.message || "Dữ liệu không hợp lệ";
+      logger.error(errorMessage);
+      return next(new ValidationError(errorMessage));
     }
 
     logger.debug(result.data);
     return next();
   } catch {
-    return next(new ValidationError("Error in validation"));
+    return next(new ValidationError("Lỗi xác thực dữ liệu"));
   }
 };
 
@@ -188,18 +271,18 @@ export const validateUpdateUserEmailInput = async (
 ) => {
   try {
     const updateInput = req.body;
-
     const result = await UpdateEmailInput.safeParse(updateInput);
 
     if (!result.success) {
-      logger.error(result.error);
-      return next(new ValidationError("Error in validation"));
+      const errorMessage = result.error.issues[0]?.message || "Dữ liệu không hợp lệ";
+      logger.error(errorMessage);
+      return next(new ValidationError(errorMessage));
     }
 
     logger.debug(result.data);
     return next();
   } catch {
-    return next(new ValidationError("Error in validation"));
+    return next(new ValidationError("Lỗi xác thực dữ liệu"));
   }
 };
 
@@ -210,18 +293,18 @@ export const validateUpdateUsernameInput = async (
 ) => {
   try {
     const updateInput = req.body;
-
     const result = await UpdateUsernameInput.safeParse(updateInput);
 
     if (!result.success) {
-      logger.error(result.error);
-      return next(new ValidationError("Error in validation"));
+      const errorMessage = result.error.issues[0]?.message || "Dữ liệu không hợp lệ";
+      logger.error(errorMessage);
+      return next(new ValidationError(errorMessage));
     }
 
     logger.debug(result.data);
     return next();
   } catch {
-    return next(new ValidationError("Error in validation"));
+    return next(new ValidationError("Lỗi xác thực dữ liệu"));
   }
 };
 
@@ -232,18 +315,18 @@ export const validatePostInput = async (
 ) => {
   try {
     const postInput = req.body;
-
     const result = await PostInput.safeParse(postInput);
 
     if (!result.success) {
-      logger.error(result.error);
-      return next(new ValidationError("Error in validation"));
+      const errorMessage = result.error.issues[0]?.message || "Dữ liệu không hợp lệ";
+      logger.error(errorMessage);
+      return next(new ValidationError(errorMessage));
     } else {
       logger.debug(result.data);
       return next();
     }
   } catch (error) {
-    return next(new ValidationError("Error in validation"));
+    return next(new ValidationError("Lỗi xác thực dữ liệu"));
   }
 };
 
@@ -254,18 +337,18 @@ export const validateUpdatePostInput = async (
 ) => {
   try {
     const updatePostInput = req.body;
-
     const result = await UpdatePostInput.safeParse(updatePostInput);
 
     if (!result.success) {
-      logger.error(result.error);
-      return next(new ValidationError("Error in validation"));
+      const errorMessage = result.error.issues[0]?.message || "Dữ liệu không hợp lệ";
+      logger.error(errorMessage);
+      return next(new ValidationError(errorMessage));
     }
 
     logger.debug(result.data);
     return next();
   } catch (error) {
-    return next(new ValidationError("Error in validation"));
+    return next(new ValidationError("Lỗi xác thực dữ liệu"));
   }
 };
 
@@ -276,18 +359,18 @@ export const validateCommentInput = async (
 ) => {
   try {
     const commentInput = req.body;
-
     const result = await CommentInput.safeParse(commentInput);
 
     if (!result.success) {
-      logger.error(result.error);
-      return next(new ValidationError("Error in validation"));
+      const errorMessage = result.error.issues[0]?.message || "Dữ liệu không hợp lệ";
+      logger.error(errorMessage);
+      return next(new ValidationError(errorMessage));
     }
 
     logger.debug(result.data);
     return next();
   } catch (_error) {
-    return next(new ValidationError("Error in validation"));
+    return next(new ValidationError("Lỗi xác thực dữ liệu"));
   }
 };
 
@@ -298,16 +381,18 @@ export const validateCategoryInput = async (
 ) => {
   try {
     const categoryInput = req.body;
-
     const result = await CategoryInput.safeParse(categoryInput);
 
-    if (!result.success) logger.error(result.error);
-    else {
+    if (!result.success) {
+      const errorMessage = result.error.issues[0]?.message || "Dữ liệu không hợp lệ";
+      logger.error(errorMessage);
+      return next(new ValidationError(errorMessage));
+    } else {
       logger.debug(result.data);
       return next();
     }
   } catch {
-    throw new ValidationError("Error in validation");
+    return next(new ValidationError("Lỗi xác thực dữ liệu"));
   }
 };
 
@@ -318,15 +403,17 @@ export const validateCreateTagInput = async (
 ) => {
   try {
     const createTagInput = req.body;
-
     const result = await CreateTagInput.safeParse(createTagInput);
 
-    if (!result.success) logger.error(result.error);
-    else {
+    if (!result.success) {
+      const errorMessage = result.error.issues[0]?.message || "Dữ liệu không hợp lệ";
+      logger.error(errorMessage);
+      return next(new ValidationError(errorMessage));
+    } else {
       logger.debug(result.data);
       return next();
     }
   } catch {
-    throw new ValidationError("Error in validation");
+    return next(new ValidationError("Lỗi xác thực dữ liệu"));
   }
 };

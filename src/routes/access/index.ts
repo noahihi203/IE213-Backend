@@ -5,6 +5,9 @@ import { authentication } from "../../auth/authUtils.js";
 import {
   validateLoginInput,
   validateRegisterInput,
+  validateVerifyEmailInput,
+  validateForgotPasswordInput,
+  validateResetPasswordInput
 } from "../../middleware/validation.js";
 const router = express.Router();
 
@@ -15,6 +18,11 @@ router.post(
   asyncHandler(accessController.signUp),
 );
 router.post("/login", validateLoginInput, asyncHandler(accessController.login));
+
+// password recovery & verification routes
+router.post("/verify-email", validateVerifyEmailInput, asyncHandler(accessController.verifyEmail));
+router.post("/forgot-password", validateForgotPasswordInput, asyncHandler(accessController.forgotPassword));
+router.post("/reset-password", validateResetPasswordInput, asyncHandler(accessController.resetPassword));
 
 // authentication
 router.post(

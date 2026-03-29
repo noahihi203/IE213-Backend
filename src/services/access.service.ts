@@ -12,6 +12,7 @@ import {
 import { Types } from "mongoose";
 import UserService from "./user.service.js";
 import logger from "../config/logger.config.js";
+import EmailService from "./email.service.js";
 
 interface SignUpParams {
   username: string;
@@ -95,12 +96,17 @@ class AccessService {
     }
 
     const passwordHash = await bcrypt.hash(password, 10);
+    const verificationToken = crypto.randomBytes(32).toString("hex");
+
     const newUser = await userModel.create({
       username,
       email,
       password: passwordHash,
       fullName,
+      emailVerificationToken: verificationToken,
+      isEmailVerified: false,
     });
+    await EmailService.sendVerificationEmail(email, verificationToken);
 
     // set super admin
     if (newUser) {
@@ -161,6 +167,7 @@ class AccessService {
 
       return {
         code: 201,
+        message: "Đăng ký thành công! Vui lòng kiểm tra email để xác thực.",
         metadata: {
           user: getInfoData({
             fields: ["_id", "username", "email", "fullName"],
@@ -180,8 +187,15 @@ class AccessService {
     email,
     password,
   }: LoginParams): Promise<{ user: UserResponse; tokens: TokenPair }> => {
-    const foundUser = await UserService.findUserByEmail({ email });
+    const foundUser = await UserService.findUserByEmail({
+      email,
+      select: { email: 1, password: 1, fullName: 1, username: 1, role: 1, tokenVersion: 1, isEmailVerified: 1 }
+    });
+    
     if (!foundUser) throw new BadRequestError("User not registered!");
+    if (foundUser.isEmailVerified === false) {
+      throw new AuthFailureError("Vui lòng xác thực email trước khi đăng nhập!");
+    }
 
     const match = await bcrypt.compare(password, foundUser.password);
     if (!match) throw new AuthFailureError("Authentication error");
@@ -269,6 +283,55 @@ class AccessService {
     const delKey = await KeyTokenService.removeKeyById(keyStore._id);
     logger.debug("delKey", { delKey });
     return delKey;
+  };
+
+  // ================= NEW AUTH METHODS =================
+
+  static verifyEmail = async (token: string) => {
+    const user = await userModel.findOne({ emailVerificationToken: token });
+    if (!user) {
+      throw new BadRequestError("Token xác thực không hợp lệ hoặc đã hết hạn.");
+    }
+
+    user.isEmailVerified = true;
+    user.emailVerificationToken = null;
+    await user.save();
+
+    return { message: "Xác thực email thành công!" };
+  };
+
+  static forgotPassword = async (email: string) => {
+    const user = await userModel.findOne({ email });
+    if (!user) {
+      throw new BadRequestError("Không tìm thấy tài khoản với email này.");
+    }
+
+    const resetToken = crypto.randomBytes(32).toString("hex");
+    user.passwordResetToken = resetToken;
+    user.passwordResetExpires = new Date(Date.now() + 15 * 60 * 1000); // 15 mins
+    await user.save();
+
+    await EmailService.sendPasswordResetEmail(email, resetToken);
+
+    return { message: "Email đặt lại mật khẩu đã được gửi." };
+  };
+
+  static resetPassword = async (token: string, newPassword: string) => {
+    const user = await userModel.findOne({
+      passwordResetToken: token,
+      passwordResetExpires: { $gt: new Date() }, // Check if token has expired
+    });
+
+    if (!user) {
+      throw new BadRequestError("Token không hợp lệ hoặc đã hết hạn.");
+    }
+
+    user.password = await bcrypt.hash(newPassword, 10);
+    user.passwordResetToken = null;
+    user.passwordResetExpires = null;
+    await user.save();
+
+    return { message: "Đặt lại mật khẩu thành công!" };
   };
 }
 

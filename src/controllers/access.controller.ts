@@ -85,6 +85,30 @@ class AccessController {
   //     metadata: await AccessService.me(req.userId),
   //   });
   // };
+
+  verifyEmail = async (req: Request, res: Response): Promise<void> => {
+    const { token } = req.body;
+    new SuccessResponse({
+      message: "Verify email processed",
+      metadata: await AccessService.verifyEmail(token),
+    }).send(res);
+  };
+
+  forgotPassword = async (req: Request, res: Response): Promise<void> => {
+    const { email } = req.body;
+    new SuccessResponse({
+      message: "Forgot password request processed",
+      metadata: await AccessService.forgotPassword(email),
+    }).send(res);
+  };
+
+  resetPassword = async (req: Request, res: Response): Promise<void> => {
+    const { token, newPassword } = req.body;
+    new SuccessResponse({
+      message: "Password reset processed",
+      metadata: await AccessService.resetPassword(token, newPassword),
+    }).send(res);
+  };
 }
 
 export default new AccessController();
