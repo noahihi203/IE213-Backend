@@ -453,6 +453,42 @@ class UserService {
     };
   };
 
+  static getTopAuthors = async () => {
+    const topAuthors = await userModel.aggregate([
+      {
+        $lookup: {
+          from: "Posts",
+          localField: "_id",
+          foreignField: "authorId",
+          as: "posts",
+        },
+      },
+      {
+        $addFields: {
+          postCount: { $size: "$posts" },
+        },
+      },
+      {
+        $sort: { postCount: -1 },
+      },
+      {
+        $limit: 4,
+      },
+      {
+        $project: {
+          username: 1,
+          fullName: 1,
+          role: 1,
+          avatar: 1,
+          postCount: 1,
+        },
+      },
+    ]);
+    if (!topAuthors) throw new BadRequestError("get author failed!")
+    
+    return topAuthors
+  };
+
   static unfollowUser = async (payload: followPayload) => {
     const { userId, followerId } = payload;
 

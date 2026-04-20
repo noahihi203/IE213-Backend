@@ -2,6 +2,7 @@ import { Types } from "mongoose";
 import { BadRequestError } from "../core/error.response.js";
 import { categoryModel } from "../models/category.model.js";
 import { redisService } from "./redis.service.js";
+import { postModel } from "../models/post.model.js";
 
 const CACHE_KEY = "categories:list";
 
@@ -11,6 +12,11 @@ interface category {
   description: string;
   icon: string;
   postCount: number;
+}
+
+interface updatePostCatCountInput {
+  catId: Types.ObjectId;
+  inc: number;
 }
 
 export function slugify(string: string) {
@@ -79,6 +85,63 @@ class CategoryService {
     }
     await CategoryService.safeRedisSetWithTTL(CACHE_KEY, categories, 3600); // 1 giờ
     return categories;
+  };
+
+  static getFeaturedCategories = async () => {
+    const result = await categoryModel.aggregate([
+      {
+        $lookup: {
+          from: "Posts",
+          localField: "_id",
+          foreignField: "category",
+          as: "posts",
+        },
+      },
+      {
+        $addFields: {
+          postCount: { $size: "$posts" },
+        },
+      },
+      {
+        $sort: { postCount: -1 },
+      },
+      {
+        $limit: 3,
+      },
+      {
+        $addFields: {
+          topPost: {
+            $arrayElemAt: [
+              {
+                $slice: [
+                  {
+                    $sortArray: {
+                      input: "$posts",
+                      sortBy: { views: -1 },
+                    },
+                  },
+                  1,
+                ],
+              },
+              0,
+            ],
+          },
+        },
+      },
+      {
+        $project: {
+          _id: 1,
+          name: 1,
+          slug: 1,
+          description: 1,
+          icon: 1,
+          postCount: 1,
+          topPost: 1,
+        },
+      },
+    ]);
+
+    return result;
   };
 
   static getCategoryById = async (categoryId: string) => {
@@ -238,6 +301,18 @@ class CategoryService {
     await CategoryService.safeRedisPublish("CACHE_INVALIDATION", CACHE_KEY);
 
     return deletedCategory;
+  };
+
+  static updatePostCatCounts = async (
+    updatePostCatCountContent: updatePostCatCountInput,
+  ) => {
+    const { catId, inc } = updatePostCatCountContent;
+
+    return categoryModel.findByIdAndUpdate(
+      catId,
+      { $inc: { postCount: inc } },
+      { new: true },
+    );
   };
 
   static getCategoryPostCount = async (categoryId: Types.ObjectId) => {

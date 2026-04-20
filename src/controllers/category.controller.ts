@@ -11,6 +11,13 @@ class CategoryController {
     }).send(res);
   };
 
+  getFeaturedCategories = async (req: Request, res: Response) => {
+    new SuccessResponse({
+      message: "Get featured categories success!",
+      metadata: await CategoryService.getFeaturedCategories(),
+    }).send(res);
+  };
+
   getSingleCategory = async (req: Request, res: Response) => {
     const categoryId = req.params.categoryId;
 

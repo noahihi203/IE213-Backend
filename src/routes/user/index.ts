@@ -31,6 +31,11 @@ router.get(
 );
 
 router.get(
+  "/top-authors",
+  asyncHandler(userController.getTopAuthors),
+);
+
+router.get(
   "/followers",
   authentication,
   asyncHandler(userController.getMyFollowers),

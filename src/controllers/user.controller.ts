@@ -66,6 +66,13 @@ class UserController {
     }).send(res);
   };
 
+  getTopAuthors = async (req: Request, res: Response): Promise<void> => {
+    new SuccessResponse({
+      message: "Get top users success!",
+      metadata: await UserService.getTopAuthors(),
+    }).send(res);
+  };
+
   deleteUser = async (req: Request, res: Response): Promise<void> => {
     const userId = Array.isArray(req.params.userId)
       ? req.params.userId[0]

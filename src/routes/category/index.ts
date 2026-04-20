@@ -13,8 +13,15 @@ const router = express.Router();
 // PUBLIC ROUTES - No authentication
 router.get("/", asyncHandler(CategoryController.getAllCategories));
 router.get("/slug/:slug", asyncHandler(CategoryController.getCategoryBySlug));
+router.get(
+  "/featured-categories",
+  asyncHandler(CategoryController.getFeaturedCategories),
+);
 router.get("/:categoryId", asyncHandler(CategoryController.getSingleCategory));
-router.get("/posts/:catSlug", asyncHandler(postController.getPostsByCategorySlug));
+router.get(
+  "/posts/:catSlug",
+  asyncHandler(postController.getPostsByCategorySlug),
+);
 // PROTECTED ROUTES - Require authentication
 router.post(
   "/",

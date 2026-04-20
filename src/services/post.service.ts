@@ -12,6 +12,7 @@ import { redisService } from "./redis.service.js";
 import { categoryModel } from "../models/category.model.js";
 import SeoRenderService from "./seo-render.service.js";
 import UrlRedirectService from "./url-redirect.service.js";
+import CategoryService from "./category.service.js";
 
 interface PostQueryParams {
   page?: number;
