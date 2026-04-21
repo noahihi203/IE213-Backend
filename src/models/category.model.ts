@@ -5,6 +5,7 @@ const COLLECTION_NAME = "Categories";
 
 export interface ICategory {
   name: string;
+  abbreviation: string;
   slug: string;
   description: string;
   icon: string;
@@ -14,6 +15,7 @@ export interface ICategory {
 const categorySchema = new Schema<ICategory>(
   {
     name: { type: String, required: true, unique: true, index: true },
+    abbreviation: { type: String, required: true, unique: true, index: true },
     slug: { type: String, required: true, unique: true, index: true },
     description: { type: String, default: null },
     icon: { type: String, default: null },

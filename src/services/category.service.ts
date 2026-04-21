@@ -8,6 +8,7 @@ const CACHE_KEY = "categories:list";
 
 interface category {
   name: string;
+  abbreviation: string;
   slug: string;
   description: string;
   icon: string;
@@ -79,7 +80,10 @@ class CategoryService {
     let categories: category[] = [];
     const cached = await CategoryService.safeRedisGet<any[]>(CACHE_KEY);
     if (cached) return cached;
-    categories = await categoryModel.find({}, "_id slug description icon name");
+    categories = await categoryModel.find(
+      {},
+      "_id slug description icon abbreviation name postCount",
+    );
     if (!categories) {
       throw new BadRequestError("category not exist!");
     }
@@ -132,6 +136,7 @@ class CategoryService {
         $project: {
           _id: 1,
           name: 1,
+          abbreviation: 1,
           slug: 1,
           description: 1,
           icon: 1,
@@ -159,11 +164,15 @@ class CategoryService {
   };
 
   static createCategory = async (catBody: category) => {
-    const { name, description, icon } = catBody;
+    const { name, abbreviation, description, icon } = catBody;
 
     // 1. Validate required fields
     if (!name || name.trim() === "") {
       throw new BadRequestError("Category name is required!");
+    }
+
+    if (!abbreviation || abbreviation.trim() === "") {
+      throw new BadRequestError("Category abbreviation is required!");
     }
 
     // 2. Validate name length
@@ -174,8 +183,12 @@ class CategoryService {
     }
 
     // 3. Generate slug from name
-    const slug = slugify(name);
-
+    let slug = "";
+    if (!catBody.slug) {
+      slug = slugify(name);
+    } else {
+      slug = catBody.slug;
+    }
     // 4. Check if category with same name or slug already exists
     const existingCategory = await categoryModel.findOne({
       $or: [{ name }, { slug }],
@@ -198,6 +211,7 @@ class CategoryService {
 
     const newCategory = await categoryModel.create({
       name: name.trim(),
+      abbreviation: abbreviation.trim(),
       slug,
       description: description?.trim() || "",
       icon: icon?.trim() || "",
@@ -212,15 +226,14 @@ class CategoryService {
   };
 
   static updateCategory = async (categoryId: string, updateData: category) => {
-    const name = updateData.name;
-    const description = updateData.description;
-    const icon = updateData.icon;
-    // 1. Validate required fields
-    if (!name || name.trim() === "") {
-      throw new BadRequestError("Category name is required!");
-    } else {
-      const slug = slugify(name);
-      // 2. Validate name length
+    // 1. Validate và xử lý Name & Slug (Chỉ chạy nếu có truyền name lên)
+    if (updateData.name !== undefined) {
+      const name = updateData.name;
+
+      if (!name || name.trim() === "") {
+        throw new BadRequestError("Category name cannot be empty!");
+      }
+
       if (name.length < 2 || name.length > 100) {
         throw new BadRequestError(
           "Category name must be between 2-100 characters!",
@@ -228,48 +241,59 @@ class CategoryService {
       }
 
       // 3. Generate slug from name
+      let slug = "";
+      if (!updateData.slug) {
+        slug = slugify(name);
+      } else {
+        slug = updateData.slug;
+      }
 
-      // 4. Check if category with same name or slug already exists
+      // Quan trọng: Kiểm tra trùng lặp nhưng phải LOẠI TRỪ categoryId đang được update
       const existingCategory = await categoryModel.findOne({
+        _id: { $ne: categoryId }, // Bỏ qua chính bản ghi này
         $or: [{ name }, { slug }],
       });
-      if (slug) {
-        updateData = {
-          ...updateData,
-          slug,
-        };
-      }
+
       if (existingCategory) {
         throw new BadRequestError("Category with this name already exists!");
       }
+
+      // Gắn thêm slug vào payload để update
+      updateData.slug = slug;
     }
 
-    // 5. Validate optional fields
-    if (description && description.length > 500) {
+    // 2. Validate Abbreviation (Chỉ kiểm tra nếu có truyền lên)
+    if (updateData.abbreviation !== undefined) {
+      if (!updateData.abbreviation || updateData.abbreviation.trim() === "") {
+        throw new BadRequestError("Category abbreviation cannot be empty!");
+      }
+    }
+
+    // 3. Validate Optional fields
+    if (updateData.description && updateData.description.length > 500) {
       throw new BadRequestError("Description must not exceed 500 characters!");
     }
 
-    if (icon && !icon.match(/^https?:\/\/.+/)) {
+    if (updateData.icon && !updateData.icon.match(/^https?:\/\/.+/)) {
       throw new BadRequestError("Icon must be a valid URL!");
     }
 
-    const updateCategory = await categoryModel.findByIdAndUpdate(
+    // 4. Update Database
+    const updatedCategory = await categoryModel.findByIdAndUpdate(
       categoryId,
       { $set: updateData },
       { new: true, runValidators: true },
     );
 
-    // 1. Xóa cache trên Redis
-    await CategoryService.safeRedisDel(CACHE_KEY);
+    if (!updatedCategory) {
+      throw new BadRequestError("Category not found!"); // Sửa lại message
+    }
 
-    // 2. Publish sự kiện để các instances khác biết (Nếu bạn có dùng Memory Cache cục bộ)
+    // 5. Clear Cache
+    await CategoryService.safeRedisDel(CACHE_KEY);
     await CategoryService.safeRedisPublish("CACHE_INVALIDATION", CACHE_KEY);
 
-    if (!updateCategory) {
-      throw new BadRequestError("User not found!");
-    } else {
-      return updateCategory;
-    }
+    return updatedCategory;
   };
 
   static deleteCategory = async (categoryId: string) => {

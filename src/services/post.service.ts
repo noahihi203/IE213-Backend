@@ -233,8 +233,9 @@ class PostService {
         .sort(sortObject)
         .skip(skip)
         .limit(parsedLimit)
-        .populate("category", "icon name")
+        .populate("category", "icon abbreviation name")
         .populate("authorId", "fullName avatar username")
+        .populate("tags", "name")
         .lean(),
       postModel.countDocuments(filter),
     ]);
