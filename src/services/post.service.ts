@@ -720,8 +720,8 @@ class PostService {
     }
   };
 
-  static getTrendingPosts = async (limit: number = 10) => {
-    const cacheKey = `${POST_TRENDING_CACHE_KEY}:${limit}`;
+  static getTrendingPosts = async () => {
+    const cacheKey = `${POST_TRENDING_CACHE_KEY}`;
 
     // Dùng hàm có try/catch tương tự CategoryService
     try {
@@ -731,18 +731,90 @@ class PostService {
       console.warn("Redis get failed, falling back to DB", err);
     }
 
-    const posts = await postModel
-      .find({ status: "published" })
-      .sort({ trendingScore: -1 })
-      .limit(limit)
-      .populate("authorId", "fullName avatar username")
-      .populate("category", "icon name")
-      .lean();
+    // const posts = await postModel
+    //   .find({ status: "published" })
+    //   .sort({ trendingScore: -1 })
+    //   .limit(limit)
+    //   .populate("authorId", "fullName avatar username")
+    //   .populate("category", "icon name")
+    //   .lean();
 
-    const result = posts.map((post: any) => ({
-      ...post,
-      author: post.authorId,
-    }));
+    // const result = posts.map((post: any) => ({
+    //   ...post,
+    //   author: post.authorId,
+    // }));
+
+    const result = await postModel.aggregate([
+      { $match: { status: "published" } },
+      {
+        $addFields: {
+          readingTime: {
+            $let: {
+              vars: {
+                wordCount: {
+                  $size: {
+                    $regexFindAll: {
+                      input: { $ifNull: ["$content", ""] },
+                      regex: /[^\s]+/,
+                    },
+                  },
+                },
+              },
+              in: {
+                $ceil: { $divide: ["$$wordCount", 200] },
+              },
+            },
+          },
+        },
+      },
+      { $sort: { viewCount: -1 } },
+      { $limit: 3 },
+      {
+        $lookup: {
+          from: "Users",
+          localField: "authorId",
+          foreignField: "_id",
+          as: "authorInfo",
+        },
+      },
+      { $unwind: "$authorInfo" },
+      {
+        $lookup: {
+          from: "Categories",
+          localField: "category",
+          foreignField: "_id",
+          as: "categoryInfo",
+        },
+      },
+      {
+        $lookup: {
+          from: "Tags",
+          localField: "tags",
+          foreignField: "_id",
+          as: "tagsInfo",
+        },
+      },
+      { $unwind: "$categoryInfo" },
+      {
+        $project: {
+          _id: 0,
+          postId: "$_id",
+          title: 1,
+          excerpt: 1,
+          coverImage: 1,
+          slug: 1,
+          viewCount: 1,
+          publishedAt: 1,
+          readingTime: {
+            $cond: [{ $eq: ["$readingTime", 0] }, 1, "$readingTime"],
+          },
+          authorName: "$authorInfo.fullName",
+          authorAvatar: "$authorInfo.avatar",
+          categoryAbbreviation: "$categoryInfo.abbreviation",
+          tags: "$tagsInfo",
+        },
+      },
+    ]);
 
     try {
       await redisService.setWithTTL(

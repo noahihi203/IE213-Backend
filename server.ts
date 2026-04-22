@@ -6,14 +6,25 @@ import fs from "fs";
 import http from "http";
 import https from "https";
 import http2 from "http2";
+import cron from "node-cron";
 
 import { rabbitMQProducer } from "./src/services/rabbitmq/rabbitmq.producer.js";
 import { NotificationConsumer } from "./src/services/rabbitmq/NotificationConsumer.js"; // đổi import
 import { shouldEnforceHttps } from "./src/middleware/https-enforcement.js";
+import postService from "./src/services/post.service.js";
 
 const PORT = Number(process.env.PORT || 5001);
 const HTTPS_PORT = Number(process.env.HTTPS_PORT || PORT);
 const HTTP_PORT = Number(process.env.HTTP_PORT || 5001);
+
+cron.schedule("0 0 * * *", async () => {
+  console.log("--- Đang chạy updateTrendingScores định kỳ ---");
+  try {
+    await postService.updateTrendingScores();
+  } catch (error) {
+    console.error("Lỗi khi chạy updateTrendingScores:", error);
+  }
+});
 
 function hasTlsConfiguration() {
   return Boolean(process.env.SSL_CERT_PATH && process.env.SSL_KEY_PATH);

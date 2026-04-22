@@ -281,7 +281,7 @@ class PostController {
     }).send(res);
   };
 
-  getTrendingPosts = async (_req: Request, res: Response) => {
+  getTrendingPosts = async (req: Request, res: Response) => {
     new SuccessResponse({
       message: "Get trending post success!",
       metadata: await PostService.getTrendingPosts(),
