@@ -9,6 +9,7 @@ import NotificationService from "./notification.service.js";
 import bcrypt from "bcrypt";
 import logger from "../config/logger.config.js";
 import { redisService } from "./redis.service.js";
+import { postModel } from "../models/post.model.js";
 
 interface UserFindByEmail {
   email: string;
@@ -291,6 +292,16 @@ class UserService {
       .findByIdAndUpdate(userId, { $set: { isActive: false } }, { new: true })
       .select("-password");
 
+    await postModel.updateMany(
+      { authorId: userId },
+      {
+        $set: {
+          status: "archived",
+          publishedAt: null,
+        },
+      },
+    );
+
     if (!deletedUser) {
       throw new BadRequestError("User not found");
     }
@@ -305,6 +316,16 @@ class UserService {
     const restoredUser = await userModel
       .findByIdAndUpdate(userId, { $set: { isActive: true } }, { new: true })
       .select("-password");
+
+    await postModel.updateMany(
+      { authorId: userId },
+      {
+        $set: {
+          status: "published",
+          publishedAt: { $lte: new Date() },
+        },
+      },
+    );
 
     if (!restoredUser) {
       throw new BadRequestError("User not found");
@@ -484,9 +505,9 @@ class UserService {
         },
       },
     ]);
-    if (!topAuthors) throw new BadRequestError("get author failed!")
-    
-    return topAuthors
+    if (!topAuthors) throw new BadRequestError("get author failed!");
+
+    return topAuthors;
   };
 
   static unfollowUser = async (payload: followPayload) => {
