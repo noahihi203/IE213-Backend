@@ -80,10 +80,32 @@ class CategoryService {
     let categories: category[] = [];
     const cached = await CategoryService.safeRedisGet<any[]>(CACHE_KEY);
     if (cached) return cached;
-    categories = await categoryModel.find(
-      {},
-      "_id slug description icon abbreviation name postCount",
-    );
+    categories = await categoryModel.aggregate([
+      {
+        $lookup: {
+          from: "Posts",
+          localField: "_id",
+          foreignField: "category",
+          as: "posts",
+        },
+      },
+      {
+        $addFields: {
+          postCount: { $size: "$posts" },
+        },
+      },
+      {
+        $project: {
+          _id: 1,
+          slug: 1,
+          abbreviation: 1,
+          description: 1,
+          icon: 1,
+          postCount: 1,
+          name: 1,
+        },
+      },
+    ]);
     if (!categories) {
       throw new BadRequestError("category not exist!");
     }
