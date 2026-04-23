@@ -74,6 +74,7 @@ const PostInput = z.object({
     .max(200, "Title không được quá 200 ký tự"),
   content: z.string().nonempty(),
   excerpt: z.string(),
+  keyword: z.string().optional(),
   category: z.string(),
 });
 
@@ -82,6 +83,7 @@ const UpdatePostInput = z
     title: z.string().min(5).max(200).optional(),
     content: z.string().optional(),
     excerpt: z.string().optional(),
+    keyword: z.string().optional(),
     coverImage: z.string().optional(),
     slug: z.string().optional(),
     status: z.enum(["draft", "published", "archived"]).optional(),
@@ -90,6 +92,7 @@ const UpdatePostInput = z
     titleUpdate: z.string().optional(),
     contentUpdate: z.string().optional(),
     excerptUpdate: z.string().optional(),
+    keywordUpdate: z.string().optional(),
     coverImageUpdate: z.string().optional(),
     slugUpdate: z.string().optional(),
     statusUpdate: z.enum(["draft", "published", "archived"]).optional(),
@@ -141,7 +144,8 @@ export const validateRegisterInput = async (
 
     if (!result.success) {
       // Changed .errors to .issues here
-      const errorMessage = result.error.issues[0]?.message || "Dữ liệu không hợp lệ";
+      const errorMessage =
+        result.error.issues[0]?.message || "Dữ liệu không hợp lệ";
       logger.error(errorMessage);
       return next(new ValidationError(errorMessage));
     } else {
@@ -164,7 +168,9 @@ export const validateLoginInput = async (
 
     if (!result.success) {
       const errorMessage = "Email hoặc mật khẩu không chính xác";
-      logger.error(`Login validation failed: ${result.error.issues[0]?.message}`);
+      logger.error(
+        `Login validation failed: ${result.error.issues[0]?.message}`,
+      );
       return next(new ValidationError(errorMessage));
     } else {
       logger.debug(result.data);
@@ -184,7 +190,8 @@ export const validateVerifyEmailInput = async (
     const result = await VerifyEmailInput.safeParse(verifyInput);
 
     if (!result.success) {
-      const errorMessage = result.error.issues[0]?.message || "Dữ liệu không hợp lệ";
+      const errorMessage =
+        result.error.issues[0]?.message || "Dữ liệu không hợp lệ";
       logger.error(errorMessage);
       return next(new ValidationError(errorMessage));
     }
@@ -206,7 +213,8 @@ export const validateForgotPasswordInput = async (
     const result = await ForgotPasswordInput.safeParse(forgotInput);
 
     if (!result.success) {
-      const errorMessage = result.error.issues[0]?.message || "Dữ liệu không hợp lệ";
+      const errorMessage =
+        result.error.issues[0]?.message || "Dữ liệu không hợp lệ";
       logger.error(errorMessage);
       return next(new ValidationError(errorMessage));
     }
@@ -228,7 +236,8 @@ export const validateResetPasswordInput = async (
     const result = await ResetPasswordInput.safeParse(resetInput);
 
     if (!result.success) {
-      const errorMessage = result.error.issues[0]?.message || "Dữ liệu không hợp lệ";
+      const errorMessage =
+        result.error.issues[0]?.message || "Dữ liệu không hợp lệ";
       logger.error(errorMessage);
       return next(new ValidationError(errorMessage));
     }
@@ -252,7 +261,8 @@ export const validateUpdateUserInput = async (
     const result = await UpdateProfileInput.safeParse(updateInput);
 
     if (!result.success) {
-      const errorMessage = result.error.issues[0]?.message || "Dữ liệu không hợp lệ";
+      const errorMessage =
+        result.error.issues[0]?.message || "Dữ liệu không hợp lệ";
       logger.error(errorMessage);
       return next(new ValidationError(errorMessage));
     }
@@ -274,7 +284,8 @@ export const validateUpdateUserEmailInput = async (
     const result = await UpdateEmailInput.safeParse(updateInput);
 
     if (!result.success) {
-      const errorMessage = result.error.issues[0]?.message || "Dữ liệu không hợp lệ";
+      const errorMessage =
+        result.error.issues[0]?.message || "Dữ liệu không hợp lệ";
       logger.error(errorMessage);
       return next(new ValidationError(errorMessage));
     }
@@ -296,7 +307,8 @@ export const validateUpdateUsernameInput = async (
     const result = await UpdateUsernameInput.safeParse(updateInput);
 
     if (!result.success) {
-      const errorMessage = result.error.issues[0]?.message || "Dữ liệu không hợp lệ";
+      const errorMessage =
+        result.error.issues[0]?.message || "Dữ liệu không hợp lệ";
       logger.error(errorMessage);
       return next(new ValidationError(errorMessage));
     }
@@ -318,7 +330,8 @@ export const validatePostInput = async (
     const result = await PostInput.safeParse(postInput);
 
     if (!result.success) {
-      const errorMessage = result.error.issues[0]?.message || "Dữ liệu không hợp lệ";
+      const errorMessage =
+        result.error.issues[0]?.message || "Dữ liệu không hợp lệ";
       logger.error(errorMessage);
       return next(new ValidationError(errorMessage));
     } else {
@@ -340,7 +353,8 @@ export const validateUpdatePostInput = async (
     const result = await UpdatePostInput.safeParse(updatePostInput);
 
     if (!result.success) {
-      const errorMessage = result.error.issues[0]?.message || "Dữ liệu không hợp lệ";
+      const errorMessage =
+        result.error.issues[0]?.message || "Dữ liệu không hợp lệ";
       logger.error(errorMessage);
       return next(new ValidationError(errorMessage));
     }
@@ -362,7 +376,8 @@ export const validateCommentInput = async (
     const result = await CommentInput.safeParse(commentInput);
 
     if (!result.success) {
-      const errorMessage = result.error.issues[0]?.message || "Dữ liệu không hợp lệ";
+      const errorMessage =
+        result.error.issues[0]?.message || "Dữ liệu không hợp lệ";
       logger.error(errorMessage);
       return next(new ValidationError(errorMessage));
     }
@@ -384,7 +399,8 @@ export const validateCategoryInput = async (
     const result = await CategoryInput.safeParse(categoryInput);
 
     if (!result.success) {
-      const errorMessage = result.error.issues[0]?.message || "Dữ liệu không hợp lệ";
+      const errorMessage =
+        result.error.issues[0]?.message || "Dữ liệu không hợp lệ";
       logger.error(errorMessage);
       return next(new ValidationError(errorMessage));
     } else {
@@ -406,7 +422,8 @@ export const validateCreateTagInput = async (
     const result = await CreateTagInput.safeParse(createTagInput);
 
     if (!result.success) {
-      const errorMessage = result.error.issues[0]?.message || "Dữ liệu không hợp lệ";
+      const errorMessage =
+        result.error.issues[0]?.message || "Dữ liệu không hợp lệ";
       logger.error(errorMessage);
       return next(new ValidationError(errorMessage));
     } else {

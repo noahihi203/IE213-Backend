@@ -13,6 +13,7 @@ import { categoryModel } from "../models/category.model.js";
 import SeoRenderService from "./seo-render.service.js";
 import UrlRedirectService from "./url-redirect.service.js";
 import CategoryService from "./category.service.js";
+import logger from "../config/logger.config.js";
 
 interface PostQueryParams {
   page?: number;
@@ -33,7 +34,9 @@ interface UpdatePostData {
   title?: string;
   content?: string;
   excerpt?: string;
+  keyword?: string;
   coverImage?: string;
+  updatedAt: Date;
   slug?: string;
   status?: PostStatus;
   tags?: Array<Types.ObjectId | string>;
@@ -41,6 +44,7 @@ interface UpdatePostData {
   titleUpdate?: string;
   contentUpdate?: string;
   excerptUpdate?: string;
+  keywordUpdate?: string;
   coverImageUpdate?: string;
   slugUpdate?: string;
   statusUpdate?: PostStatus;
@@ -118,7 +122,7 @@ class PostService {
   }
 
   private static async invalidatePostCaches(options?: {
-    postId?: string;
+    postId?: Types.ObjectId;
     slug?: string;
     categorySlug?: string;
   }) {
@@ -426,25 +430,18 @@ class PostService {
   };
 
   static createPost = async (postBody: IPost) => {
-    const { authorId, title, content, excerpt, category, tags } = postBody;
+    const { authorId, title, content, excerpt, category } = postBody;
 
+    // Check dữ liệu đầu vào
     if (!authorId) {
       throw new BadRequestError("AuthorId is required!");
     }
-
     if (!title) {
       throw new BadRequestError("Tittle is required!");
     }
 
     const finalSlug = postBody.slug || slugify(postBody.title);
 
-    const existingPost = await postModel.findOne({
-      $or: [{ title }, { slug: finalSlug }],
-    });
-
-    if (existingPost) {
-      throw new BadRequestError("Post is exist!");
-    }
     postBody.slug = finalSlug;
 
     if (!content) {
@@ -457,204 +454,184 @@ class PostService {
       throw new BadRequestError("Category is required!");
     }
 
-    const createPost = await postModel.create(postBody);
-    if (!createPost) throw new BadRequestError("Create post success!");
-
-    await PostService.invalidatePostCaches({
-      postId: String(createPost._id),
-      slug: createPost.slug,
-    });
-
-    const updatePostCount = await TagService.updateTagCounts({
-      tagIds: tags,
-      inc: 1,
-    });
-    if (!updatePostCount)
-      throw new BadRequestError("Update post count for tag failed!");
-
-    return createPost;
-  };
-
-  static updatePost = async (postId: string, updateData: UpdatePostData) => {
-    if (!postId) throw new BadRequestError("Missing parameter!");
-    if (!updateData) throw new BadRequestError("Missing parameter!");
-
-    const beforePost = await postModel.findById(postId);
-    if (!beforePost) throw new BadRequestError("Post not found!");
-
-    const normalizedUpdateData: Record<string, any> = {};
-
-    const title = updateData.title ?? updateData.titleUpdate;
-    const content = updateData.content ?? updateData.contentUpdate;
-    const excerpt = updateData.excerpt ?? updateData.excerptUpdate;
-    const coverImage = updateData.coverImage ?? updateData.coverImageUpdate;
-    const slug = updateData.slug ?? updateData.slugUpdate;
-    const status = updateData.status ?? updateData.statusUpdate;
-    const category = updateData.category ?? updateData.categoryUpdate;
-    const tags = updateData.tags ?? updateData.tagsUpdate;
-
-    if (typeof title === "string" && title.trim()) {
-      normalizedUpdateData.title = title.trim();
-      normalizedUpdateData.slug = slugify(title);
-    }
-
-    if (typeof content === "string") {
-      normalizedUpdateData.content = content;
-    }
-
-    if (typeof excerpt === "string") {
-      normalizedUpdateData.excerpt = excerpt;
-    }
-
-    if (typeof coverImage === "string") {
-      normalizedUpdateData.coverImage = coverImage;
-    }
-
-    if (typeof slug === "string" && slug.trim()) {
-      normalizedUpdateData.slug = slugify(slug);
-    }
-
-    if (status) {
-      normalizedUpdateData.status = status;
-    }
-
-    if (category) {
-      normalizedUpdateData.category =
-        typeof category === "string"
-          ? convertToObjectIdMongodb(category)
-          : category;
-    }
-
-    if (tags !== undefined) {
-      const rawTags = Array.isArray(tags)
-        ? tags
-        : typeof tags === "string"
-          ? tags
-              .split(",")
-              .map((tag) => tag.trim())
-              .filter(Boolean)
-          : [];
-
-      normalizedUpdateData.tags = rawTags.map((tagId) =>
-        typeof tagId === "string" ? convertToObjectIdMongodb(tagId) : tagId,
-      );
-    }
-
-    if (Object.keys(normalizedUpdateData).length === 0) {
-      throw new BadRequestError("No valid fields to update!");
-    }
-
-    if (normalizedUpdateData.slug) {
+    try {
       const existingPost = await postModel.findOne({
-        slug: normalizedUpdateData.slug,
-        _id: { $ne: postId },
+        $or: [{ title }, { slug: finalSlug }],
       });
 
       if (existingPost) {
-        throw new BadRequestError("Slug already exists!");
-      }
-    }
-
-    const updatePost = await postModel.findByIdAndUpdate(
-      postId,
-      { $set: normalizedUpdateData },
-      { new: true, runValidators: true },
-    );
-
-    if (!updatePost) throw new BadRequestError("Update post failed!");
-
-    if (Array.isArray(normalizedUpdateData.tags)) {
-      const oldTags = beforePost.tags || [];
-      const newTags = normalizedUpdateData.tags as Types.ObjectId[];
-
-      const oldTagIds = new Set(oldTags.map((id) => String(id)));
-      const newTagIds = new Set(newTags.map((id) => String(id)));
-
-      const tagsToRemove = oldTags.filter((id) => !newTagIds.has(String(id)));
-      const tagsToAdd = newTags.filter((id) => !oldTagIds.has(String(id)));
-
-      if (tagsToAdd.length > 0) {
-        await TagService.updateTagCounts({
-          tagIds: tagsToAdd,
-          inc: 1,
-        });
+        throw new BadRequestError("Post is exist!");
       }
 
-      if (tagsToRemove.length > 0) {
-        await TagService.updateTagCounts({
-          tagIds: tagsToRemove,
-          inc: -1,
-        });
-      }
-    }
+      const createPost = await postModel.create(postBody);
+      if (!createPost) throw new BadRequestError("Create post success!");
 
-    const oldSlug = String(beforePost.slug || "");
-    const newSlug = String(updatePost.slug || "");
-    if (oldSlug && newSlug && oldSlug !== newSlug) {
-      const nextFrontendUrl = SeoRenderService.buildFrontendPostUrl(newSlug);
-
-      await Promise.all([
-        UrlRedirectService.upsertRedirect(
-          `/posts/${oldSlug}`,
-          nextFrontendUrl,
-          301,
-        ),
-        UrlRedirectService.upsertRedirect(
-          `/blog/${oldSlug}`,
-          nextFrontendUrl,
-          301,
-        ),
-      ]);
-    }
-
-    await PostService.invalidatePostCaches({
-      postId,
-      slug: updatePost.slug || beforePost.slug,
-    });
-
-    return updatePost;
-  };
-
-  static deletePost = async (postId: string) => {
-    if (!postId) throw new BadRequestError("Missing parameter!");
-
-    try {
-      // 1. Chuyển trạng thái bài viết thành "archived" (Xóa mềm)
-      const deletePost = await postModel.findByIdAndUpdate(
-        postId,
-        { status: "archived" },
-        { new: true }, // Cần new: true để lấy ra danh sách tags mới nhất
+      const increasePostCount = await this.changePostStatus(
+        createPost._id,
+        "published",
       );
 
-      if (!deletePost) {
-        throw new BadRequestError("Delete post failed! Post not found.");
+      if (!increasePostCount)
+        throw new BadRequestError("Increase post count failed!");
+      return createPost;
+    } catch (error) {
+      logger.error(error);
+      throw new BadRequestError("Create Post failed!");
+    }
+  };
+
+  static updatePost = async (
+    postId: Types.ObjectId,
+    updateData: UpdatePostData,
+  ) => {
+    try {
+      if (!postId) throw new BadRequestError("Missing parameter!");
+      if (!updateData) throw new BadRequestError("Missing parameter!");
+
+      const beforePost = await postModel.findById(postId);
+      if (!beforePost) throw new BadRequestError("Post not found!");
+
+      const normalizedUpdateData: Record<string, any> = {};
+
+      const title = updateData.title ?? updateData.titleUpdate;
+      const content = updateData.content ?? updateData.contentUpdate;
+      const excerpt = updateData.excerpt ?? updateData.excerptUpdate;
+      const keyword = updateData.keyword ?? updateData.keywordUpdate;
+      const coverImage = updateData.coverImage ?? updateData.coverImageUpdate;
+      const slug = updateData.slug ?? updateData.slugUpdate;
+      const status = updateData.status ?? updateData.statusUpdate;
+      const category = updateData.category ?? updateData.categoryUpdate;
+      const tags = updateData.tags ?? updateData.tagsUpdate;
+
+      if (typeof title === "string" && title.trim()) {
+        normalizedUpdateData.title = title.trim();
+        normalizedUpdateData.slug = slugify(title);
       }
 
-      const tagsToRemove = deletePost.tags;
+      if (typeof content === "string") {
+        normalizedUpdateData.content = content;
+      }
 
-      // 2. Giảm số lượng đếm (count) của các tags tương ứng
-      if (tagsToRemove && tagsToRemove.length > 0) {
-        const removeTag = await TagService.updateTagCounts({
-          tagIds: tagsToRemove,
-          inc: -1,
+      if (typeof excerpt === "string") {
+        normalizedUpdateData.excerpt = excerpt;
+      }
+
+      if (typeof keyword === "string") {
+        normalizedUpdateData.keyword = keyword.trim() || null;
+      }
+
+      if (typeof coverImage === "string") {
+        normalizedUpdateData.coverImage = coverImage;
+      }
+
+      if (typeof slug === "string" && slug.trim()) {
+        normalizedUpdateData.slug = slugify(slug);
+      }
+
+      if (status) {
+        normalizedUpdateData.status = status;
+      }
+
+      normalizedUpdateData.updatedAt = new Date();
+
+      if (category) {
+        normalizedUpdateData.category =
+          typeof category === "string"
+            ? convertToObjectIdMongodb(category)
+            : category;
+      }
+
+      if (tags !== undefined) {
+        const rawTags = Array.isArray(tags)
+          ? tags
+          : typeof tags === "string"
+            ? tags
+                .split(",")
+                .map((tag) => tag.trim())
+                .filter(Boolean)
+            : [];
+
+        normalizedUpdateData.tags = rawTags.map((tagId) =>
+          typeof tagId === "string" ? convertToObjectIdMongodb(tagId) : tagId,
+        );
+      }
+
+      if (Object.keys(normalizedUpdateData).length === 0) {
+        throw new BadRequestError("No valid fields to update!");
+      }
+
+      if (normalizedUpdateData.slug) {
+        const existingPost = await postModel.findOne({
+          slug: normalizedUpdateData.slug,
+          _id: { $ne: postId },
         });
 
-        if (!removeTag) {
-          throw new BadRequestError("Remove tag failed!");
+        if (existingPost) {
+          throw new BadRequestError("Slug already exists!");
         }
       }
 
-      // Trả về kết quả cho Controller
+      const updatePost = await postModel.findByIdAndUpdate(
+        postId,
+        { $set: normalizedUpdateData },
+        { new: true, runValidators: true },
+      );
+
+      if (!updatePost) throw new BadRequestError("Update post failed!");
+
+      if (Array.isArray(normalizedUpdateData.tags)) {
+        const oldTags = beforePost.tags || [];
+        const newTags = normalizedUpdateData.tags as Types.ObjectId[];
+
+        const oldTagIds = new Set(oldTags.map((id) => String(id)));
+        const newTagIds = new Set(newTags.map((id) => String(id)));
+
+        const tagsToRemove = oldTags.filter((id) => !newTagIds.has(String(id)));
+        const tagsToAdd = newTags.filter((id) => !oldTagIds.has(String(id)));
+
+        if (tagsToAdd.length > 0) {
+          await TagService.updateTagCounts({
+            tagIds: tagsToAdd,
+            inc: 1,
+          });
+        }
+
+        if (tagsToRemove.length > 0) {
+          await TagService.updateTagCounts({
+            tagIds: tagsToRemove,
+            inc: -1,
+          });
+        }
+      }
+
+      const oldSlug = String(beforePost.slug || "");
+      const newSlug = String(updatePost.slug || "");
+      if (oldSlug && newSlug && oldSlug !== newSlug) {
+        const nextFrontendUrl = SeoRenderService.buildFrontendPostUrl(newSlug);
+
+        await Promise.all([
+          UrlRedirectService.upsertRedirect(
+            `/posts/${oldSlug}`,
+            nextFrontendUrl,
+            301,
+          ),
+          UrlRedirectService.upsertRedirect(
+            `/blog/${oldSlug}`,
+            nextFrontendUrl,
+            301,
+          ),
+        ]);
+      }
+
       await PostService.invalidatePostCaches({
         postId,
-        slug: deletePost.slug,
+        slug: updatePost.slug || beforePost.slug,
       });
 
-      return deletePost;
+      return updatePost;
     } catch (error) {
-      // Bắt và ném lỗi ra ngoài để Controller xử lý trả về HTTP Error
-      console.error("Lỗi khi xóa (archive) bài viết:", error);
-      throw error;
+      logger.error(error);
+      return {};
     }
   };
 
@@ -730,19 +707,6 @@ class PostService {
     } catch (err) {
       console.warn("Redis get failed, falling back to DB", err);
     }
-
-    // const posts = await postModel
-    //   .find({ status: "published" })
-    //   .sort({ trendingScore: -1 })
-    //   .limit(limit)
-    //   .populate("authorId", "fullName avatar username")
-    //   .populate("category", "icon name")
-    //   .lean();
-
-    // const result = posts.map((post: any) => ({
-    //   ...post,
-    //   author: post.authorId,
-    // }));
 
     const result = await postModel.aggregate([
       { $match: { status: "published" } },
@@ -850,100 +814,71 @@ class PostService {
     return { postWithEngagemment, users, comments, shares };
   };
 
-  static changePostStatus = async (postId: string, status: PostStatus) => {
+  static changePostStatus = async (
+    postId: Types.ObjectId,
+    status: PostStatus,
+  ) => {
     if (!postId) throw new BadRequestError("Missing parameter!");
     if (!status) throw new BadRequestError("Status is required!");
 
-    if (status === "published") {
-      return await PostService.changeStatusPostToPublished(
-        convertToObjectIdMongodb(postId),
-      );
-    }
-
-    if (status === "archived") {
-      return await PostService.deletePost(postId);
-    }
-
-    const updatedPost = await postModel.findByIdAndUpdate(
-      postId,
-      { status: "draft", publishedAt: null },
-      { new: true },
-    );
-
-    if (!updatedPost) throw new BadRequestError("Change status failed!");
-
-    await PostService.invalidatePostCaches({
-      postId,
-      slug: updatedPost.slug,
-    });
-
-    return updatedPost;
-  };
-
-  static changeStatusPostToPublished = async (postId: Types.ObjectId) => {
     try {
-      // 1. Cập nhật trạng thái bài viết (Bỏ session)
-      const changeStatus = await postModel.findByIdAndUpdate(
-        postId,
-        { status: "published" },
-        { new: true }, // Trả về document mới sau khi update
-      );
-
-      if (!changeStatus) {
-        throw new BadRequestError("Change status failed! Post not found.");
-      }
-
-      const tagsToAdd = changeStatus.tags;
-
-      // 2. Giảm số lượng đếm (count) của các tags tương ứng
-      if (tagsToAdd && tagsToAdd.length > 0) {
-        const removeTag = await TagService.updateTagCounts({
-          tagIds: tagsToAdd,
+      const changeStatusPost = await postModel.findById(postId);
+      if (!changeStatusPost) throw new BadRequestError("Post not found!");
+      // Thay đổi status thành published
+      if (status === "published") {
+        changeStatusPost.status = "published";
+        // Tăng Tags Count
+        if (changeStatusPost.tags && changeStatusPost.tags.length > 0) {
+          const increaseTagsCount = await TagService.updateTagCounts({
+            tagIds: changeStatusPost.tags,
+            inc: 1,
+          });
+          if (!increaseTagsCount)
+            throw new BadRequestError("Increase Tags count failed!");
+        }
+        // Tăng Cateogry Count
+        const increaseCatCount = await CategoryService.updatePostCatCounts({
+          catId: changeStatusPost.category._id,
           inc: 1,
         });
-
-        if (!removeTag) {
-          throw new BadRequestError("Remove tag failed!");
-        }
+        if (!increaseCatCount)
+          throw new BadRequestError("Increase Category count failed");
       }
 
-      // 2. Lấy danh sách follower của tác giả (Bỏ session)
-      const user = await userModel
-        .findOne({ _id: changeStatus.authorId })
-        .select("followers");
-
-      // Author là actor của hành động publish
-      const authorId = convertToObjectIdMongodb(String(changeStatus.authorId));
-
-      // 3. Gửi thông báo cho từng follower
-      if (user && user.followers && user.followers.length > 0) {
-        for (const followerId of user.followers) {
-          try {
-            await NotificationService.notifyOnUser({
-              userId: convertToObjectIdMongodb(String(followerId)),
-              actorId: authorId,
-              type: "newPost",
-              message: "published a new post",
-              targetType: "post",
-              targetId: postId,
-            });
-          } catch (err) {
-            // Lỗi ở 1 follower sẽ không làm chết toàn bộ tiến trình
-            console.error(`Failed to notify follower ${followerId}`, err);
+      // Thay đổi status thành archived hoặc draft
+      if (status === "archived" || status === "draft") {
+        changeStatusPost.status = status;
+        // Giảm Category count xuống 1.
+        const decreaseCatCount = await CategoryService.updatePostCatCounts({
+          catId: changeStatusPost.category._id,
+          inc: -1,
+        });
+        if (!decreaseCatCount) {
+          throw new BadRequestError("Decrease Tags count failed!");
+        }
+        // Giảm Tags count xuống 1
+        const tags = changeStatusPost.tags;
+        if (tags && tags.length > 0) {
+          const decreaseTagsCount = await TagService.updateTagCounts({
+            tagIds: tags,
+            inc: -1,
+          });
+          if (!decreaseTagsCount) {
+            throw new BadRequestError("Decrease tag count failed!");
           }
         }
       }
 
       await PostService.invalidatePostCaches({
-        postId: String(postId),
-        slug: changeStatus.slug,
+        postId,
+        slug: changeStatusPost.slug,
       });
 
-      return changeStatus;
+      await changeStatusPost.save();
+      return changeStatusPost;
     } catch (error) {
-      // Bắt mọi lỗi xảy ra và ném lên trên để Controller xử lý (trả về HTTP 500/400)
-      console.error("Lỗi khi chuyển status bài viết:", error);
-      throw error;
+      logger.error(error);
+      throw new BadRequestError("Change status failed");
     }
   };
 

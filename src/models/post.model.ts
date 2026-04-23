@@ -4,6 +4,7 @@ const DOCUMENT_NAME = "Post";
 const COLLECTION_NAME = "Posts";
 
 export interface IPost {
+  _id: Types.ObjectId;
   authorId: Types.ObjectId;
   title: string;
   content: string;
@@ -12,6 +13,7 @@ export interface IPost {
   slug: string;
   status: "draft" | "published" | "archived";
   tags: Array<Types.ObjectId>;
+  keyword?: string;
   category: Types.ObjectId;
   viewCount: number;
   likesCount: number;
@@ -36,6 +38,7 @@ const postSchema = new Schema<IPost>(
       index: true,
     },
     tags: [{ type: Schema.Types.ObjectId, ref: "Tag", index: true }],
+    keyword: { type: String, default: null, index: true },
     category: { type: Schema.Types.ObjectId, ref: "Category", required: true },
     viewCount: { type: Number, default: 0 },
     likesCount: { type: Number, default: 0 },

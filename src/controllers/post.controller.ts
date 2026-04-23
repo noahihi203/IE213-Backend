@@ -156,30 +156,9 @@ class PostController {
     }
     new SuccessResponse({
       message: "Update post success!",
-      metadata: await PostService.updatePost(postId, req.body),
-    }).send(res);
-  };
-
-  deletePost = async (req: Request, res: Response) => {
-    const postId = req.params.postId;
-    if (Array.isArray(postId))
-      throw new BadRequestError("Invalid post id format!");
-
-    new SuccessResponse({
-      message: "Delete post success!",
-      metadata: await PostService.deletePost(postId),
-    }).send(res);
-  };
-
-  publishPost = async (req: Request, res: Response) => {
-    const postId = req.params.postId;
-    if (typeof postId !== "string")
-      throw new BadRequestError("Invalid post id format!");
-
-    new SuccessResponse({
-      message: "Publish post success!",
-      metadata: await PostService.changeStatusPostToPublished(
+      metadata: await PostService.updatePost(
         convertToObjectIdMongodb(postId),
+        req.body,
       ),
     }).send(res);
   };
@@ -197,7 +176,10 @@ class PostController {
 
     new SuccessResponse({
       message: "Change post status success!",
-      metadata: await PostService.changePostStatus(postId, status),
+      metadata: await PostService.changePostStatus(
+        convertToObjectIdMongodb(postId),
+        status,
+      ),
     }).send(res);
   };
 

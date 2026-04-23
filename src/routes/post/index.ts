@@ -83,22 +83,6 @@ router.put(
   asyncHandler(PostController.updatePost),
 );
 
-router.delete(
-  "/:postId",
-  authentication,
-  checkAuthorOrAdmin,
-  checkPostOwnership,
-  asyncHandler(PostController.deletePost),
-);
-
-router.patch(
-  "/:postId/publish",
-  authentication,
-  checkAuthorOrAdmin,
-  checkPostOwnership,
-  asyncHandler(PostController.publishPost),
-);
-
 router.patch(
   "/:postId/status",
   authentication,
