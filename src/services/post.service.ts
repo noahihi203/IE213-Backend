@@ -1013,7 +1013,7 @@ class PostService {
         .skip(skip)
         .limit(limit)
         .populate("authorId", "fullName avatar username") // Lấy thông tin tác giả
-        .populate("category", "icon name slug") // Lấy thông tin category
+        .populate("category", "icon name slug abbreviation") // Lấy thông tin category
         .lean(),
       postModel.countDocuments(filter),
     ]);

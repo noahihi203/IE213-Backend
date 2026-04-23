@@ -63,65 +63,75 @@ class NotificationService {
   static createNotification = async (
     notificationPayload: notificationPayload,
   ) => {
-    const { userId, actorId, targetId, targetType } = notificationPayload;
+    try {
+      const { userId, actorId, targetId, targetType } = notificationPayload;
 
-    const user = await userModel.findById(userId);
-    if (!user) throw new NotFoundError("User not found");
+      const user = await userModel.findById(userId);
+      if (!user) throw new NotFoundError("User not found");
 
-    const actor = await userModel.findById(actorId);
-    if (!actor) throw new NotFoundError("Actor not found");
+      const actor = await userModel.findById(actorId);
+      if (!actor) throw new NotFoundError("Actor not found");
 
-    if (targetType === "post") {
-      const targetPost = await postModel.findById(targetId);
-      if (!targetPost) throw new NotFoundError("Post not found");
-    } else if (targetType === "comment") {
-      const targetComment = await commentModel.findById(targetId);
-      if (!targetComment) throw new NotFoundError("Comment not found");
-    } else if (targetType === "user") {
-      const targetUser = await userModel.findById(targetId);
-      if (!targetUser) throw new NotFoundError("User not found");
+      if (targetType === "post") {
+        const targetPost = await postModel.findById(targetId);
+        if (!targetPost) throw new NotFoundError("Post not found");
+      } else if (targetType === "comment") {
+        const targetComment = await commentModel.findById(targetId);
+        if (!targetComment) throw new NotFoundError("Comment not found");
+      } else if (targetType === "user") {
+        const targetUser = await userModel.findById(targetId);
+        if (!targetUser) throw new NotFoundError("User not found");
+      }
+
+      const sent = await rabbitMQProducer.send("notification-queue", {
+        notificationPayload,
+        createdAt: new Date(),
+      });
+
+      if (!sent) {
+        logger.warn(`Failed to enqueue notification for user ${userId}`);
+      }
+
+      return { success: true, message: "Notification is being processed" };
+    } catch (error: any) {
+      logger.error("Create notification error: ", error);
+      if (error instanceof NotFoundError) throw error;
+      throw new Error("Internal Server Error");
     }
-
-    const sent = await rabbitMQProducer.send("notification-queue", {
-      notificationPayload,
-      createdAt: new Date(),
-    });
-
-    if (!sent) {
-      logger.warn(`Failed to enqueue notification for user ${userId}`);
-    }
-
-    return { success: true, message: "Notification is being processed" };
   };
 
   static getUserNotifications = async (payload: getUserNotisPayload) => {
-    const { userId, filter } = payload;
-    const { isRead, type } = filter;
+    try {
+      const { userId, filter } = payload;
+      const { isRead, type } = filter;
 
-    const query: Record<string, unknown> = { userId };
+      const query: Record<string, unknown> = { userId };
 
-    if (isRead !== undefined) query.isRead = isRead;
-    if (type && type !== "") query.type = type;
+      if (isRead !== undefined) query.isRead = isRead;
+      if (type && type !== "") query.type = type;
 
-    const notifications = await notificationModel
-      .find(query)
-      .populate("actorId", "_id username fullName")
-      .sort({ createdOn: -1 })
-      .limit(20)
-      .lean();
+      const notifications = await notificationModel
+        .find(query)
+        .populate("actorId", "_id username fullName")
+        .sort({ createdOn: -1 })
+        .limit(20)
+        .lean();
 
-    const total = await notificationModel.countDocuments({ userId });
+      const total = await notificationModel.countDocuments({ userId });
 
-    const unreadCount = await notificationModel.countDocuments({
-      userId,
-      isRead: false,
-    });
+      const unreadCount = await notificationModel.countDocuments({
+        userId,
+        isRead: false,
+      });
 
-    return {
-      notifications,
-      total,
-      unreadCount,
-    };
+      return {
+        notifications,
+        total,
+        unreadCount,
+      };
+    } catch (error) {
+      console.log("error:::", error);
+    }
   };
 
   static markAsRead = async (payload: markAsReadPayload) => {
