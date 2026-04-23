@@ -18,21 +18,21 @@ class EmailService {
     const message = {
       senderAddress: senderAddress,
       content: {
-        subject: "🎓 Xác thực tài khoản Unisynchcm của bạn",
-        plainText: `Chào mừng bạn đến với Unisynchcm! Vui lòng truy cập liên kết sau để xác thực email và bắt đầu khám phá thông tin các trường đại học tại TP.HCM: ${verificationLink}`,
+        subject: "🎓 Xác thực tài khoản UniSync của bạn",
+        plainText: `Chào mừng bạn đến với UniSync! Vui lòng truy cập liên kết sau để xác thực email và bắt đầu khám phá thông tin các trường đại học tại TP.HCM: ${verificationLink}`,
         html: `
           <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f8fafc; padding: 40px 20px; color: #334155;">
             <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.05), 0 8px 10px -6px rgba(0,0,0,0.01);">
               
               <div style="background: linear-gradient(135deg, #059669 0%, #10b981 100%); padding: 35px 30px; text-align: center;">
                 <h1 style="color: #ffffff; margin: 0; font-size: 26px; font-weight: 700; letter-spacing: -0.5px;">
-                  Chào mừng bạn đến với Unisynchcm! 🎓
+                  Chào mừng bạn đến với UniSync! 🎓
                 </h1>
               </div>
               
               <div style="padding: 40px 30px;">
                 <p style="font-size: 16px; line-height: 1.6; color: #475569; margin-top: 0;">
-                  Chào mừng bạn đến với Unisynchcm – nền tảng tổng hợp thông tin các trường đại học tại TP.HCM. 
+                  Chào mừng bạn đến với UniSync – nền tảng tổng hợp thông tin các trường đại học tại TP.HCM. 
                   Chúng tôi rất vui khi bạn tham gia cùng cộng đồng sinh viên và người học.
                 </p>
 
@@ -43,7 +43,7 @@ class EmailService {
                 
                 <div style="text-align: center; margin: 40px 0;">
                   <a href="${verificationLink}" style="display: inline-block; padding: 16px 36px; background-color: #059669; color: #ffffff; text-decoration: none; border-radius: 10px; font-weight: 600; font-size: 16px; letter-spacing: 0.5px; box-shadow: 0 4px 6px -1px rgba(5, 150, 105, 0.2), 0 2px 4px -2px rgba(5, 150, 105, 0.1);">
-                    Kích hoạt tài khoản Unisynchcm
+                    Kích hoạt tài khoản UniSync
                   </a>
                 </div>
                 
@@ -58,7 +58,7 @@ class EmailService {
               
               <div style="background-color: #f1f5f9; padding: 24px; text-align: center; border-top: 1px solid #e2e8f0;">
                 <p style="font-size: 12px; color: #94a3b8; margin: 0;">
-                  Email được gửi tự động từ hệ thống Unisynchcm. Vui lòng không trả lời email này.
+                  Email được gửi tự động từ hệ thống UniSync. Vui lòng không trả lời email này.
                 </p>
               </div>
 
@@ -88,21 +88,21 @@ class EmailService {
     const message = {
       senderAddress: senderAddress,
       content: {
-        subject: "🔐 Đặt lại mật khẩu tài khoản Unisynchcm",
-        plainText: `Bạn đã yêu cầu đặt lại mật khẩu tài khoản Unisynchcm. Vui lòng truy cập liên kết sau để đặt lại mật khẩu: ${resetLink}`,
+        subject: "🔐 Đặt lại mật khẩu tài khoản UniSync",
+        plainText: `Bạn đã yêu cầu đặt lại mật khẩu tài khoản UniSync. Vui lòng truy cập liên kết sau để đặt lại mật khẩu: ${resetLink}`,
         html: `
           <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f8fafc; padding: 40px 20px; color: #334155;">
             <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.05), 0 8px 10px -6px rgba(0,0,0,0.01);">
               
               <div style="background-color: #0f172a; padding: 35px 30px; text-align: center;">
                 <h1 style="color: #ffffff; margin: 0; font-size: 24px; font-weight: 600; letter-spacing: -0.5px;">
-                  Đặt lại mật khẩu Unisynchcm 🔐
+                  Đặt lại mật khẩu UniSync 🔐
                 </h1>
               </div>
               
               <div style="padding: 40px 30px;">
                 <p style="font-size: 16px; line-height: 1.6; color: #475569; margin-top: 0;">
-                  Chúng tôi vừa nhận được yêu cầu đặt lại mật khẩu cho tài khoản Unisynchcm của bạn.
+                  Chúng tôi vừa nhận được yêu cầu đặt lại mật khẩu cho tài khoản UniSync của bạn.
                 </p>
 
                 <p style="font-size: 16px; line-height: 1.6; color: #475569;">
@@ -133,7 +133,7 @@ class EmailService {
               
               <div style="background-color: #f1f5f9; padding: 24px; text-align: center; border-top: 1px solid #e2e8f0;">
                 <p style="font-size: 12px; color: #94a3b8; margin: 0;">
-                  Email được gửi tự động từ hệ thống Unisynchcm. Vui lòng không trả lời email này.
+                  Email được gửi tự động từ hệ thống UniSync. Vui lòng không trả lời email này.
                 </p>
               </div>
 
