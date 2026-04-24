@@ -395,19 +395,19 @@ class PostService {
     const cachedPost = await redisService.get<any>(cacheKey);
     if (cachedPost) return cachedPost;
 
-    const post = await postModel
+    const result = await postModel
       .findOne({ slug })
-      .populate("category", "icon name")
-      .populate("authorId", "fullName avatar username")
+      .populate("category", "icon abbreviation name")
+      .populate("authorId", "fullName avatar username bio")
       .populate("tags", "name slug")
       .lean();
 
-    if (!post) throw new BadRequestError("Post not found!");
+    if (!result) throw new BadRequestError("Post not found!");
 
-    const result = {
-      ...post,
-      author: post.authorId,
-    };
+    // const result = {
+    //   ...post,
+    //   author: post.authorId,
+    // };
 
     await redisService.setWithTTL(
       cacheKey,
