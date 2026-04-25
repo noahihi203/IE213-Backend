@@ -189,12 +189,23 @@ class AccessService {
   }: LoginParams): Promise<{ user: UserResponse; tokens: TokenPair }> => {
     const foundUser = await UserService.findUserByEmail({
       email,
-      select: { email: 1, password: 1, fullName: 1, username: 1, role: 1, tokenVersion: 1, isEmailVerified: 1 }
+      select: {
+        email: 1,
+        password: 1,
+        fullName: 1,
+        username: 1,
+        role: 1,
+        avatar: 1,
+        tokenVersion: 1,
+        isEmailVerified: 1,
+      },
     });
-    
+
     if (!foundUser) throw new BadRequestError("User not registered!");
     if (foundUser.isEmailVerified === false) {
-      throw new AuthFailureError("Vui lòng xác thực email trước khi đăng nhập!");
+      throw new AuthFailureError(
+        "Vui lòng xác thực email trước khi đăng nhập!",
+      );
     }
 
     const match = await bcrypt.compare(password, foundUser.password);
@@ -227,7 +238,7 @@ class AccessService {
     });
     return {
       user: getInfoData({
-        fields: ["_id", "username", "email", "fullName", "role"],
+        fields: ["_id", "username", "email", "fullName", "avatar", "role"],
         object: foundUser,
       }) as UserResponse,
       tokens,
