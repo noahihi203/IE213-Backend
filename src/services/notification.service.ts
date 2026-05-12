@@ -58,8 +58,6 @@ interface notifyOnUserPayload {
 }
 
 class NotificationService {
-  // Chỉ validate rồi đẩy lên queue — KHÔNG lưu DB ở đây
-  // Việc lưu DB do NotificationConsumer xử lý
   static createNotification = async (
     notificationPayload: notificationPayload,
   ) => {
@@ -130,7 +128,8 @@ class NotificationService {
         unreadCount,
       };
     } catch (error) {
-      console.log("error:::", error);
+      logger.error("Get user notifications error: ", error);
+      throw error; 
     }
   };
 
@@ -212,7 +211,7 @@ class NotificationService {
     const userId = post.authorId;
     if (!userId) throw new ForBiddenError("Post has no author!");
 
-    if (userId.toString() === actorId.toString()) return;
+    if (userId.toString() === actorId.toString()) return { createdNoti: false };
 
     const noti = await NotificationService.createNotification({
       userId: convertToObjectIdMongodb(userId.toString()),
@@ -239,7 +238,7 @@ class NotificationService {
     const userId = comment.userId;
     if (!userId) throw new ForBiddenError("Comment has no user!");
 
-    if (userId.toString() === actorId.toString()) return;
+    if (userId.toString() === actorId.toString()) return { createdNoti: false };
 
     const noti = await NotificationService.createNotification({
       userId: convertToObjectIdMongodb(userId.toString()),
@@ -260,7 +259,7 @@ class NotificationService {
     if (!userId || !actorId || !type)
       throw new BadRequestError("Missing parameter");
 
-    if (userId.toString() === actorId.toString()) return;
+    if (userId.toString() === actorId.toString()) return { createdNoti: false };
 
     const resolvedTargetType = targetType || "user";
     const resolvedTargetId = targetId || actorId;
