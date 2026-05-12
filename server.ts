@@ -9,7 +9,7 @@ import http2 from "http2";
 import cron from "node-cron";
 
 import { rabbitMQProducer } from "./src/services/rabbitmq/rabbitmq.producer.js";
-import { NotificationConsumer } from "./src/services/rabbitmq/NotificationConsumer.js"; // đổi import
+import { NotificationConsumer } from "./src/services/rabbitmq/NotificationConsumer.js"; 
 import { shouldEnforceHttps } from "./src/middleware/https-enforcement.js";
 import postService from "./src/services/post.service.js";
 
@@ -57,11 +57,11 @@ function createHttpsServer() {
         cert,
         allowHTTP1: true,
       },
-      app,
+      app as any, // FIX: Cast app to any to resolve HTTP2 type mismatch
     );
   }
 
-  return https.createServer({ key, cert }, app);
+  return https.createServer({ key, cert }, app as any); // Cast here as well for consistency
 }
 
 function createHttpRedirectServer() {
