@@ -78,7 +78,7 @@ app.use(
 );
 
 // init db
-import "./dbs/init.mongodb";
+import './dbs/init.mongodb.js';
 
 // init routes
 import routes from "./routes/index.js";
