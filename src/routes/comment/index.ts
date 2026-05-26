@@ -13,6 +13,12 @@ router.post(
   validateCommentInput,
   asyncHandler(CommentController.createComment),
 );
+
+router.get(
+  "/top-comments/:limit",
+  asyncHandler(CommentController.getTopComments),
+);
+
 router.get(
   "/:commentId",
   authentication,

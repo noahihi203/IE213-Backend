@@ -398,7 +398,7 @@ class PostService {
     const result = await postModel
       .findOne({ slug })
       .populate("category", "icon abbreviation name")
-      .populate("authorId", "fullName avatar username bio")
+      .populate("authorId", "fullName avatar username bio following followers")
       .populate("tags", "name slug")
       .lean();
 

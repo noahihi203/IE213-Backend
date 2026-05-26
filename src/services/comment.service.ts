@@ -436,6 +436,19 @@ class CommentService {
 
     return comments;
   }
+
+  //Lấy 3 comment nhiều like nhất
+  static async getTopComments(limit: number) {
+    const comment = await commentModel
+      .find({}, "content -_id")
+      .limit(limit)
+      .sort({ likesCount: -1 })
+      .populate("userId", "avatar fullName followers role -_id")
+      .populate("postId", "slug -_id")
+      .lean();
+    if (!comment) throw new NotFoundError("Lấy top comment thất bại");
+    return comment;
+  }
 }
 
 export default CommentService;

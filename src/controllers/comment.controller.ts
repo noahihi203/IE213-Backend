@@ -102,6 +102,16 @@ class CommentController {
       ),
     }).send(res);
   };
+
+  getTopComments = async (req: Request, res: Response) => {
+    const limit = Number(req.params.limit);
+    if (typeof limit !== "number") throw new BadRequestError("Type của limit bị sai!")
+    
+    new SuccessResponse({
+      message: `Lấy top ${limit} thành công`,
+      metadata: await CommentService.getTopComments(limit)
+    }).send(res);
+  }
 }
 
 export default new CommentController();
