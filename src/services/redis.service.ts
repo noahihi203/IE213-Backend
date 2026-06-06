@@ -6,14 +6,14 @@ class RedisService {
   public subscriber: RedisClientType;
 
   private static buildRedisConnectionUrl(): string {
-    const REDIS_URI= process.env.REDIS_URI;
-    console.log("Redis connection URL from env:", REDIS_URI);
-    if (REDIS_URI) return REDIS_URI;
-    const host = process.env.REDIS_HOST;
-    const port = process.env.REDIS_PORT;
+    const redisUrl = process.env.REDIS_URL;
+    if (redisUrl) return redisUrl;
+
+    const host = process.env.REDIS_HOST || "localhost";
+    const port = process.env.REDIS_PORT || "6379";
     const username = process.env.REDIS_USERNAME;
     const password = process.env.REDIS_PASSWORD;
-    const missingParams = process.env.REDIS_MISSING_PARAMS;
+
     let credentials = "";
     if (password && username) {
       credentials = `${encodeURIComponent(username)}:${encodeURIComponent(password)}@`;
@@ -22,6 +22,7 @@ class RedisService {
     } else if (username) {
       credentials = `${encodeURIComponent(username)}@`;
     }
+
     return `redis://${credentials}${host}:${port}`;
   }
 

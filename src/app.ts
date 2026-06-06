@@ -11,7 +11,7 @@ import { enforceHttps } from "./middleware/https-enforcement.js";
 
 interface HttpError extends Error {
   status?: number;
-  code?: string;
+  code?: string; // Add custom error code
 }
 
 const app = express();
@@ -22,15 +22,17 @@ const shouldCompress: compression.CompressionFilter = (req, res) => {
   if (req.headers["x-no-compression"]) {
     return false;
   }
+
   return compression.filter(req, res);
 };
 
 app.set("etag", "strong");
 
+// init middleware
 app.use(
   cors({
-    origin: "*", // Allows all origins
-    credentials: false, // Must be false when origin is "*"
+    origin: process.env.FRONTEND_URL || "http://localhost:3000",
+    credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization", "x-client-id"],
   }),
@@ -76,7 +78,7 @@ app.use(
 );
 
 // init db
-import './dbs/init.mongodb.js';
+import "./dbs/init.mongodb";
 
 // init routes
 import routes from "./routes/index.js";
@@ -95,7 +97,7 @@ app.use(
     return res.status(statusCode).json({
       status: statusCode,
       message: error.message || "Internal Server error",
-      ...(error.code && { code: error.code }),
+      ...(error.code && { code: error.code }), // Include custom error code if present
       ...(process.env.NODE_ENV === "development" && { stack: error.stack }),
     });
   },
