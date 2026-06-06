@@ -285,6 +285,9 @@ class PostController {
       metadata: await CommentService.getTopLevelComments(
         convertToObjectIdMongodb(postId),
         { limit: parsedLimit, skip: parsedSkip },
+        req.user?.userId
+          ? convertToObjectIdMongodb(req.user.userId)
+          : undefined,
       ),
     }).send(res);
   };
@@ -303,6 +306,9 @@ class PostController {
       metadata: await CommentService.getRepliesByCommentId(
         convertToObjectIdMongodb(postId),
         convertToObjectIdMongodb(parentCommentId),
+        req.user?.userId // thêm dòng này
+          ? convertToObjectIdMongodb(req.user.userId)
+          : undefined,
       ),
     }).send(res);
   };

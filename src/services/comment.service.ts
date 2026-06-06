@@ -173,7 +173,9 @@ class CommentService {
   static getTopLevelComments = async (
     postId: Types.ObjectId,
     { limit = 5, skip = 0 }: { limit?: number; skip?: number },
+    currentUserId?: Types.ObjectId,
   ) => {
+    console.log("currentUserId nhận được:", currentUserId);
     // Comment gốc = không có parentId
     const comments = await commentModel
       .find({
@@ -204,7 +206,14 @@ class CommentService {
           commentLeft: { $gt: c.commentLeft },
           commentRight: { $lt: c.commentRight },
         });
-        return { ...c, replyCount };
+        const isLiked = currentUserId
+          ? !!(await likeCommentModel.findOne({
+              targetId: c._id,
+              userId: currentUserId,
+            }))
+          : false;
+
+        return { ...c, replyCount, isLikedByCurrentUser: isLiked };
       }),
     );
 
@@ -220,16 +229,13 @@ class CommentService {
   static getRepliesByCommentId = async (
     postId: Types.ObjectId,
     parentCommentId: Types.ObjectId,
+    currentUserId?: Types.ObjectId, // thêm param
   ) => {
     const parent = await commentModel.findById(parentCommentId).lean();
     if (!parent) throw new NotFoundError("Comment not found!");
 
-    // Chỉ lấy direct children (level 2), không lấy sâu hơn
     const replies = await commentModel
-      .find({
-        postId,
-        parentId: parentCommentId,
-      })
+      .find({ postId, parentId: parentCommentId })
       .select({
         userId: 1,
         commentLeft: 1,
@@ -244,7 +250,19 @@ class CommentService {
       .populate("userId", CommentService.commentAuthorSelect)
       .lean();
 
-    return replies;
+    console.log("currentUserId:: ", currentUserId);
+
+    if (!currentUserId) return replies;
+
+    return Promise.all(
+      replies.map(async (r) => {
+        const isLiked = !!(await likeCommentModel.findOne({
+          targetId: r._id,
+          userId: currentUserId,
+        }));
+        return { ...r, isLikedByCurrentUser: isLiked };
+      }),
+    );
   };
 
   static async deleteComments(deleteParams: deleteParams) {
@@ -312,7 +330,10 @@ class CommentService {
   }
 
   static async getCommentById(commentId: Types.ObjectId) {
-    const comment = await commentModel.findById(commentId);
+    const comment = await commentModel
+      .findById(commentId)
+      .populate("postId", "slug")
+      .lean();
     if (!comment) throw new NotFoundError("Comment not found");
     return comment;
   }

@@ -142,8 +142,32 @@ const authentication = asyncHandler(
   },
 );
 
+const optionalAuthentication = asyncHandler(
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const userId = req.headers[HEADER.CLIENT_ID];
+      if (!userId || typeof userId !== "string") return next();
+
+      const keyStore = await KeyTokenService.findByUserId(userId);
+      if (!keyStore) return next();
+
+      const accessToken = req.headers[HEADER.AUTHORIZATION];
+      if (!accessToken || typeof accessToken !== "string") return next();
+
+      const decodeUser = JWT.verify(accessToken, keyStore.publicKey, {
+        algorithms: ["RS256"],
+      }) as JwtPayload;
+
+      if (userId !== decodeUser.userId) return next();
+
+      (req as any).user = decodeUser;
+    } catch {}
+    next();
+  },
+);
+
 const verifyJWT = async (token: string, keySecret: Secret) => {
   return JWT.verify(token, keySecret, { algorithms: ["RS256"] });
 };
 
-export { createTokenPair, authentication, verifyJWT };
+export { createTokenPair, authentication, verifyJWT, optionalAuthentication };

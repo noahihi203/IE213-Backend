@@ -1,6 +1,9 @@
 import express from "express";
 import { asyncHandler } from "../../auth/checkAuth.js";
-import { authentication } from "../../auth/authUtils.js";
+import {
+  authentication,
+  optionalAuthentication,
+} from "../../auth/authUtils.js";
 import {
   checkAuthorOrAdmin,
   checkPostOwnership,
@@ -111,11 +114,13 @@ router.post(
 
 router.get(
   "/:postId/comments",
+  optionalAuthentication,
   asyncHandler(PostController.getPostComments),
 );
 
 router.get(
   "/:postId/next-comments",
+  optionalAuthentication,
   asyncHandler(PostController.getNextLevelPostComments),
 );
 
