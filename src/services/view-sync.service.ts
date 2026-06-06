@@ -28,23 +28,20 @@ const syncViewsToDatabase = async (viewUpdates: ViewUpdate[]) => {
   await postModel.bulkWrite(operations, { ordered: false });
 };
 
-// Gọi API này khi user xem bài viết
 export const recordPostView = async (postId: string) => {
   const key = `${VIEW_PREFIX}${postId}`;
   await redisService.incr(key);
 };
 
-// Chạy hàm này 1 lần khi khởi động app
 export const startViewSyncWorker = () => {
   setInterval(async () => {
     try {
       const bulkUpdates: ViewUpdate[] = [];
       const keysToDelete: string[] = [];
 
-      // Dùng scanIterator thay cho keys() để không gây nghẽn Redis Server
       for await (const scanResult of redisService.client.scanIterator({
         MATCH: `${VIEW_PREFIX}*`,
-        COUNT: 100, // Quét mỗi lần 100 keys
+        COUNT: 100, 
       })) {
         const keys = normalizeScannedKeys(scanResult);
         if (keys.length === 0) continue;
@@ -66,15 +63,13 @@ export const startViewSyncWorker = () => {
       }
 
       if (bulkUpdates.length > 0) {
-        // Cập nhật MongoDB theo batch để giảm số lần ghi
         await syncViewsToDatabase(bulkUpdates);
 
-        // Xóa các key đã sync thành công
         await redisService.del(keysToDelete);
         console.log(`Đã đồng bộ ${bulkUpdates.length} bài viết xuống DB.`);
       }
     } catch (error) {
       console.error("Lỗi khi đồng bộ lượt xem:", error);
     }
-  }, 30 * 1000); // 30 giây chạy 1 lần
+  }, 30 * 1000);
 };

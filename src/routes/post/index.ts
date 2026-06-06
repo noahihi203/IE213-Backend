@@ -111,19 +111,16 @@ router.post(
 
 router.get(
   "/:postId/comments",
-  withPublicCache(20, 40),
   asyncHandler(PostController.getPostComments),
 );
 
 router.get(
   "/:postId/next-comments",
-  withPublicCache(20, 40),
   asyncHandler(PostController.getNextLevelPostComments),
 );
 
 router.get(
   "/:postId/comment-count",
-  withPublicCache(20, 40),
   asyncHandler(PostController.getCommentCount),
 );
 
