@@ -15,6 +15,13 @@ class RabbitMQProducer {
         password: process.env.RABBITMQ_PASS,
       });
 
+      this.connection.on("error", (err) =>
+        logger.error("❌ RabbitMQ Producer connection error:", err.message),
+      );
+      this.connection.on("close", () =>
+        logger.warn("⚠️ RabbitMQ Producer connection closed"),
+      );
+
       this.channel = await this.connection.createChannel();
       logger.info("🐰 RabbitMQ Producer connected");
     } catch (error) {
@@ -30,6 +37,10 @@ class RabbitMQProducer {
 
   async send(queue: string, message: any): Promise<boolean> {
     try {
+      if (!this.channel) {
+        logger.warn(`RabbitMQ channel not available, skipping send [${queue}]`);
+        return false;
+      }
       await this.channel.assertQueue(queue, { durable: true });
 
       const success = this.channel.sendToQueue(

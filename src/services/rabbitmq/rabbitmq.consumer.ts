@@ -15,6 +15,13 @@ export class RabbitMQConsumer {
         password: process.env.RABBITMQ_PASS,
       });
 
+      this.connection.on("error", (err) =>
+        logger.error("❌ RabbitMQ Producer connection error:", err.message),
+      );
+      this.connection.on("close", () =>
+        logger.warn("⚠️ RabbitMQ Producer connection closed"),
+      );
+
       this.channel = await this.connection.createChannel();
       logger.info("✅ RabbitMQ Consumer connected");
     } catch (error) {
@@ -28,6 +35,11 @@ export class RabbitMQConsumer {
     handler: (payload: any) => Promise<void>,
   ): Promise<void> {
     try {
+      if (!this.channel) {
+        logger.warn(`RabbitMQ channel not available [${queue}]`);
+        return;
+      }
+
       await this.channel.assertQueue(queue, { durable: true });
 
       await this.channel.consume(queue, async (message) => {

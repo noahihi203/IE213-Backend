@@ -126,17 +126,18 @@ const authentication = asyncHandler(
       const decodeUser = JWT.verify(accessToken, keyStore.publicKey, {
         algorithms: ["RS256"],
       }) as JwtPayload;
+
       if (userId !== decodeUser.userId)
         throw new AuthFailureError("Invalid Userid");
 
-      // Check token version
       await checkTokenVersion(decodeUser);
 
       (req as any).keyStore = keyStore;
       (req as any).user = decodeUser;
       return next();
     } catch (error) {
-      throw error;
+      if (error instanceof AuthFailureError) throw error;
+      throw new AuthFailureError("Invalid or expired token");
     }
   },
 );
