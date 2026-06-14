@@ -1,7 +1,6 @@
 # UniSync HCM — Backend
 
 > RESTful API cho nền tảng blog chia sẻ thông tin về các trường đại học tại TP. Hồ Chí Minh.
-> Live API: **[api.unisynchcm.com](https://api.unisynchcm.com)**
 
 ---
 
